@@ -6,16 +6,20 @@ export const sanitizeQuery = (query) => {
   }
 
   const clean = (obj) => {
-    for (const key in obj) {
+    for (const key of Object.keys(obj)) {
       if (key === "__proto__" || key === "constructor") {
         throw new Error("🚫 Prototype pollution attempt");
       }
 
-      if (key === "$where" || key === "$expr") {
-        throw new Error(`🚫 Unsafe operator detected: ${key}`);
+      if (key.startsWith("$")) {
+        throw new Error(`🚫 Mongo operator not allowed: ${key}`);
       }
 
-      if (typeof obj[key] === "object") {
+      if (
+        typeof obj[key] === "object" &&
+        obj[key] !== null &&
+        !Array.isArray(obj[key])
+      ) {
         clean(obj[key]);
       }
     }
@@ -23,4 +27,20 @@ export const sanitizeQuery = (query) => {
 
   clean(query);
   return query;
+};
+
+export const sanitizeMongoQuery = (query) => {
+  if (!query || typeof query !== "object") return query;
+
+  const sanitized = {};
+
+  for (const key of Object.keys(query)) {
+    if (key.startsWith("$")) {
+      throw new Error(`🚫 Mongo operator not allowed: ${key}`);
+    }
+
+    sanitized[key] = query[key];
+  }
+
+  return sanitized;
 };
