@@ -1,4 +1,5 @@
 import { makeExecutableSchema } from "@graphql-tools/schema";
+import { mergeResolvers } from "@graphql-tools/merge";
 import { authDirective } from "./directives/auth.directive";
 
 import authTypeDefs from "@/modules/auth/interface/graphql/auth.schema";
@@ -16,9 +17,17 @@ const baseTypeDefs = `
   }
 `;
 
-export let schema = makeExecutableSchema({
+const baseResolvers = {
+  Query: {
+    _empty: () => "OK",
+  },
+};
+
+let schema = makeExecutableSchema({
   typeDefs: [baseTypeDefs, authTypeDefs],
-  resolvers: [authResolvers],
+  resolvers: mergeResolvers([baseResolvers, authResolvers]),
 });
 
 schema = authDirective(schema);
+
+export { schema };

@@ -1,24 +1,59 @@
 import { verifyToken } from "@/shared/utils/jwt";
-import { getUserById } from "@/modules/auth/infrastructure/persistence/user.repository";
+import * as UserRepo from "@/modules/auth/infrastructure/persistence/user.repository";
 
-export async function createContext({ req, res }) {
+const parseCookies = (cookieHeader = "") => {
+  if (!cookieHeader) return {};
+
+  return Object.fromEntries(
+    cookieHeader.split("; ").map((c) => {
+      const [key, ...v] = c.trim().split("=");
+      return [key, v.join("=")];
+    }),
+  );
+};
+
+export async function createContext({ request }) {
   let user = null;
 
   try {
-    const token =
-      req.headers.authorization?.replace("Bearer ", "") ||
-      req.cookies?.accessToken;
+    const authHeader = request.headers.get("authorization");
 
-    if (token) {
-      const decoded = verifyToken(token);
-      user = await getUserById(decoded.id);
+    let token = null;
+
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.slice(7);
+    } else {
+      const cookies = parseCookies(request.headers.get("cookie") || "");
+      token = cookies.accessToken;
     }
+
+    if (!token) {
+      return {
+        req: request,
+        res: new Response(),
+        user: null,
+        isAuthenticated: false,
+      };
+    }
+
+    const decoded = verifyToken(token);
+
+    if (!decoded?.id) {
+      throw new Error("Invalid token payload");
+    }
+
+    user = await UserRepo.getUserById(decoded.id);
   } catch (err) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("Auth context error:", err.message);
+    }
   }
 
   return {
-    req,
-    res,
+    req: request,
+
+    res: new Response(),
+
     user,
     isAuthenticated: !!user,
   };

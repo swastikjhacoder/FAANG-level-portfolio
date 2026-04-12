@@ -1,5 +1,3 @@
-import { cookies } from "next/headers";
-
 import { LoginUseCase } from "../../application/useCases/login.usecase";
 import { RegisterUseCase } from "../../application/useCases/register.usecase";
 import { RefreshTokenUseCase } from "../../application/useCases/refreshToken.usecase";
@@ -9,10 +7,23 @@ import { extractRequestMeta } from "@/shared/utils/requestMeta";
 
 const COOKIE_NAME = "refreshToken";
 
+const buildCookie = (value, options = {}) => {
+  const parts = [`${COOKIE_NAME}=${value}`];
+
+  if (options.httpOnly) parts.push("HttpOnly");
+  if (options.secure) parts.push("Secure");
+  if (options.sameSite) parts.push(`SameSite=${options.sameSite}`);
+  if (options.path) parts.push(`Path=${options.path}`);
+  if (options.maxAge) parts.push(`Max-Age=${options.maxAge}`);
+  if (options.expires) parts.push(`Expires=${options.expires.toUTCString()}`);
+
+  return parts.join("; ");
+};
+
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: "strict",
+  sameSite: "Strict",
   path: "/",
   maxAge: 60 * 60 * 24 * 7,
 };
@@ -46,7 +57,7 @@ export const authResolvers = {
 
     login: async (_, args, context) => {
       try {
-        const { req } = context;
+        const { req, res } = context;
 
         const { ip, userAgent } = extractRequestMeta(req);
 
@@ -57,8 +68,9 @@ export const authResolvers = {
           userAgent,
         });
 
-        const cookieStore = cookies();
-        cookieStore.set(COOKIE_NAME, result.refreshToken, COOKIE_OPTIONS);
+        const cookie = buildCookie(result.refreshToken, COOKIE_OPTIONS);
+
+        res.headers.append("Set-Cookie", cookie);
 
         return {
           success: true,
@@ -76,10 +88,13 @@ export const authResolvers = {
 
     refreshToken: async (_, __, context) => {
       try {
-        const { req } = context;
+        const { req, res } = context;
 
-        const cookieStore = cookies();
-        const refreshToken = cookieStore.get(COOKIE_NAME)?.value;
+        const cookieHeader = req.headers.get("cookie") || "";
+        const refreshToken = cookieHeader
+          .split("; ")
+          .find((c) => c.startsWith(`${COOKIE_NAME}=`))
+          ?.split("=")[1];
 
         if (!refreshToken) {
           throw new Error("Unauthorized");
@@ -94,7 +109,9 @@ export const authResolvers = {
           userAgent,
         });
 
-        cookieStore.set(COOKIE_NAME, result.refreshToken, COOKIE_OPTIONS);
+        const cookie = buildCookie(result.refreshToken, COOKIE_OPTIONS);
+
+        res.headers.append("Set-Cookie", cookie);
 
         return {
           success: true,
@@ -110,7 +127,7 @@ export const authResolvers = {
 
     logout: async (_, args, context) => {
       try {
-        const { req } = context;
+        const { req, res } = context;
 
         const { ip, userAgent } = extractRequestMeta(req);
 
@@ -125,12 +142,12 @@ export const authResolvers = {
           { ip, userAgent },
         );
 
-        const cookieStore = cookies();
-        cookieStore.set(COOKIE_NAME, "", {
-          httpOnly: true,
+        const cookie = buildCookie("", {
           path: "/",
           expires: new Date(0),
         });
+
+        res.headers.append("Set-Cookie", cookie);
 
         return {
           success: true,

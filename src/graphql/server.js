@@ -3,7 +3,6 @@ import { schema } from "./schema";
 import { createContext } from "./context";
 
 import { complexityPlugin } from "./plugins/complexity.plugin";
-import { costAnalysisPlugin } from "./plugins/costAnalysis.plugin";
 import { depthLimitRule } from "./plugins/depthLimit.plugin";
 
 import { permissions } from "./security/graphqlShield";
@@ -11,24 +10,56 @@ import { persistedQueryPlugin } from "./security/persistedQueries";
 import { disableIntrospection } from "./security/disableIntrospection";
 
 import { applyMiddleware } from "graphql-middleware";
+import { mergeSchemas } from "@graphql-tools/schema";
 
 const securedSchema = applyMiddleware(schema, permissions);
 
 export const yoga = createYoga({
   schema: securedSchema,
+
   context: createContext,
 
   plugins: [
-    complexityPlugin(schema),
-    costAnalysisPlugin(),
+    complexityPlugin(securedSchema),
     persistedQueryPlugin(),
+
+    {
+      async requestDidStart() {
+        return {
+          didResolveOperation({ request }) {
+            if (process.env.NODE_ENV !== "production") {
+              console.log("GraphQL Operation:", request.operationName);
+            }
+          },
+        };
+      },
+    },
   ],
 
-  validationRules: [depthLimitRule],
+  validationRules: [
+    depthLimitRule,
+    ...(process.env.NODE_ENV === "production"
+      ? disableIntrospection().ValidationRules
+      : []),
+  ],
+
+  cors: {
+    origin: process.env.CORS_ORIGIN?.split(",") || [],
+    credentials: true,
+  },
 
   graphiql: process.env.NODE_ENV !== "production",
 
-  maskedErrors: true,
+  maskedErrors: {
+    maskError: (err, message, isDev) => {
+      return {
+        message: err.message || "Internal Server Error",
+        extensions: {
+          code: err.extensions?.code || "INTERNAL_ERROR",
+        },
+      };
+    },
+  },
 });
 
 export default yoga;

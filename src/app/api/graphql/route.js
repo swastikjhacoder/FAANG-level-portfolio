@@ -1,4 +1,5 @@
 import { corsOptions } from "@/shared/config/cors";
+import yoga from "@/graphql/server";
 
 const resolveOrigin = (req) => {
   const origin = req.headers.get("origin");
@@ -9,6 +10,30 @@ const resolveOrigin = (req) => {
   }
 
   return origin;
+};
+
+const withCors = (req, handler) => {
+  return async () => {
+    const allowOrigin = resolveOrigin(req);
+
+    if (!allowOrigin) {
+      return new Response("CORS blocked", { status: 403 });
+    }
+
+    const response = await handler(req);
+
+    const newHeaders = new Headers(response.headers);
+
+    newHeaders.set("Access-Control-Allow-Origin", allowOrigin);
+    newHeaders.set("Access-Control-Allow-Credentials", "true");
+    newHeaders.set("Vary", "Origin");
+
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: newHeaders,
+    });
+  };
 };
 
 export async function OPTIONS(req) {
@@ -25,26 +50,10 @@ export async function OPTIONS(req) {
       "Access-Control-Allow-Credentials": "true",
       "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      "Vary": "Origin",
+      Vary: "Origin",
     },
   });
 }
 
-export async function POST(req) {
-  const allowOrigin = resolveOrigin(req);
-
-  if (!allowOrigin) {
-    return new Response("CORS blocked", { status: 403 });
-  }
-
-  const response = await handleGraphQL(req);
-
-  return new Response(response.body, {
-    headers: {
-      "Access-Control-Allow-Origin": allowOrigin,
-      "Access-Control-Allow-Credentials": "true",
-      "Vary": "Origin",
-      "Content-Type": "application/json",
-    },
-  });
-}
+export const GET = (req) => withCors(req, yoga)(req);
+export const POST = (req) => withCors(req, yoga)(req);
