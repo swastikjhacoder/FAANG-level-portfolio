@@ -31,9 +31,10 @@ export class LoginUseCase {
     const { ip, userAgent } = context;
 
     const emailVO = new Email(dto.email);
-    const passwordVO = new Password(dto.password);
 
     const email = emailVO.value;
+    
+    const passwordVO = new Password(dto.password);
 
     const user = await this.userRepository.findByEmail(email, {
       includePassword: true,
@@ -50,7 +51,11 @@ export class LoginUseCase {
       if (user) {
         await this.userRepository.incrementFailedAttempts(user._id);
 
-        if (user.failedLoginAttempts + 1 >= MAX_ATTEMPTS) {
+        const updatedUser = await this.userRepository.incrementFailedAttempts(
+          user._id,
+        );
+
+        if (updatedUser.failedLoginAttempts >= MAX_ATTEMPTS) {
           await this.userRepository.lockAccount(user._id);
         }
       }
@@ -111,8 +116,8 @@ export class LoginUseCase {
     return {
       user: toSafeUser(user),
       accessToken,
-      refreshToken,
       sessionId: session._id,
+      refreshToken,
     };
   }
 }

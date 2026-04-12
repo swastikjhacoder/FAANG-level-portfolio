@@ -1,4 +1,4 @@
-export const sanitizeQuery = (query) => {
+export const sanitizeMongoQuery = (query) => {
   if (!query || typeof query !== "object") return query;
 
   if (JSON.stringify(query).length > 10000) {
@@ -15,32 +15,22 @@ export const sanitizeQuery = (query) => {
         throw new Error(`🚫 Mongo operator not allowed: ${key}`);
       }
 
+      const value = obj[key];
+
       if (
-        typeof obj[key] === "object" &&
-        obj[key] !== null &&
-        !Array.isArray(obj[key])
+        typeof value === "object" &&
+        value !== null &&
+        !Array.isArray(value)
       ) {
-        clean(obj[key]);
+        clean(value);
+      }
+
+      if (typeof value === "string") {
+        obj[key] = value.trim();
       }
     }
   };
 
   clean(query);
   return query;
-};
-
-export const sanitizeMongoQuery = (query) => {
-  if (!query || typeof query !== "object") return query;
-
-  const sanitized = {};
-
-  for (const key of Object.keys(query)) {
-    if (key.startsWith("$")) {
-      throw new Error(`🚫 Mongo operator not allowed: ${key}`);
-    }
-
-    sanitized[key] = query[key];
-  }
-
-  return sanitized;
 };

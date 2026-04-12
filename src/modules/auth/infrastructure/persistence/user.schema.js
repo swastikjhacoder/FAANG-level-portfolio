@@ -86,6 +86,8 @@ const UserSchema = new mongoose.Schema(
 );
 
 UserSchema.index({ email: 1 }, { unique: true });
+UserSchema.index({ sessionVersion: 1 });
+UserSchema.index({ createdAt: -1 });
 
 UserSchema.set("toJSON", {
   transform: (_, ret) => {

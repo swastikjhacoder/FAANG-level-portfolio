@@ -6,7 +6,7 @@ export class RegisterDTO {
       throw new Error("Invalid email");
     }
 
-    this.email = email.trim().toLowerCase();
+    this.email = email;
 
     if (!password || password.length < 8) {
       throw new Error("Password must be at least 8 characters");
