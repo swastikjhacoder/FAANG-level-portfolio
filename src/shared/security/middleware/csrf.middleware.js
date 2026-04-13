@@ -8,26 +8,34 @@ export const generateCsrfToken = () => {
   return randomBytes(32).toString("hex");
 };
 
-export const setCsrfCookie = () => {
+export const setCsrfCookie = async () => {
   const token = generateCsrfToken();
 
-  cookies().set(CSRF_COOKIE_NAME, token, {
+  const cookieStore = await cookies();
+
+  cookieStore.set(CSRF_COOKIE_NAME, token, {
     httpOnly: false,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
     path: "/",
   });
 
+  console.log("CSRF_SET_TOKEN:", token);
+
   return token;
 };
 
-export const validateCsrf = (req) => {
-  const cookieStore = cookies();
+export const validateCsrf = async (req) => {
+  const cookieStore = await cookies();
 
   const cookieToken = cookieStore.get(CSRF_COOKIE_NAME)?.value;
   const headerToken = req.headers.get(CSRF_HEADER_NAME);
 
+  console.log("CSRF_COOKIE_TOKEN:", cookieToken);
+  console.log("CSRF_HEADER_TOKEN:", headerToken);
+
   if (!cookieToken || !headerToken) {
+    console.log("CSRF_ERROR: missing token");
     throw new Error("CSRF token missing");
   }
 
@@ -38,8 +46,11 @@ export const validateCsrf = (req) => {
     cookieBuffer.length !== headerBuffer.length ||
     !timingSafeEqual(cookieBuffer, headerBuffer)
   ) {
+    console.log("CSRF_ERROR: token mismatch");
     throw new Error("Invalid CSRF token");
   }
+
+  console.log("CSRF_VALID");
 
   return true;
 };
@@ -51,12 +62,16 @@ export const withCsrf = (handler) => {
     const protectedMethods = ["POST", "PUT", "PATCH", "DELETE"];
 
     try {
+      console.log("CSRF_METHOD:", method);
+
       if (protectedMethods.includes(method)) {
-        validateCsrf(req);
+        await validateCsrf(req);
       }
 
       return await handler(req, context);
     } catch (error) {
+      console.log("CSRF_BLOCKED:", error.message);
+
       return new Response(
         JSON.stringify({
           success: false,

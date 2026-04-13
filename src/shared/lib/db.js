@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { withTimeout } from "@/shared/utils/timeout";
 import logger from "@/shared/lib/logger";
-import { sanitizeQuery } from "../security/sanitizers/mongo.sanitizer";
+import { sanitizeMongoQuery } from "../security/sanitizers/mongo.sanitizer";
 
 const MONGODB_URL = process.env.MONGODB_URL;
 
@@ -51,7 +51,7 @@ const connectDB = async () => {
       retryWrites: true,
       w: "majority",
       family: 4,
-      tls: true, // 🔐 enforce TLS
+      tls: process.env.NODE_ENV === "production",
     };
 
     const start = Date.now();
@@ -116,7 +116,7 @@ if (!global.__mongoose_exec_patched) {
     return function () {
       try {
         if (this._conditions) {
-          this._conditions = sanitizeQuery(this._conditions);
+          this._conditions = sanitizeMongoQuery(this._conditions);
         }
 
         this.maxTimeMS(5000);

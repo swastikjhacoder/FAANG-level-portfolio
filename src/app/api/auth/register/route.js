@@ -1,20 +1,24 @@
 import { registerController } from "@/modules/auth/interface/http/auth.controller";
 import { corsOptions } from "@/shared/config/cors";
-import { withCsrf } from "@/shared/middleware/csrf.middleware";
-import { withRateLimit } from "@/shared/middleware/rateLimit.middleware";
+import { withCsrf } from "@/shared/security/middleware/csrf.middleware";
+import { withRateLimit } from "@/shared/security/middleware/rateLimit.middleware";
 import { sanitizeInput } from "@/shared/security/sanitizers/input.sanitizer";
-import { validateSchema } from "@/shared/validation/schema.validator";
+import { validateSchema } from "@/shared/security/validators/schema.validator";
 import { registerSchema } from "@/modules/auth/interface/validation/register.schema";
 
 const resolveOrigin = (req) => {
   const origin = req.headers.get("origin");
   const allowedOrigins = corsOptions.origin;
 
-  if (!origin || !allowedOrigins.includes(origin)) {
-    return null;
+  if (!origin) {
+    return allowedOrigins[0];
   }
 
-  return origin;
+  if (allowedOrigins.includes(origin)) {
+    return origin;
+  }
+
+  return null;
 };
 
 const buildCorsHeaders = (origin) => ({

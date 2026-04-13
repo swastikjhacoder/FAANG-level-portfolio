@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 const UserSchema = new mongoose.Schema(
   {
     email: {
@@ -54,7 +56,6 @@ const UserSchema = new mongoose.Schema(
     },
 
     lastLoginAt: Date,
-
     passwordChangedAt: Date,
 
     mfaEnabled: {
@@ -96,3 +97,7 @@ UserSchema.set("toJSON", {
     return ret;
   },
 });
+
+const UserModel = mongoose.models.User || mongoose.model("User", UserSchema);
+
+export default UserModel;

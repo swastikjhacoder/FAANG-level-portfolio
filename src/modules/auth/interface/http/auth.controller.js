@@ -1,3 +1,4 @@
+import connectDB from "@/shared/lib/db";
 import { cookies } from "next/headers";
 
 import { LoginUseCase } from "../../application/useCases/login.usecase";
@@ -18,6 +19,8 @@ const COOKIE_OPTIONS = {
 
 export const loginController = async (req) => {
   try {
+    await connectDB();
+
     const body = await req.json();
 
     const { ip, userAgent } = extractRequestMeta(req);
@@ -52,6 +55,8 @@ export const loginController = async (req) => {
 
 export const registerController = async (req) => {
   try {
+    await connectDB();
+
     const body = await req.json();
 
     const { ip, userAgent } = extractRequestMeta(req);
@@ -80,6 +85,8 @@ export const registerController = async (req) => {
 
 export const refreshController = async (req) => {
   try {
+    await connectDB();
+    
     const cookieStore = cookies();
 
     const refreshToken = cookieStore.get(COOKIE_NAME)?.value;
