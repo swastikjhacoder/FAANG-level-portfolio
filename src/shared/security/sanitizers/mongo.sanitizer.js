@@ -1,3 +1,14 @@
+const ALLOWED_OPERATORS = new Set([
+  "$gt",
+  "$gte",
+  "$lt",
+  "$lte",
+  "$in",
+  "$nin",
+  "$eq",
+  "$ne",
+]);
+
 export const sanitizeMongoQuery = (query) => {
   if (!query || typeof query !== "object") return query;
 
@@ -12,7 +23,9 @@ export const sanitizeMongoQuery = (query) => {
       }
 
       if (key.startsWith("$")) {
-        throw new Error(`🚫 Mongo operator not allowed: ${key}`);
+        if (!ALLOWED_OPERATORS.has(key)) {
+          throw new Error(`🚫 Mongo operator not allowed: ${key}`);
+        }
       }
 
       const value = obj[key];

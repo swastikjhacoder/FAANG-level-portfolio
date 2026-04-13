@@ -1,23 +1,23 @@
 import { redisIncr, redisExpire, redisGet } from "@/shared/lib/redis";
 import { trackSecurityEvent } from "@/shared/lib/monitoring";
-import xss from "xss";
+import { withTimeout } from "@/shared/utils/timeout";
 
 const DEFAULT_LIMIT = 100;
 const DEFAULT_WINDOW = 60;
 
 const getKey = (req, prefix = "rate") => {
   const rawIp =
-    req.headers.get("x-forwarded-for") ||
+    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
     req.headers.get("x-real-ip") ||
     "unknown";
 
-  const ip = xss(rawIp);
+  const ip = rawIp.replace(/[^0-9a-fA-F:.,]/g, "");
 
   return `${prefix}:${ip}`;
 };
 
 const checkRateLimit = async ({ key, limit, window }) => {
-  const current = await redisIncr(key);
+  const current = await withTimeout(redisIncr(key), 100);
 
   if (current === 1) {
     await redisExpire(key, window);
@@ -78,13 +78,13 @@ export const withRateLimit = (handler, options = {}) => {
 
       return response;
     } catch (error) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          message: "Rate limiter error",
-        }),
-        { status: 500 },
-      );
+      trackSecurityEvent({
+        type: "RATE_LIMIT_ERROR",
+        ip: key,
+        metadata: { message: error.message },
+      });
+
+      return await handler(req, context);
     }
   };
 };

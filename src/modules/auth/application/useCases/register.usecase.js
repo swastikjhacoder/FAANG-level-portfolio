@@ -9,6 +9,8 @@ import { toSafeUser } from "../mapper/user.mapper";
 
 import auditLogger from "@/shared/security/audit/audit.logger";
 
+import crypto from "crypto";
+
 export class RegisterUseCase {
   constructor() {
     this.userRepository = new UserRepository();
@@ -22,6 +24,12 @@ export class RegisterUseCase {
     const nameVO = new Name(dto.name);
 
     const email = emailVO.value;
+    const rawToken = crypto.randomBytes(32).toString("hex");
+
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(rawToken)
+      .digest("hex");
 
     const existingUser = await this.userRepository.findByEmail(email);
 
@@ -41,6 +49,7 @@ export class RegisterUseCase {
     const userData = {
       email,
       passwordHash,
+
       name: {
         firstName: nameVO.firstName,
         lastName: nameVO.lastName,
@@ -50,11 +59,12 @@ export class RegisterUseCase {
       roles: ["USER"],
       isVerified: false,
 
+      emailVerificationToken: hashedToken,
+      emailVerificationExpires: Date.now() + 1000 * 60 * 15,
+
       failedLoginAttempts: 0,
       isLocked: false,
-
       mfaEnabled: false,
-
       sessionVersion: 0,
 
       createdByIp: ip,
@@ -71,6 +81,9 @@ export class RegisterUseCase {
       userAgent,
     });
 
-    return toSafeUser(createdUser);
+    return {
+      user: toSafeUser(createdUser),
+      verificationToken: rawToken,
+    };
   }
 }

@@ -80,13 +80,22 @@ const UserSchema = new mongoose.Schema(
 
     createdByIp: String,
     lastLoginIp: String,
+
+    emailVerificationToken: {
+      type: String,
+      default: null,
+    },
+
+    emailVerificationExpires: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
   },
 );
 
-UserSchema.index({ email: 1 }, { unique: true });
 UserSchema.index({ sessionVersion: 1 });
 UserSchema.index({ createdAt: -1 });
 

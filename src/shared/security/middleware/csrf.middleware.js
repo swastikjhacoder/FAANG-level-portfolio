@@ -31,9 +31,6 @@ export const validateCsrf = async (req) => {
   const cookieToken = cookieStore.get(CSRF_COOKIE_NAME)?.value;
   const headerToken = req.headers.get(CSRF_HEADER_NAME);
 
-  console.log("CSRF_COOKIE_TOKEN:", cookieToken);
-  console.log("CSRF_HEADER_TOKEN:", headerToken);
-
   if (!cookieToken || !headerToken) {
     console.log("CSRF_ERROR: missing token");
     throw new Error("CSRF token missing");
@@ -62,7 +59,6 @@ export const withCsrf = (handler) => {
     const protectedMethods = ["POST", "PUT", "PATCH", "DELETE"];
 
     try {
-      console.log("CSRF_METHOD:", method);
 
       if (protectedMethods.includes(method)) {
         await validateCsrf(req);

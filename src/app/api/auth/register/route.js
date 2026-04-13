@@ -5,6 +5,7 @@ import { withRateLimit } from "@/shared/security/middleware/rateLimit.middleware
 import { sanitizeInput } from "@/shared/security/sanitizers/input.sanitizer";
 import { validateSchema } from "@/shared/security/validators/schema.validator";
 import { registerSchema } from "@/modules/auth/interface/validation/register.schema";
+import connectDB from "@/shared/lib/db";
 
 const resolveOrigin = (req) => {
   const origin = req.headers.get("origin");
@@ -44,6 +45,7 @@ export async function OPTIONS(req) {
 
 const handler = withRateLimit(
   withCsrf(async (req) => {
+    await connectDB();
     const rawBody = await req.json();
 
     const sanitizedBody = sanitizeInput(rawBody);

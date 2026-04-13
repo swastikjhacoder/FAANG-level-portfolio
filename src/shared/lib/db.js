@@ -4,6 +4,8 @@ import logger from "@/shared/lib/logger";
 import { sanitizeMongoQuery } from "../security/sanitizers/mongo.sanitizer";
 
 const MONGODB_URL = process.env.MONGODB_URL;
+console.log("MONGO_URL:", process.env.MONGODB_URL);
+console.log("ENV:", process.env.NODE_ENV);
 
 if (!MONGODB_URL) {
   throw new Error("❌ MONGODB_URL is not defined");
@@ -17,7 +19,7 @@ const globalCache = global.__mongoose || {
 global.__mongoose = globalCache;
 
 let retryCount = 0;
-const MAX_RETRIES = 5;
+const MAX_RETRIES = process.env.NODE_ENV === "production" ? 5 : 1;
 let circuitState = "CLOSED";
 
 const metrics = {
@@ -36,7 +38,11 @@ if (process.env.NODE_ENV === "development") {
 
 const connectDB = async () => {
   if (circuitState === "OPEN") {
-    throw new Error("🚫 DB unavailable (circuit open)");
+    if (process.env.NODE_ENV !== "production") {
+      circuitState = "HALF_OPEN";
+    } else {
+      throw new Error("🚫 DB unavailable (circuit open)");
+    }
   }
 
   if (globalCache.conn) return globalCache.conn;
@@ -50,8 +56,7 @@ const connectDB = async () => {
       socketTimeoutMS: 45000,
       retryWrites: true,
       w: "majority",
-      family: 4,
-      tls: process.env.NODE_ENV === "production",
+      tls: true,
     };
 
     const start = Date.now();
@@ -94,7 +99,7 @@ const connectDB = async () => {
       retryCount++;
       metrics.totalRetries++;
 
-      const delay = Math.min(1000 * 2 ** retryCount, 10000);
+      const delay = Math.min(1000 * 2 ** retryCount, 5000);
 
       await new Promise((res) => setTimeout(res, delay));
       return connectDB();
@@ -105,7 +110,7 @@ const connectDB = async () => {
     setTimeout(() => {
       circuitState = "HALF_OPEN";
       retryCount = 0;
-    }, 30000);
+    }, 10000);
 
     throw new Error("❌ DB connection failed after retries");
   }

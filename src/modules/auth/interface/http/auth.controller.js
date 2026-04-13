@@ -6,6 +6,7 @@ import { RegisterUseCase } from "../../application/useCases/register.usecase";
 import { RefreshTokenUseCase } from "../../application/useCases/refreshToken.usecase";
 
 import { extractRequestMeta } from "@/shared/utils/requestMeta";
+import { EmailService } from "@/modules/auth/infrastructure/communication/email.service";
 
 const COOKIE_NAME = "refreshToken";
 
@@ -22,7 +23,6 @@ export const loginController = async (req) => {
     await connectDB();
 
     const body = await req.json();
-
     const { ip, userAgent } = extractRequestMeta(req);
 
     const useCase = new LoginUseCase();
@@ -32,16 +32,21 @@ export const loginController = async (req) => {
       userAgent,
     });
 
-    const cookieStore = cookies();
-
-    cookieStore.set(COOKIE_NAME, result.refreshToken, COOKIE_OPTIONS);
-
-    return Response.json({
+    const response = Response.json({
       success: true,
       user: result.user,
       accessToken: result.accessToken,
       sessionId: result.sessionId,
     });
+
+    response.headers.set(
+      "Set-Cookie",
+      `${COOKIE_NAME}=${result.refreshToken}; Path=/; HttpOnly; ${
+        process.env.NODE_ENV === "production" ? "Secure;" : ""
+      } SameSite=Strict; Max-Age=${60 * 60 * 24 * 7}`,
+    );
+
+    return response;
   } catch (error) {
     return new Response(
       JSON.stringify({
@@ -55,22 +60,24 @@ export const loginController = async (req) => {
 
 export const registerController = async (req) => {
   try {
-    await connectDB();
-
     const body = await req.json();
 
     const { ip, userAgent } = extractRequestMeta(req);
 
     const useCase = new RegisterUseCase();
 
-    const user = await useCase.execute(body, {
-      ip,
-      userAgent,
-    });
+    const result = await useCase.execute(body, { ip, userAgent });
+
+    const emailService = new EmailService();
+
+    const verifyUrl = `${process.env.APP_URL}/api/auth/verify-email?token=${result.verificationToken}`;
+
+    await emailService.sendVerificationEmail(result.user.email, verifyUrl);
 
     return Response.json({
       success: true,
-      user,
+      user: result.user,
+      message: "Verification email sent",
     });
   } catch (error) {
     return new Response(

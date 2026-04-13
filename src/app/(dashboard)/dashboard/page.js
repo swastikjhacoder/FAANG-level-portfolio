@@ -6,18 +6,23 @@ import { useAuthStore } from "@/store/useAuthStore";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { isLoggedIn, hydrated } = useAuthStore();
+
+  const user = useAuthStore((s) => s.user);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const hydrated = useAuthStore((s) => s.hydrated);
+
+  console.log("Dashboard user:", user);
 
   useEffect(() => {
     if (!hydrated) return;
 
-    if (!isLoggedIn) {
+    if (!isAuthenticated) {
       router.replace("/login");
     }
-  }, [hydrated, isLoggedIn, router]);
+  }, [hydrated, isAuthenticated, router]);
 
   if (!hydrated) return null;
-  if (!isLoggedIn) return null;
+  if (!isAuthenticated) return null;
 
   return (
     <div className="p-6">

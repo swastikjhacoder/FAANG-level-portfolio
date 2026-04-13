@@ -15,6 +15,12 @@ export class UserRepository {
     return await UserModel.findOne(safeQuery).select(projection).lean();
   }
 
+  async findOne(filter) {
+    const safeQuery = sanitizeMongoQuery(filter);
+
+    return await UserModel.findOne(safeQuery);
+  }
+
   async create(userData) {
     const safeData = {
       email: userData.email,
@@ -26,8 +32,11 @@ export class UserRepository {
         displayName: userData.name.displayName,
       },
 
-      roles: ["USER"],
+      roles: userData.roles || ["USER"],
       isVerified: false,
+
+      emailVerificationToken: userData.emailVerificationToken,
+      emailVerificationExpires: userData.emailVerificationExpires,
 
       failedLoginAttempts: 0,
       isLocked: false,
@@ -40,7 +49,7 @@ export class UserRepository {
     };
 
     try {
-      const user = await UserModel.create(sanitizeMongoQuery(safeData));
+      const user = await UserModel.create(safeData);
       return user.toObject();
     } catch (err) {
       if (err.code === 11000) {
@@ -48,6 +57,16 @@ export class UserRepository {
       }
       throw err;
     }
+  }
+
+  async save(user) {
+    return await user.save();
+  }
+
+  async updateById(userId, update) {
+    const safeId = new mongoose.Types.ObjectId(userId);
+
+    return await UserModel.updateOne({ _id: safeId }, { $set: update });
   }
 
   async incrementFailedAttempts(userId) {
