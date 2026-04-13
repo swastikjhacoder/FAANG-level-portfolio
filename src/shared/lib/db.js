@@ -4,8 +4,6 @@ import logger from "@/shared/lib/logger";
 import { sanitizeMongoQuery } from "../security/sanitizers/mongo.sanitizer";
 
 const MONGODB_URL = process.env.MONGODB_URL;
-console.log("MONGO_URL:", process.env.MONGODB_URL);
-console.log("ENV:", process.env.NODE_ENV);
 
 if (!MONGODB_URL) {
   throw new Error("❌ MONGODB_URL is not defined");

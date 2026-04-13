@@ -53,21 +53,17 @@ export const validateCsrf = async (req) => {
 };
 
 export const withCsrf = (handler) => {
-  return async (req, context = {}) => {
+  return async (req) => {
     const method = req.method;
-
     const protectedMethods = ["POST", "PUT", "PATCH", "DELETE"];
 
     try {
-
       if (protectedMethods.includes(method)) {
         await validateCsrf(req);
       }
 
-      return await handler(req, context);
+      return handler(req);
     } catch (error) {
-      console.log("CSRF_BLOCKED:", error.message);
-
       return new Response(
         JSON.stringify({
           success: false,
@@ -75,9 +71,7 @@ export const withCsrf = (handler) => {
         }),
         {
           status: 403,
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
         },
       );
     }

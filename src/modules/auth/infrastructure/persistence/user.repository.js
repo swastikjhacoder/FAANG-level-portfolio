@@ -18,7 +18,7 @@ export class UserRepository {
   async findOne(filter) {
     const safeQuery = sanitizeMongoQuery(filter);
 
-    return await UserModel.findOne(safeQuery);
+    return await UserModel.findOne(safeQuery).lean();
   }
 
   async create(userData) {

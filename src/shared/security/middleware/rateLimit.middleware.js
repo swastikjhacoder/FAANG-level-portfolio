@@ -37,7 +37,7 @@ export const withRateLimit = (handler, options = {}) => {
     prefix = "rate",
   } = options;
 
-  return async (req, context = {}) => {
+  return async (req) => {
     const key = getKey(req, prefix);
 
     try {
@@ -69,7 +69,7 @@ export const withRateLimit = (handler, options = {}) => {
         );
       }
 
-      const response = await handler(req, context);
+      const response = await handler(req);
 
       if (response instanceof Response) {
         response.headers.set("X-RateLimit-Limit", limit.toString());
@@ -84,7 +84,7 @@ export const withRateLimit = (handler, options = {}) => {
         metadata: { message: error.message },
       });
 
-      return await handler(req, context);
+      return handler(req);
     }
   };
 };

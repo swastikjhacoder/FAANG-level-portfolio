@@ -48,6 +48,9 @@ export const loginController = async (req) => {
 
     return response;
   } catch (error) {
+    console.error("FULL ERROR:", error);
+    console.error("STACK TRACE:", error.stack);
+
     return new Response(
       JSON.stringify({
         success: false,

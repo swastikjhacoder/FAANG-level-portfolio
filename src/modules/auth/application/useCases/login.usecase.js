@@ -4,12 +4,17 @@ import { Password } from "../../domain/valueObjects/Password.vo";
 import { UserRepository } from "../../infrastructure/persistence/user.repository";
 import { SessionRepository } from "../../infrastructure/persistence/session.repository";
 
-import { comparePassword, generateTokenWithMeta } from "@/shared/utils/hash";
+import {
+  comparePassword,
+  generateTokenWithMeta,
+  hashPassword,
+} from "@/shared/utils/hash";
 
 import { toSafeUser } from "../mapper/user.mapper";
 
 import auditLogger from "@/shared/security/audit/audit.logger";
 import { signAccessToken as generateAccessToken } from "@/shared/utils/jwt";
+import bcrypt from "bcryptjs";
 
 const DUMMY_HASH =
   "$2b$12$C6UzMDM.H6dfI/f/IKcEeO9r9GqQ8K/ux6j7a8qG9Q5e5e5e5e5eO";
@@ -36,12 +41,12 @@ export class LoginUseCase {
 
     const passwordHash = user?.passwordHash || DUMMY_HASH;
 
-    const isPasswordValid = await comparePassword(
+    const { valid, needsUpgrade } = await comparePassword(
       passwordVO.value,
       passwordHash,
     );
 
-    if (!user || !isPasswordValid) {
+    if (!user || !valid) {
       if (user) {
         const updatedUser = await this.userRepository.incrementFailedAttempts(
           user._id,
@@ -62,6 +67,18 @@ export class LoginUseCase {
       throw new Error("Invalid credentials");
     }
 
+    if (needsUpgrade) {
+      const normalized = passwordVO.value.trim().normalize("NFKC");
+
+      const newHash = await hashPassword(normalized);
+
+      await this.userRepository.updateById(user._id, {
+        passwordHash: newHash,
+      });
+
+      console.log("🔄 Password upgraded to peppered hash");
+    }
+
     if (user.isLocked) {
       throw new Error("Account locked. Try later.");
     }
@@ -75,15 +92,21 @@ export class LoginUseCase {
     const { raw: refreshToken, hash: refreshTokenHash } =
       generateTokenWithMeta();
 
-    const fingerprint = deviceFingerprint || userAgent || "unknown";
+    const fingerprint =
+      deviceFingerprint || `${userAgent}-${ip}` || "unknown-device";
 
     const session = await this.sessionRepository.create({
       userId: user._id,
+
       currentTokenHash: refreshTokenHash,
       previousTokenHash: null,
+
       fingerprint,
       userAgent,
       ip,
+
+      sessionVersion: user.sessionVersion || 0,
+
       isRevoked: false,
       expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
     });
@@ -95,14 +118,15 @@ export class LoginUseCase {
       sessionId: session._id,
     });
 
-    await this.userRepository.updateLoginMetadata(user._id, {
-      lastLoginAt: new Date(),
-      lastLoginIp: ip,
-    });
+   await this.userRepository.updateLoginMetadata(user._id, {
+     lastLoginAt: new Date(),
+     lastLoginIp: ip,
+   });
 
     await auditLogger.log({
       action: "LOGIN_SUCCESS",
       userId: user._id,
+      sessionId: session._id,
       ip,
       userAgent,
     });

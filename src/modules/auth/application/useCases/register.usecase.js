@@ -3,7 +3,7 @@ import { Password } from "../../domain/valueObjects/Password.vo";
 import { Name } from "../../domain/valueObjects/Name.vo";
 
 import { UserRepository } from "../../infrastructure/persistence/user.repository";
-import { hashPassword } from "../../infrastructure/security/hash.service";
+import { hashPassword } from "@/shared/utils/hash";
 
 import { toSafeUser } from "../mapper/user.mapper";
 

@@ -4,17 +4,21 @@ import { sanitizeMongoQuery } from "@/shared/security/sanitizers/mongo.sanitizer
 
 export class SessionRepository {
   async create(sessionData) {
-    const safeData = sanitizeMongoQuery({
+    const safeData = {
       userId: new mongoose.Types.ObjectId(sessionData.userId),
-      refreshTokenHash: sessionData.refreshTokenHash,
+
+      currentTokenHash: sessionData.currentTokenHash,
+      previousTokenHash: sessionData.previousTokenHash || null,
+
+      fingerprint: sessionData.fingerprint,
       userAgent: sessionData.userAgent,
       ip: sessionData.ip,
-      fingerprint: sessionData.fingerprint,
+
+      sessionVersion: sessionData.sessionVersion || 0,
+
+      isRevoked: sessionData.isRevoked ?? false,
       expiresAt: sessionData.expiresAt,
-      rotatedFrom: sessionData.rotatedFrom
-        ? new mongoose.Types.ObjectId(sessionData.rotatedFrom)
-        : undefined,
-    });
+    };
 
     const session = await SessionModel.create(safeData);
     return session.toObject();
@@ -22,12 +26,12 @@ export class SessionRepository {
 
   async findByTokenHash(hash) {
     const safeQuery = sanitizeMongoQuery({
-      refreshTokenHash: hash,
+      currentTokenHash: hash,
     });
 
     return SessionModel.findOne(safeQuery)
       .select(
-        "+refreshTokenHash userId isRevoked expiresAt rotatedFrom fingerprint",
+        "+currentTokenHash +previousTokenHash userId isRevoked expiresAt fingerprint sessionVersion",
       )
       .lean();
   }
@@ -35,7 +39,9 @@ export class SessionRepository {
   async findById(sessionId) {
     const safeId = new mongoose.Types.ObjectId(sessionId);
 
-    return SessionModel.findById(safeId).lean();
+    return SessionModel.findById(safeId)
+      .select("-currentTokenHash -previousTokenHash")
+      .lean();
   }
 
   async rotateSession(oldSessionId, newSessionData) {

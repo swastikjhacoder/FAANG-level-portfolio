@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 const PUBLIC_PATHS = ["/", "/login", "/register"];
 
-export function middleware(req) {
+export function proxy(req) {
   const { pathname } = req.nextUrl;
 
   const res = NextResponse.next();
