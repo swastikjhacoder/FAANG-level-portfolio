@@ -6,7 +6,7 @@ import authTypeDefs from "@/modules/auth/interface/graphql/auth.schema";
 import authResolvers from "@/modules/auth/interface/graphql/auth.resolver";
 
 const baseTypeDefs = `
-  directive @auth on FIELD_DEFINITION
+  directive @auth(role: String) on FIELD_DEFINITION
 
   type Query {
     _empty: String

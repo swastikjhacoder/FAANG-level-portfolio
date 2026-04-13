@@ -7,10 +7,9 @@ import { depthLimitRule } from "./plugins/depthLimit.plugin";
 
 import { permissions } from "./security/graphqlShield";
 import { persistedQueryPlugin } from "./security/persistedQueries";
-import { disableIntrospection } from "./security/disableIntrospection";
+import { disableIntrospectionRule } from "./security/disableIntrospection";
 
 import { applyMiddleware } from "graphql-middleware";
-import { mergeSchemas } from "@graphql-tools/schema";
 
 const securedSchema = applyMiddleware(schema, permissions);
 
@@ -22,7 +21,6 @@ export const yoga = createYoga({
   plugins: [
     complexityPlugin(securedSchema),
     persistedQueryPlugin(),
-
     {
       async requestDidStart() {
         return {
@@ -39,7 +37,7 @@ export const yoga = createYoga({
   validationRules: [
     depthLimitRule,
     ...(process.env.NODE_ENV === "production"
-      ? disableIntrospection().ValidationRules
+      ? [disableIntrospectionRule]
       : []),
   ],
 
@@ -52,8 +50,10 @@ export const yoga = createYoga({
 
   maskedErrors: {
     maskError: (err, message, isDev) => {
+      if (isDev) return err;
+
       return {
-        message: err.message || "Internal Server Error",
+        message: "Internal Server Error",
         extensions: {
           code: err.extensions?.code || "INTERNAL_ERROR",
         },

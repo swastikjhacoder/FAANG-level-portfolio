@@ -3,6 +3,7 @@ import {
   simpleEstimator,
   fieldExtensionsEstimator,
 } from "graphql-query-complexity";
+import { GraphQLError } from "graphql";
 
 export const complexityPlugin = (schema, maxComplexity = 1000) => ({
   async requestDidStart() {
@@ -19,9 +20,9 @@ export const complexityPlugin = (schema, maxComplexity = 1000) => ({
         });
 
         if (complexity > maxComplexity) {
-          throw new Error(
-            `Query is too complex: ${complexity}. Max allowed: ${maxComplexity}`,
-          );
+          throw new GraphQLError("Query too complex", {
+            extensions: { code: "QUERY_TOO_COMPLEX" },
+          });
         }
       },
     };

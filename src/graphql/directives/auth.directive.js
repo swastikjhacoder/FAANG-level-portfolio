@@ -4,29 +4,41 @@ export const authDirective = (schema, directiveName = "auth") => {
   const typeMap = schema.getTypeMap();
 
   Object.values(typeMap).forEach((type) => {
-    if (!type.getFields) return;
+    if (!type.getFields || type.name.startsWith("__")) return;
 
     const fields = type.getFields();
 
     Object.values(fields).forEach((field) => {
-      const directives = field.astNode?.directives || [];
+      const astNode = field.astNode;
+      if (!astNode?.directives?.length) return;
 
-      const authDirectiveNode = directives.find(
+      const authDirectiveNode = astNode.directives.find(
         (d) => d.name.value === directiveName,
       );
-
       if (!authDirectiveNode) return;
 
       const originalResolver = field.resolve || defaultFieldResolver;
 
+      const args = authDirectiveNode.arguments || [];
+      const roleArg = args.find((arg) => arg.name.value === "role");
+      const requiredRole = roleArg?.value?.value || null;
+
       field.resolve = async function (parent, args, context, info) {
-        if (!context.user) {
-          throw new GraphQLError("Unauthorized", {
+        const { user } = context;
+
+        if (!user) {
+          throw new GraphQLError("Authentication required", {
             extensions: { code: "UNAUTHENTICATED" },
           });
         }
 
-        return originalResolver(parent, args, context, info);
+        if (requiredRole && user.role !== requiredRole) {
+          throw new GraphQLError("Forbidden: insufficient permissions", {
+            extensions: { code: "FORBIDDEN" },
+          });
+        }
+
+        return originalResolver.call(this, parent, args, context, info);
       };
     });
   });

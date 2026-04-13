@@ -53,29 +53,32 @@ export async function createContext({ request }) {
       };
     }
 
-    const decoded = verifyToken(token);
+    const decoded = await verifyToken(token);
 
-    if (!decoded || typeof decoded !== "object" || !decoded.id) {
+    if (!decoded?.id) {
       throw new Error("Invalid token payload");
     }
 
     user = await UserRepo.getUserById(decoded.id);
 
-    if (!user) {
-      throw new Error("User not found");
+    if (!user || user.tokenVersion !== decoded.tokenVersion) {
+      throw new Error("Invalid session");
     }
   } catch (err) {
     if (process.env.NODE_ENV !== "production") {
       console.error("[Auth Context Error]:", err.message);
     }
-
     user = null;
   }
 
   return {
     req: request,
     user,
-    isAuthenticated: Boolean(user),
     token,
+    isAuthenticated: Boolean(user),
+    ip:
+      request.headers.get("x-forwarded-for") ||
+      request.headers.get("x-real-ip"),
+    userAgent: request.headers.get("user-agent"),
   };
 }
