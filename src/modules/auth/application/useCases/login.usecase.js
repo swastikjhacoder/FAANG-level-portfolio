@@ -1,4 +1,4 @@
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 import { Email } from "../../domain/valueObjects/Email.vo";
 import { Password } from "../../domain/valueObjects/Password.vo";
