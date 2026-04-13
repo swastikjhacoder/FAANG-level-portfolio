@@ -96,9 +96,8 @@ export const registerController = async (req) => {
 export const refreshController = async (req) => {
   try {
     await connectDB();
-    
-    const cookieStore = cookies();
 
+    const cookieStore = cookies();
     const refreshToken = cookieStore.get(COOKIE_NAME)?.value;
 
     if (!refreshToken) {
@@ -114,7 +113,13 @@ export const refreshController = async (req) => {
       userAgent,
     });
 
-    cookieStore.set(COOKIE_NAME, result.refreshToken, COOKIE_OPTIONS);
+    cookieStore.set(COOKIE_NAME, result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+    });
 
     return Response.json({
       success: true,
