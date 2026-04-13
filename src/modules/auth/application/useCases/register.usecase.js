@@ -10,6 +10,7 @@ import { toSafeUser } from "../mapper/user.mapper";
 import auditLogger from "@/shared/security/audit/audit.logger";
 
 import crypto from "crypto";
+import { generateTokenWithMeta } from "@/shared/utils/hash";
 
 export class RegisterUseCase {
   constructor() {
@@ -17,19 +18,14 @@ export class RegisterUseCase {
   }
 
   async execute(dto, context = {}) {
-    const { ip, userAgent } = context;
+    const { ip, userAgent, deviceFingerprint } = context;
 
     const emailVO = new Email(dto.email);
     const passwordVO = new Password(dto.password);
     const nameVO = new Name(dto.name);
 
     const email = emailVO.value;
-    const rawToken = crypto.randomBytes(32).toString("hex");
-
-    const hashedToken = crypto
-      .createHash("sha256")
-      .update(rawToken)
-      .digest("hex");
+    const { raw: rawToken, hash: hashedToken } = generateTokenWithMeta();
 
     const existingUser = await this.userRepository.findByEmail(email);
 

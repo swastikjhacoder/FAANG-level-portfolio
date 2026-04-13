@@ -1,3 +1,4 @@
+import { generateTokenWithMeta } from "@/shared/utils/hash";
 import crypto from "crypto";
 
 export class ResendVerificationUseCase {
@@ -24,12 +25,7 @@ export class ResendVerificationUseCase {
       };
     }
 
-    const rawToken = crypto.randomBytes(32).toString("hex");
-
-    const hashedToken = crypto
-      .createHash("sha256")
-      .update(rawToken)
-      .digest("hex");
+    const { raw: rawToken, hash: hashedToken } = generateTokenWithMeta();
 
     await this.userRepository.updateById(user._id, {
       emailVerificationToken: hashedToken,

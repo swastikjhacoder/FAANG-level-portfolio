@@ -28,6 +28,7 @@
     "graphql-validation-complexity": "^0.4.2",
     "helmet": "^8.1.0",
     "ioredis": "^5.10.1",
+    "jose": "^6.2.2",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.8.0",
     "mongoose": "^9.4.1",

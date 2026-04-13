@@ -9,10 +9,22 @@ const SessionSchema = new mongoose.Schema(
       index: true,
     },
 
-    refreshTokenHash: {
+    currentTokenHash: {
       type: String,
       required: true,
       select: false,
+      index: true,
+    },
+
+    previousTokenHash: {
+      type: String,
+      default: null,
+      select: false,
+    },
+
+    fingerprint: {
+      type: String,
+      index: true,
     },
 
     userAgent: String,
@@ -30,12 +42,16 @@ const SessionSchema = new mongoose.Schema(
       index: true,
     },
 
-    rotatedFrom: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Session",
+    sessionVersion: {
+      type: Number,
+      default: 0,
+      index: true,
     },
 
-    lastUsedAt: Date,
+    lastUsedAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
   {
     timestamps: true,
@@ -43,7 +59,16 @@ const SessionSchema = new mongoose.Schema(
 );
 
 SessionSchema.index({ userId: 1, isRevoked: 1 });
+
+SessionSchema.index({ currentTokenHash: 1 });
+SessionSchema.index({ previousTokenHash: 1 });
+
 SessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+SessionSchema.pre("save", function (next) {
+  this.lastUsedAt = new Date();
+  next();
+});
 
 export default mongoose.models.Session ||
   mongoose.model("Session", SessionSchema);

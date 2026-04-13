@@ -1,20 +1,15 @@
-import bcrypt from "bcryptjs";
-
 import { Email } from "../../domain/valueObjects/Email.vo";
 import { Password } from "../../domain/valueObjects/Password.vo";
 
 import { UserRepository } from "../../infrastructure/persistence/user.repository";
 import { SessionRepository } from "../../infrastructure/persistence/session.repository";
 
-import { hashToken } from "../../infrastructure/security/encryption.service";
+import { comparePassword, generateTokenWithMeta } from "@/shared/utils/hash";
 
 import { toSafeUser } from "../mapper/user.mapper";
 
 import auditLogger from "@/shared/security/audit/audit.logger";
-import {
-  signAccessToken as generateAccessToken,
-  signRefreshToken as generateRefreshToken,
-} from "@/shared/utils/jwt";
+import { signAccessToken as generateAccessToken } from "@/shared/utils/jwt";
 
 const DUMMY_HASH =
   "$2b$12$C6UzMDM.H6dfI/f/IKcEeO9r9GqQ8K/ux6j7a8qG9Q5e5e5e5e5eO";
@@ -28,13 +23,12 @@ export class LoginUseCase {
   }
 
   async execute(dto, context = {}) {
-    const { ip, userAgent } = context;
+    const { ip, userAgent, deviceFingerprint } = context;
 
     const emailVO = new Email(dto.email);
+    const passwordVO = new Password(dto.password);
 
     const email = emailVO.value;
-    
-    const passwordVO = new Password(dto.password);
 
     const user = await this.userRepository.findByEmail(email, {
       includePassword: true,
@@ -42,7 +36,7 @@ export class LoginUseCase {
 
     const passwordHash = user?.passwordHash || DUMMY_HASH;
 
-    const isPasswordValid = await bcrypt.compare(
+    const isPasswordValid = await comparePassword(
       passwordVO.value,
       passwordHash,
     );
@@ -78,18 +72,19 @@ export class LoginUseCase {
 
     await this.userRepository.resetFailedAttempts(user._id);
 
-    const refreshToken = generateRefreshToken({
-      userId: user._id,
-      sessionVersion: user.sessionVersion,
-    });
+    const { raw: refreshToken, hash: refreshTokenHash } =
+      generateTokenWithMeta();
 
-    const refreshTokenHash = await hashToken(refreshToken);
+    const fingerprint = deviceFingerprint || userAgent || "unknown";
 
     const session = await this.sessionRepository.create({
       userId: user._id,
-      refreshTokenHash,
+      currentTokenHash: refreshTokenHash,
+      previousTokenHash: null,
+      fingerprint,
       userAgent,
       ip,
+      isRevoked: false,
       expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
     });
 

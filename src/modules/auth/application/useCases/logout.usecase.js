@@ -17,7 +17,7 @@ export class LogoutUseCase {
    */
   async execute(params = {}, context = {}) {
     const { sessionId, userId, logoutAll = false } = params;
-    const { ip, userAgent } = context;
+    const { ip, userAgent, deviceFingerprint } = context;
 
     if (logoutAll) {
       if (!userId) {

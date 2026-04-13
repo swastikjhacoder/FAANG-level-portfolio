@@ -10,8 +10,11 @@ export const extractRequestMeta = (req) => {
 
   const userAgent = req.headers.get("user-agent") || "";
 
+  const deviceFingerprint = req.headers.get("x-device-id") || userAgent;
+
   return {
     ip,
     userAgent,
+    deviceFingerprint,
   };
 };

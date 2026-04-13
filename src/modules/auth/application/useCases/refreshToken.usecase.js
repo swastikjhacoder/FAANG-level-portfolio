@@ -1,8 +1,6 @@
-import { hashToken } from "../../infrastructure/security/encryption.service";
-import {
-  signAccessToken as generateAccessToken,
-  signRefreshToken as generateRefreshToken,
-} from "@/shared/utils/jwt";
+import { hashToken, generateTokenWithMeta } from "@/shared/utils/hash";
+
+import { signAccessToken as generateAccessToken } from "@/shared/utils/jwt";
 
 import { SessionRepository } from "../../infrastructure/persistence/session.repository";
 import { UserRepository } from "../../infrastructure/persistence/user.repository";
@@ -16,9 +14,9 @@ export class RefreshTokenUseCase {
   }
 
   async execute(refreshToken, context = {}) {
-    const { ip, userAgent } = context;
+    const { ip, userAgent, deviceFingerprint } = context;
 
-    const tokenHash = await hashToken(refreshToken);
+    const tokenHash = hashToken(refreshToken);
 
     const session = await this.sessionRepository.findByTokenHash(tokenHash);
 
@@ -26,7 +24,7 @@ export class RefreshTokenUseCase {
       throw new Error("Invalid refresh token");
     }
 
-    if (session.isRevoked) {
+    if (session.previousTokenHash === tokenHash) {
       await this.sessionRepository.revokeAllUserSessions(session.userId);
 
       await auditLogger.log({
@@ -35,6 +33,12 @@ export class RefreshTokenUseCase {
         ip,
         userAgent,
       });
+
+      throw new Error("Session hijacking detected. Please login again.");
+    }
+
+    if (session.isRevoked) {
+      await this.sessionRepository.revokeAllUserSessions(session.userId);
 
       throw new Error("Session compromised. Please login again.");
     }
@@ -51,35 +55,44 @@ export class RefreshTokenUseCase {
       throw new Error("User not found");
     }
 
-    if (session.sessionVersion !== user.sessionVersion) {
+    if (
+      user.sessionVersion !== undefined &&
+      session.sessionVersion !== undefined &&
+      session.sessionVersion !== user.sessionVersion
+    ) {
       await this.sessionRepository.revokeAllUserSessions(user._id);
 
       throw new Error("Session invalidated. Please login again.");
     }
 
-    await this.sessionRepository.revokeSession(session._id);
+    const fingerprint = deviceFingerprint || userAgent || "unknown";
 
-    const newRefreshToken = generateRefreshToken({
-      userId: user._id,
-      sessionVersion: user.sessionVersion,
-    });
+    if (session.fingerprint && session.fingerprint !== fingerprint) {
+      await this.sessionRepository.revokeAllUserSessions(session.userId);
 
-    const newHash = await hashToken(newRefreshToken);
+      await auditLogger.log({
+        action: "DEVICE_MISMATCH",
+        userId: session.userId,
+        ip,
+        userAgent,
+      });
 
-    const newSession = await this.sessionRepository.create({
-      userId: user._id,
-      refreshTokenHash: newHash,
-      userAgent,
-      ip,
-      rotatedFrom: session._id,
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
-    });
+      throw new Error("Device mismatch detected");
+    }
+
+    const { raw: newRefreshToken, hash: newHash } = generateTokenWithMeta();
+
+    session.previousTokenHash = session.currentTokenHash;
+    session.currentTokenHash = newHash;
+    session.lastUsedAt = new Date();
+
+    await this.sessionRepository.save(session);
 
     const newAccessToken = generateAccessToken({
       userId: user._id,
       roles: user.roles,
       sessionVersion: user.sessionVersion,
-      sessionId: newSession._id,
+      sessionId: session._id,
     });
 
     await auditLogger.log({
@@ -92,7 +105,7 @@ export class RefreshTokenUseCase {
     return {
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
-      sessionId: newSession._id,
+      sessionId: session._id,
     };
   }
 }
