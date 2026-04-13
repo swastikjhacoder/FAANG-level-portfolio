@@ -53,10 +53,11 @@ export class UserRepository {
   async incrementFailedAttempts(userId) {
     const safeId = new mongoose.Types.ObjectId(userId);
 
-    return UserModel.updateOne(
-      { _id: safeId },
+    return await UserModel.findByIdAndUpdate(
+      safeId,
       { $inc: { failedLoginAttempts: 1 } },
-    );
+      { new: true, projection: { failedLoginAttempts: 1 } },
+    ).lean();
   }
 
   async resetFailedAttempts(userId) {

@@ -10,6 +10,7 @@ import { persistedQueryPlugin } from "./security/persistedQueries";
 import { disableIntrospectionRule } from "./security/disableIntrospection";
 
 import { applyMiddleware } from "graphql-middleware";
+import { costAnalysisPlugin } from "./plugins/costAnalysis.plugin";
 
 const securedSchema = applyMiddleware(schema, permissions);
 
@@ -20,6 +21,7 @@ export const yoga = createYoga({
 
   plugins: [
     complexityPlugin(securedSchema),
+    costAnalysisPlugin(1000),
     persistedQueryPlugin(),
     {
       async requestDidStart() {
@@ -55,7 +57,7 @@ export const yoga = createYoga({
       return {
         message: "Internal Server Error",
         extensions: {
-          code: err.extensions?.code || "INTERNAL_ERROR",
+          code: "INTERNAL_ERROR",
         },
       };
     },

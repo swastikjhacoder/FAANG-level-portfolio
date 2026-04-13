@@ -11,11 +11,20 @@ const ISSUER = "swastikjha.com";
 const AUDIENCE = "user";
 
 export const signAccessToken = (payload) => {
-  return jwt.sign(payload, ACCESS_TOKEN_SECRET, {
-    expiresIn: "15m",
-    issuer: ISSUER,
-    audience: AUDIENCE,
-  });
+  return jwt.sign(
+    {
+      userId: payload.userId,
+      roles: payload.roles,
+      sessionVersion: payload.sessionVersion,
+      sessionId: payload.sessionId,
+    },
+    ACCESS_TOKEN_SECRET,
+    {
+      expiresIn: "15m",
+      issuer: ISSUER,
+      audience: AUDIENCE,
+    },
+  );
 };
 
 export const verifyAccessToken = (token) => {

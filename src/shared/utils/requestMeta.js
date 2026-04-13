@@ -6,9 +6,9 @@ export const extractRequestMeta = (req) => {
 
   const rawIp = realIp || forwardedFor || "";
 
-  const ip = xss(rawIp.split(",")[0].trim());
+  const ip = rawIp ? rawIp.split(",")[0].trim() : null;
 
-  const userAgent = xss(req.headers.get("user-agent") || "");
+  const userAgent = req.headers.get("user-agent") || "";
 
   return {
     ip,

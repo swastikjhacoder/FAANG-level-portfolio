@@ -7,14 +7,14 @@ import { UserRepository } from "../../infrastructure/persistence/user.repository
 import { SessionRepository } from "../../infrastructure/persistence/session.repository";
 
 import { hashToken } from "../../infrastructure/security/encryption.service";
-import {
-  generateAccessToken,
-  generateRefreshToken,
-} from "../../infrastructure/security/token.service";
 
 import { toSafeUser } from "../mapper/user.mapper";
 
 import auditLogger from "@/shared/security/audit/audit.logger";
+import {
+  signAccessToken as generateAccessToken,
+  signRefreshToken as generateRefreshToken,
+} from "@/shared/utils/jwt";
 
 const DUMMY_HASH =
   "$2b$12$C6UzMDM.H6dfI/f/IKcEeO9r9GqQ8K/ux6j7a8qG9Q5e5e5e5e5eO";
@@ -49,8 +49,6 @@ export class LoginUseCase {
 
     if (!user || !isPasswordValid) {
       if (user) {
-        await this.userRepository.incrementFailedAttempts(user._id);
-
         const updatedUser = await this.userRepository.incrementFailedAttempts(
           user._id,
         );
@@ -80,12 +78,6 @@ export class LoginUseCase {
 
     await this.userRepository.resetFailedAttempts(user._id);
 
-    const accessToken = generateAccessToken({
-      userId: user._id,
-      roles: user.roles,
-      sessionVersion: user.sessionVersion,
-    });
-
     const refreshToken = generateRefreshToken({
       userId: user._id,
       sessionVersion: user.sessionVersion,
@@ -98,7 +90,14 @@ export class LoginUseCase {
       refreshTokenHash,
       userAgent,
       ip,
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+    });
+
+    const accessToken = generateAccessToken({
+      userId: user._id,
+      roles: user.roles,
+      sessionVersion: user.sessionVersion,
+      sessionId: session._id,
     });
 
     await this.userRepository.updateLoginMetadata(user._id, {

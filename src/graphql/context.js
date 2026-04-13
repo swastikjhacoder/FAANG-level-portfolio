@@ -1,84 +1,59 @@
-import { verifyToken } from "@/shared/utils/jwt";
-import * as UserRepo from "@/modules/auth/infrastructure/persistence/user.repository";
+import { verifyAccessToken } from "@/shared/utils/jwt";
+import { UserRepository } from "@/modules/user/infrastructure/user.repository";
+import { SessionRepository } from "@/modules/session/infrastructure/session.repository";
 
-const parseCookies = (cookieHeader = "") => {
-  if (!cookieHeader || typeof cookieHeader !== "string") return {};
+const userRepo = new UserRepository();
+const sessionRepo = new SessionRepository();
 
-  return cookieHeader.split(";").reduce((acc, cookie) => {
-    const [rawKey, ...rest] = cookie.split("=");
-    if (!rawKey) return acc;
+export async function createContext({ request, response }) {
+  let user = null;
 
-    const key = rawKey.trim();
-    const value = rest.join("=").trim();
+  const forwarded = request.headers.get("x-forwarded-for");
+  const realIp = request.headers.get("x-real-ip");
 
-    try {
-      acc[key] = decodeURIComponent(value);
-    } catch {
-      acc[key] = value;
-    }
+  const ip = realIp || (forwarded ? forwarded.split(",")[0].trim() : null);
+  const userAgent = request.headers.get("user-agent") || null;
 
-    return acc;
-  }, {});
-};
-
-const extractToken = (request) => {
   try {
     const authHeader = request.headers.get("authorization");
 
-    if (authHeader && authHeader.startsWith("Bearer ")) {
-      return authHeader.slice(7).trim();
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.slice(7);
+
+      const decoded = verifyAccessToken(token);
+
+      if (!decoded?.userId) throw new Error("Invalid token");
+
+      user = await userRepo.findById(decoded.userId);
+
+      if (!user || user.sessionVersion !== decoded.sessionVersion) {
+        throw new Error("Session invalid");
+      }
+
+      if (decoded?.sessionId) {
+        const session = await sessionRepo.findById(decoded.sessionId);
+
+        if (
+          !session ||
+          session.isRevoked ||
+          new Date() > new Date(session.expiresAt)
+        ) {
+          throw new Error("Session invalid");
+        }
+
+        await sessionRepo.updateLastUsed(decoded.sessionId);
+      }
     }
-
-    const cookieHeader = request.headers.get("cookie") || "";
-    const cookies = parseCookies(cookieHeader);
-
-    return cookies.accessToken || null;
   } catch {
-    return null;
-  }
-};
-
-export async function createContext({ request }) {
-  let user = null;
-  let token = null;
-
-  try {
-    token = extractToken(request);
-
-    if (!token) {
-      return {
-        req: request,
-        user: null,
-        isAuthenticated: false,
-      };
-    }
-
-    const decoded = await verifyToken(token);
-
-    if (!decoded?.id) {
-      throw new Error("Invalid token payload");
-    }
-
-    user = await UserRepo.getUserById(decoded.id);
-
-    if (!user || user.tokenVersion !== decoded.tokenVersion) {
-      throw new Error("Invalid session");
-    }
-  } catch (err) {
-    if (process.env.NODE_ENV !== "production") {
-      console.error("[Auth Context Error]:", err.message);
-    }
     user = null;
   }
 
   return {
     req: request,
+    res: response,
     user,
-    token,
-    isAuthenticated: Boolean(user),
-    ip:
-      request.headers.get("x-forwarded-for") ||
-      request.headers.get("x-real-ip"),
-    userAgent: request.headers.get("user-agent"),
+    isAuthenticated: !!user,
+    ip,
+    userAgent,
   };
 }

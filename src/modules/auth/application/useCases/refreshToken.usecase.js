@@ -1,8 +1,8 @@
 import { hashToken } from "../../infrastructure/security/encryption.service";
 import {
-  generateAccessToken,
-  generateRefreshToken,
-} from "../../infrastructure/security/token.service";
+  signAccessToken as generateAccessToken,
+  signRefreshToken as generateRefreshToken,
+} from "@/shared/utils/jwt";
 
 import { SessionRepository } from "../../infrastructure/persistence/session.repository";
 import { UserRepository } from "../../infrastructure/persistence/user.repository";
@@ -59,12 +59,6 @@ export class RefreshTokenUseCase {
 
     await this.sessionRepository.revokeSession(session._id);
 
-    const newAccessToken = generateAccessToken({
-      userId: user._id,
-      roles: user.roles,
-      sessionVersion: user.sessionVersion,
-    });
-
     const newRefreshToken = generateRefreshToken({
       userId: user._id,
       sessionVersion: user.sessionVersion,
@@ -78,7 +72,14 @@ export class RefreshTokenUseCase {
       userAgent,
       ip,
       rotatedFrom: session._id,
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7), // 7 days
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+    });
+
+    const newAccessToken = generateAccessToken({
+      userId: user._id,
+      roles: user.roles,
+      sessionVersion: user.sessionVersion,
+      sessionId: newSession._id,
     });
 
     await auditLogger.log({

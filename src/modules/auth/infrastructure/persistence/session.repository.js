@@ -25,7 +25,9 @@ export class SessionRepository {
     });
 
     return SessionModel.findOne(safeQuery)
-      .select("+refreshTokenHash userId isRevoked expiresAt rotatedFrom")
+      .select(
+        "+refreshTokenHash userId isRevoked expiresAt rotatedFrom fingerprint sessionVersion",
+      )
       .lean();
   }
 

@@ -8,7 +8,7 @@ import { extractRequestMeta } from "@/shared/utils/requestMeta";
 const COOKIE_NAME = "refreshToken";
 
 const buildCookie = (value, options = {}) => {
-  const parts = [`${COOKIE_NAME}=${value}`];
+  const parts = [`${COOKIE_NAME}=${encodeURIComponent(value)}`];
 
   if (options.httpOnly) parts.push("HttpOnly");
   if (options.secure) parts.push("Secure");
@@ -90,11 +90,13 @@ export const authResolvers = {
       try {
         const { req, res } = context;
 
-        const cookieHeader = req.headers.get("cookie") || "";
-        const refreshToken = cookieHeader
-          .split("; ")
-          .find((c) => c.startsWith(`${COOKIE_NAME}=`))
-          ?.split("=")[1];
+        const cookies = Object.fromEntries(
+          (req.headers.get("cookie") || "")
+            .split(";")
+            .map((c) => c.trim().split("=")),
+        );
+
+        const refreshToken = cookies[COOKIE_NAME];
 
         if (!refreshToken) {
           throw new Error("Unauthorized");

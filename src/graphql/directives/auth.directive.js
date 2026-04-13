@@ -32,7 +32,7 @@ export const authDirective = (schema, directiveName = "auth") => {
           });
         }
 
-        if (requiredRole && user.role !== requiredRole) {
+        if (requiredRole && !user.roles?.includes(requiredRole)) {
           throw new GraphQLError("Forbidden: insufficient permissions", {
             extensions: { code: "FORBIDDEN" },
           });

@@ -5,7 +5,6 @@ export class User {
   constructor({
     id,
     email,
-    passwordHash,
     name,
     roles,
     isVerified,
@@ -14,14 +13,12 @@ export class User {
     lastLoginAt,
     passwordChangedAt,
     mfaEnabled,
-    mfaSecret,
     deviceFingerprint,
     createdAt,
     updatedAt,
   }) {
     this.id = id;
     this.email = new Email(email).value;
-    this.passwordHash = passwordHash;
 
     this.name = new Name(name);
 
@@ -36,7 +33,6 @@ export class User {
     this.passwordChangedAt = passwordChangedAt;
 
     this.mfaEnabled = mfaEnabled || false;
-    this.mfaSecret = mfaSecret;
 
     this.deviceFingerprint = deviceFingerprint;
 
