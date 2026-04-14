@@ -5,25 +5,29 @@ import { withCsrf } from "@/shared/security/middleware/csrf.middleware";
 
 import { sanitizeInput } from "@/shared/security/sanitizers/input.sanitizer";
 
-import { createProfileDTO } from "@/modules/profile/application/dto/createProfile.dto";
-import { updateProfileDTO } from "@/modules/profile/application/dto/updateProfile.dto";
+import { AddContactUseCase } from "@/modules/profile/application/useCases/addContact.usecase";
+import { UpdateContactUseCase } from "@/modules/profile/application/useCases/updateContact.usecase";
+import { DeleteContactUseCase } from "@/modules/profile/application/useCases/deleteContact.usecase";
+
+import { ContactRepository } from "@/modules/profile/infrastructure/persistence/contact.repository";
 
 import { authGuard } from "@/modules/auth/security/guards/auth.guard";
 import { roleGuard } from "@/modules/auth/security/guards/role.guard";
 
 import { ROLES } from "@/shared/constants/roles";
 
-import { ProfileService } from "@/modules/profile/application/services/profile.service";
-
 import { validateObjectId } from "@/shared/utils/validateObjectId";
 import { ValidationError } from "@/shared/errors";
 import auditLogger from "@/shared/security/audit/audit.logger";
 
-const service = new ProfileService();
+const repo = new ContactRepository();
 
-const ADMIN_ROLES = [ROLES.ADMIN, ROLES.SUPER_ADMIN];
+const createUC = new AddContactUseCase(repo);
+const updateUC = new UpdateContactUseCase(repo);
+const deleteUC = new DeleteContactUseCase(repo);
 
 const DEV = process.env.NODE_ENV === "development";
+const ADMIN = [ROLES.ADMIN, ROLES.SUPER_ADMIN];
 
 const safeJson = async (req) => {
   try {
@@ -34,11 +38,15 @@ const safeJson = async (req) => {
 };
 
 const ok = (data) => Response.json({ success: true, data });
+
 const fail = (error) =>
   Response.json(
     {
       success: false,
-      message: error.message || "Internal Server Error",
+      message:
+        error?.code === "BAD_USER_INPUT"
+          ? error.message
+          : "Internal Server Error",
       code: error.code || "INTERNAL_ERROR",
     },
     { status: error.status || 500 },
@@ -49,14 +57,12 @@ const createHandler = async (req) => {
     await connectDB();
 
     const raw = await safeJson(req);
-
     const sanitized = sanitizeInput(raw);
-    const validated = createProfileDTO.parse(sanitized);
 
-    const result = await service.createProfile(validated, req.user);
+    const result = await createUC.execute(sanitized, req.user);
 
     auditLogger.log({
-      action: "PROFILE_CREATE",
+      action: "CONTACT_CREATE",
       userId: req.user.id,
       resourceId: result._id,
     });
@@ -72,16 +78,13 @@ const getHandler = async (req) => {
     await connectDB();
 
     const { searchParams } = new URL(req.url);
+    const profileId = searchParams.get("profileId");
 
-    const page = Math.max(1, Number(searchParams.get("page") || 1));
-    const limit = Math.min(
-      Math.max(1, Number(searchParams.get("limit") || 10)),
-      50,
-    );
+    validateObjectId(profileId, "profileId");
 
-    const result = await service.repo.list({ page, limit });
+    const data = await repo.findByProfile(profileId);
 
-    return ok(result);
+    return ok(data);
   } catch (err) {
     return fail(err);
   }
@@ -92,21 +95,19 @@ const updateHandler = async (req) => {
     await connectDB();
 
     const { searchParams } = new URL(req.url);
-    const profileId = searchParams.get("profileId");
+    const id = searchParams.get("contactId");
 
-    validateObjectId(profileId, "profileId");
+    validateObjectId(id, "contactId");
 
     const raw = await safeJson(req);
-
     const sanitized = sanitizeInput(raw);
-    const validated = updateProfileDTO.parse(sanitized);
 
-    const result = await service.updateProfile(profileId, validated, req.user);
+    const result = await updateUC.execute(id, sanitized, req.user);
 
     auditLogger.log({
-      action: "PROFILE_UPDATE",
+      action: "CONTACT_UPDATE",
       userId: req.user.id,
-      resourceId: profileId,
+      resourceId: id,
     });
 
     return ok(result);
@@ -120,16 +121,16 @@ const deleteHandler = async (req) => {
     await connectDB();
 
     const { searchParams } = new URL(req.url);
-    const profileId = searchParams.get("profileId");
+    const id = searchParams.get("contactId");
 
-    validateObjectId(profileId, "profileId");
+    validateObjectId(id, "contactId");
 
-    await service.deleteProfile(profileId, req.user);
+    await deleteUC.execute(id);
 
     auditLogger.log({
-      action: "PROFILE_DELETE",
+      action: "CONTACT_DELETE",
       userId: req.user.id,
-      resourceId: profileId,
+      resourceId: id,
     });
 
     return ok({ success: true });
@@ -139,30 +140,23 @@ const deleteHandler = async (req) => {
 };
 
 const create = withRateLimit(
-  withCsrf(authGuard(roleGuard(createHandler, ADMIN_ROLES))),
-  DEV
-    ? { limit: 1000, window: 60, prefix: "create-profile" }
-    : { limit: 10, window: 60, prefix: "create-profile" },
+  withCsrf(authGuard(roleGuard(createHandler, ADMIN))),
+  DEV ? { limit: 1000, window: 60 } : { limit: 10, window: 60 },
 );
 
 const update = withRateLimit(
-  withCsrf(authGuard(roleGuard(updateHandler, ADMIN_ROLES))),
-  DEV
-    ? { limit: 1000, window: 60, prefix: "update-profile" }
-    : { limit: 20, window: 60, prefix: "update-profile" },
+  withCsrf(authGuard(roleGuard(updateHandler, ADMIN))),
+  DEV ? { limit: 1000, window: 60 } : { limit: 10, window: 60 },
 );
 
 const remove = withRateLimit(
-  withCsrf(authGuard(roleGuard(deleteHandler, ADMIN_ROLES))),
-  DEV
-    ? { limit: 1000, window: 60, prefix: "delete-profile" }
-    : { limit: 10, window: 60, prefix: "delete-profile" },
+  withCsrf(authGuard(roleGuard(deleteHandler, ADMIN))),
+  DEV ? { limit: 1000, window: 60 } : { limit: 5, window: 60 },
 );
 
 const get = withRateLimit(getHandler, {
   limit: 100,
   window: 60,
-  prefix: "get-profile",
 });
 
 export async function POST(req) {

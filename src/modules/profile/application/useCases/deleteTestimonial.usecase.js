@@ -1,20 +1,20 @@
 import { validateObjectId } from "@/shared/utils/validateObjectId";
 import { NotFoundError } from "@/shared/errors";
 
-export class ApproveTestimonialUseCase {
+export class DeleteTestimonialUseCase {
   constructor(repo) {
     this.repo = repo;
   }
 
-  async execute(id, user) {
+  async execute(id) {
     validateObjectId(id, "testimonialId");
 
-    const updated = await this.repo.approve(id, user.id);
+    const deleted = await this.repo.softDelete(id);
 
-    if (!updated) {
+    if (!deleted) {
       throw new NotFoundError("Testimonial not found");
     }
 
-    return updated;
+    return true;
   }
 }
