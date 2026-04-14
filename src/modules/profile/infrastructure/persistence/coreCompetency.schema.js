@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const serviceSchema = new mongoose.Schema(
+const competencySchema = new mongoose.Schema(
   {
     profileId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -10,23 +10,20 @@ const serviceSchema = new mongoose.Schema(
     },
 
     heading: { type: String, required: true },
+    description: { type: String, required: true },
 
     icon: {
       url: String,
       publicId: String,
     },
 
-    subheading: String,
-    description: String,
-
     isDeleted: { type: Boolean, default: false, index: true },
     deletedAt: Date,
-
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true },
 );
 
-export const ServiceModel =
-  mongoose.models.Service || mongoose.model("Service", serviceSchema);
+competencySchema.index({ profileId: 1, heading: 1 });
+
+export const CompetencyModel =
+  mongoose.models.Competency || mongoose.model("Competency", competencySchema);
