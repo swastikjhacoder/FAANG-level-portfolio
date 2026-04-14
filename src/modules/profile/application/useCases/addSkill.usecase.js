@@ -3,6 +3,8 @@ import { toSkillEntity } from "../mapper/profile.mapper.js";
 import { SkillModel } from "../../infrastructure/persistence/skill.schema.js";
 import { ProfileRepository } from "../../infrastructure/persistence/profile.repository.js";
 import { ProfileCache } from "../../infrastructure/cache/profile.cache.js";
+import { ConflictError, ValidationError } from "@/shared/errors";
+import { validateObjectId } from "@/shared/utils/validateObjectId";
 
 export class AddSkillUseCase {
   constructor() {
@@ -13,9 +15,12 @@ export class AddSkillUseCase {
   async execute(payload, user, { session } = {}) {
     const data = addSkillDTO.parse(payload);
 
+    validateObjectId(data.profileId, "profileId");
+
     await this.profileRepo.assertOwnership(data.profileId, user.id);
 
     const entity = toSkillEntity(data);
+    entity.validate();
 
     try {
       const [doc] = await SkillModel.create(
@@ -39,15 +44,17 @@ export class AddSkillUseCase {
     } catch (err) {
       if (err?.code === 11000) {
         if (err.keyPattern?.profileId && err.keyPattern?.name) {
-          throw new Error("Skill already exists for this profile");
+          throw new ConflictError("Skill already exists for this profile");
         }
-
-        const field = Object.keys(err.keyPattern || {})[0];
-        throw new Error(`Duplicate value for ${field}`);
+        throw new ConflictError("Duplicate resource");
       }
 
       if (err?.name === "ValidationError") {
-        throw new Error("Invalid skill data");
+        throw new ValidationError("Invalid skill data");
+      }
+
+      if (err?.name === "ZodError") {
+        throw new ValidationError(err.errors?.[0]?.message);
       }
 
       throw err;

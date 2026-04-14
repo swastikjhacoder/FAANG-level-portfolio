@@ -1,12 +1,24 @@
 import { trackError } from "@/shared/lib/monitoring";
 import logger from "@/shared/lib/logger";
+import { AppError } from "@/shared/errors/AppError.js";
 
 const normalizeError = (err) => {
+  if (err instanceof AppError) {
+    return {
+      message: err.message,
+      statusCode: err.status,
+      code: err.code,
+      details: err.meta || null,
+      stack: err.stack,
+    };
+  }
+
   return {
-    message: err.message || "Internal Server Error",
-    statusCode: err.statusCode || err.status || 500,
-    code: err.code || "INTERNAL_ERROR",
-    details: err.details || null,
+    message: "Internal Server Error",
+    statusCode: 500,
+    code: "INTERNAL_SERVER_ERROR",
+    details: null,
+    stack: err.stack,
   };
 };
 
@@ -17,8 +29,10 @@ const buildResponse = (error) => {
     success: false,
     message: error.message,
     code: error.code,
+
     ...(isProd ? {} : { stack: error.stack }),
-    ...(error.details ? { details: error.details } : {}),
+
+    ...(error.details && !isProd ? { details: error.details } : {}),
   };
 };
 
@@ -29,6 +43,7 @@ export const errorMiddleware = (err, req, res, next) => {
     url: req.originalUrl,
     method: req.method,
     ip: req.ip,
+    userId: req.user?.id,
   });
 
   logger.error("HTTP_ERROR", {
@@ -37,7 +52,8 @@ export const errorMiddleware = (err, req, res, next) => {
     statusCode: error.statusCode,
     url: req.originalUrl,
     method: req.method,
+    userId: req.user?.id,
   });
 
-  return res.status(error.statusCode).json(buildResponse(err));
+  return res.status(error.statusCode).json(buildResponse(error));
 };

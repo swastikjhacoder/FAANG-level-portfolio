@@ -1,4 +1,5 @@
 import { ProfileReadRepository } from "../../infrastructure/persistence/profile.read.repository.js";
+import { validateObjectId } from "@/shared/utils/validateObjectId";
 
 export class GetProfileUseCase {
   constructor() {
@@ -6,6 +7,8 @@ export class GetProfileUseCase {
   }
 
   async execute(profileId) {
+    validateObjectId(profileId, "profileId");
+
     return this.readRepo.getFullProfile(profileId);
   }
 }

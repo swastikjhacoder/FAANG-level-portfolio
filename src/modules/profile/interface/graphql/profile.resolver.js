@@ -38,24 +38,18 @@ const profileRepo = new ProfileRepository();
 
 const handleError = (err) => {
   if (err.name === "ZodError") {
-    throw new GraphQLError(err.errors?.[0]?.message || "Validation failed", {
+    return new GraphQLError("Invalid input", {
       extensions: { code: "BAD_USER_INPUT" },
     });
   }
 
-  if (err.message === "Forbidden") {
-    throw new GraphQLError("Forbidden", {
-      extensions: { code: "FORBIDDEN" },
+  if (err.code) {
+    return new GraphQLError(err.message, {
+      extensions: { code: err.code },
     });
   }
 
-  if (err.message === "Unauthorized") {
-    throw new GraphQLError("Unauthorized", {
-      extensions: { code: "UNAUTHORIZED" },
-    });
-  }
-
-  throw new GraphQLError(err.message || "Internal Server Error", {
+  return new GraphQLError("Internal Server Error", {
     extensions: { code: "INTERNAL_SERVER_ERROR" },
   });
 };
@@ -66,8 +60,7 @@ const withErrorHandling =
     try {
       return await resolver(...args);
     } catch (err) {
-      handleError(err);
-      throw err;
+      throw handleError(err);
     }
   };
 
@@ -75,7 +68,7 @@ const mapId = (parent) => {
   if (parent?.id) return parent.id;
   if (parent?._id) return parent._id.toString();
 
-  throw new GraphQLError("ID mapping failed", {
+  throw new GraphQLError("Internal Server Error", {
     extensions: { code: "INTERNAL_SERVER_ERROR" },
   });
 };
@@ -87,7 +80,10 @@ export const profileResolvers = {
     }),
 
     profiles: withErrorHandling(async (_, { page = 1, limit = 10 }) => {
-      return await profileRepo.list({ page, limit });
+      limit = Math.min(limit, 50);
+      page = Math.max(page, 1);
+
+      return profileRepo.list({ page, limit });
     }),
   },
 

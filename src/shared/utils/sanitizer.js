@@ -13,10 +13,22 @@ export const cleanArray = (arr) => {
 export const cleanObject = (obj) => {
   if (!obj || typeof obj !== "object") return obj;
 
+  if (Array.isArray(obj)) {
+    return obj.map(cleanObject);
+  }
+
   const result = {};
   for (const key in obj) {
-    result[key] =
-      typeof obj[key] === "string" ? cleanString(obj[key]) : obj[key];
+    const value = obj[key];
+
+    if (typeof value === "string") {
+      result[key] = cleanString(value);
+    } else if (typeof value === "object") {
+      result[key] = cleanObject(value);
+    } else {
+      result[key] = value;
+    }
   }
+
   return result;
 };

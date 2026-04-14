@@ -19,7 +19,7 @@ export const addProjectDTO = z
       }),
     ),
 
-    description: z.array(z.string()),
+    description: z.array(z.string().max(500)).max(50),
 
     screenshot: z
       .object({

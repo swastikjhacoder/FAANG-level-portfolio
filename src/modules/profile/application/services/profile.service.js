@@ -2,11 +2,14 @@ import mongoose from "mongoose";
 import { ProfileCache } from "../../infrastructure/cache/profile.cache.js";
 import { ProfileReadRepository } from "../../infrastructure/persistence/profile.read.repository.js";
 import { ProfileModel } from "../../infrastructure/persistence/profile.schema.js";
+import { ProfileRepository } from "../../infrastructure/persistence/profile.repository.js";
+import { ForbiddenError } from "@/shared/errors/index.js";
 
 export class ProfileService {
   constructor() {
     this.cache = new ProfileCache();
     this.readRepo = new ProfileReadRepository();
+    this.repo = new ProfileRepository();
   }
 
   validateAdmin(user) {
@@ -15,7 +18,7 @@ export class ProfileService {
       !Array.isArray(user.roles) ||
       !user.roles.some((r) => ["ADMIN", "SUPER_ADMIN"].includes(r))
     ) {
-      throw new Error("Forbidden");
+      throw new ForbiddenError("Admin privileges required");
     }
   }
 
@@ -62,18 +65,30 @@ export class ProfileService {
   async updateProfile(profileId, data, user) {
     this.validateAdmin(user);
 
-    const updated = await ProfileModel.findByIdAndUpdate(
-      profileId,
-      {
-        ...data,
-        updatedBy: user.id,
-      },
-      { new: true },
-    );
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    await this.cache.invalidate(profileId);
+    try {
+      const updated = await ProfileModel.findByIdAndUpdate(
+        profileId,
+        {
+          ...data,
+          updatedBy: user.id,
+        },
+        { new: true, session },
+      ).lean();
 
-    return updated;
+      await this.cache.invalidate(profileId);
+
+      await session.commitTransaction();
+
+      return updated;
+    } catch (err) {
+      await session.abortTransaction();
+      throw err;
+    } finally {
+      session.endSession();
+    }
   }
 
   async deleteProfile(profileId, user) {

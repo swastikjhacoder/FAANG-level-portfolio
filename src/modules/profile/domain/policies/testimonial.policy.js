@@ -4,7 +4,11 @@ export class TestimonialPolicy {
   }
 
   static canApprove(user) {
-    return user && ["ADMIN", "SUPER_ADMIN"].includes(user.role);
+    return (
+      user &&
+      Array.isArray(user.roles) &&
+      user.roles.some((r) => ["ADMIN", "SUPER_ADMIN"].includes(r))
+    );
   }
 
   static canView(testimonial) {

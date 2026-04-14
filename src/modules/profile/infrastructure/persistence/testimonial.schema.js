@@ -30,6 +30,7 @@ const testimonialSchema = new mongoose.Schema(
 );
 
 testimonialSchema.index({ profileId: 1, approved: 1 });
+testimonialSchema.index({ profileId: 1, quote: 1 }, { unique: true });
 
 export const TestimonialModel =
   mongoose.models.Testimonial ||

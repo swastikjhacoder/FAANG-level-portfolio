@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const addSkillDTO = z
   .object({
-    profileId: z.string(),
+    profileId: z.string().regex(/^[a-f\d]{24}$/i),
 
     name: z.string().min(2).max(50),
 

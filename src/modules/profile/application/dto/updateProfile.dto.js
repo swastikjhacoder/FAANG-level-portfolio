@@ -22,7 +22,10 @@ export const updateProfileDTO = z
 
     dateOfBirth: z.coerce.date().optional(),
 
-    maritalStatus: z.enum(["single", "married", "other"]).optional(),
+    maritalStatus: z
+      .enum(["SINGLE", "MARRIED", "OTHER"])
+      .transform((val) => val.toLowerCase())
+      .optional(),
 
     languages: z.array(z.string()).optional(),
   })

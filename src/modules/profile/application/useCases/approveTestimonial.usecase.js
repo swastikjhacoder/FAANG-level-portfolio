@@ -1,7 +1,10 @@
 import { TestimonialModel } from "../../infrastructure/persistence/testimonial.schema.js";
+import { validateObjectId } from "@/shared/utils/validateObjectId";
 
 export class ApproveTestimonialUseCase {
   async execute(testimonialId, user, { session } = {}) {
+    validateObjectId(testimonialId, "testimonialId");
+
     return TestimonialModel.findOneAndUpdate(
       { _id: testimonialId, isDeleted: false },
       {
@@ -12,6 +15,6 @@ export class ApproveTestimonialUseCase {
         new: true,
         session,
       },
-    );
+    ).lean();
   }
 }

@@ -1,3 +1,5 @@
+const dangerousKeys = ["__proto__", "constructor", "prototype"];
+
 export const sanitizeStrings = (obj) => {
   if (Array.isArray(obj)) {
     return obj.map(sanitizeStrings);
@@ -5,9 +7,13 @@ export const sanitizeStrings = (obj) => {
 
   if (obj && typeof obj === "object") {
     const result = {};
+
     for (const key in obj) {
+      if (dangerousKeys.includes(key)) continue;
+
       result[key] = sanitizeStrings(obj[key]);
     }
+
     return result;
   }
 

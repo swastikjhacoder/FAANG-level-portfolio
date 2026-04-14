@@ -5,7 +5,7 @@ import { Skill } from "../../domain/entities/Skill.entity.js";
 import { Testimonial } from "../../domain/entities/Testimonial.entity.js";
 
 export const toProfileEntity = (data) => {
-  return new Profile({
+  const entity = new Profile({
     name: data.name,
     roles: data.roles,
     description: data.description,
@@ -14,20 +14,28 @@ export const toProfileEntity = (data) => {
     maritalStatus: data.maritalStatus || null,
     languages: data.languages || [],
   });
+
+  entity.validate();
+
+  return entity;
 };
 
 export const toSkillEntity = (data) => {
-  return new Skill({
+  const entity = new Skill({
     profileId: data.profileId,
     name: data.name,
     experience: data.experience,
     proficiency: data.proficiency,
     icon: data.icon || null,
   });
+
+  entity.validate();
+
+  return entity;
 };
 
 export const toExperienceEntity = (data) => {
-  return new Experience({
+  const entity = new Experience({
     profileId: data.profileId,
     company: data.company,
     role: data.role,
@@ -37,10 +45,14 @@ export const toExperienceEntity = (data) => {
     achievements: data.achievements || [],
     projects: data.projects || [],
   });
+
+  entity.validate();
+
+  return entity;
 };
 
 export const toProjectEntity = (data) => {
-  return new Project({
+  const entity = new Project({
     profileId: data.profileId,
     name: data.name,
     liveUrl: data.liveUrl || null,
@@ -52,10 +64,14 @@ export const toProjectEntity = (data) => {
     description: data.description || [],
     screenshot: data.screenshot || null,
   });
+
+  entity.validate();
+
+  return entity;
 };
 
 export const toTestimonialEntity = (data) => {
-  return new Testimonial({
+  const entity = new Testimonial({
     profileId: data.profileId,
     quote: data.quote,
     senderName: data.senderName,
@@ -63,6 +79,10 @@ export const toTestimonialEntity = (data) => {
     company: data.company || null,
     approved: false,
   });
+
+  entity.validate();
+
+  return entity;
 };
 
 export const toPersistenceProfile = (entity, userId) => {

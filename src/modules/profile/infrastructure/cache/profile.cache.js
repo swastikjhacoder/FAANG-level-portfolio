@@ -9,7 +9,13 @@ export class ProfileCache {
 
   async get(profileId) {
     const data = await redis.get(this.getKey(profileId));
-    return data ? JSON.parse(data) : null;
+
+    try {
+      return data ? JSON.parse(data) : null;
+    } catch {
+      await this.invalidate(profileId);
+      return null;
+    }
   }
 
   async set(profileId, value) {
