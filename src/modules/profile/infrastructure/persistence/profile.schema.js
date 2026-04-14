@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+ import { sanitizeStrings } from "@/shared/utils/mongooseSanitizer";
 
 const profileSchema = new mongoose.Schema(
   {
@@ -53,6 +54,18 @@ profileSchema.set("toJSON", {
 
 profileSchema.index({ roles: 1 });
 profileSchema.index({ languages: 1 });
+
+schema.pre("save", async function () {
+  sanitizeStrings(this);
+});
+
+schema.pre(["findOneAndUpdate", "updateOne"], async function () {
+  const update = this.getUpdate();
+
+  if (update) {
+    sanitizeStrings(update);
+  }
+});
 
 export const ProfileModel =
   mongoose.models.Profile || mongoose.model("Profile", profileSchema);

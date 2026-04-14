@@ -1,0 +1,16 @@
+import { z } from "zod";
+
+export const skillValidation = z.object({
+  name: z.string().min(2).max(50),
+
+  experience: z.number().min(0).max(50),
+
+  proficiency: z.number().min(0).max(10),
+
+  icon: z
+    .object({
+      url: z.string().url(),
+      publicId: z.string(),
+    })
+    .optional(),
+});
