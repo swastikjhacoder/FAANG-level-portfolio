@@ -19,6 +19,13 @@ export class ContactRepository {
       isDeleted: false,
     }).lean();
   }
+  
+  async findById(id) {
+    return ContactModel.findOne({
+      _id: id,
+      isDeleted: false,
+    }).lean();
+  }
 
   async update(id, data, userId) {
     return ContactModel.findOneAndUpdate(

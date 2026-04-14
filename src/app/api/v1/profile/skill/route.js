@@ -24,11 +24,11 @@ const useCase = new AddSkillUseCase();
 const DEV = process.env.NODE_ENV === "development";
 const ADMIN = [ROLES.ADMIN, ROLES.SUPER_ADMIN];
 
-const safeJson = async (req) => {
+const safeFormData = async (req) => {
   try {
-    return await req.json();
+    return await req.formData();
   } catch {
-    throw new ValidationError("Invalid JSON body");
+    throw new ValidationError("Invalid multipart/form-data");
   }
 };
 

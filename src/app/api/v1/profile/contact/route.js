@@ -19,6 +19,8 @@ import { ROLES } from "@/shared/constants/roles";
 import { validateObjectId } from "@/shared/utils/validateObjectId";
 import { ValidationError } from "@/shared/errors";
 import auditLogger from "@/shared/security/audit/audit.logger";
+import { cloudinaryService } from "@/modules/profile/infrastructure/services/cloudinary.service";
+
 
 const repo = new ContactRepository();
 
@@ -29,12 +31,40 @@ const deleteUC = new DeleteContactUseCase(repo);
 const DEV = process.env.NODE_ENV === "development";
 const ADMIN = [ROLES.ADMIN, ROLES.SUPER_ADMIN];
 
-const safeJson = async (req) => {
+const safeFormData = async (req) => {
   try {
-    return await req.json();
+    return await req.formData();
   } catch {
-    throw new ValidationError("Invalid JSON body");
+    throw new ValidationError("Invalid multipart/form-data");
   }
+};
+
+const parseFormData = (formData) => {
+  const data = {};
+  const files = {};
+
+  for (const [key, value] of formData.entries()) {
+    if (value instanceof File) {
+      files[key] = value;
+    } else {
+      data[key] = value;
+    }
+  }
+
+  return { data, files };
+};
+
+const toUploadFile = async (file) => {
+  if (!file) return null;
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+
+  return {
+    buffer,
+    size: file.size,
+    mimetype: file.type,
+    originalname: file.name,
+  };
 };
 
 const ok = (data) => Response.json({ success: true, data });
@@ -56,8 +86,36 @@ const createHandler = async (req) => {
   try {
     await connectDB();
 
-    const raw = await safeJson(req);
-    const sanitized = sanitizeInput(raw);
+    const formData = await safeFormData(req);
+    const { data, files } = parseFormData(formData);
+
+    if (data.socials) {
+      data.socials = JSON.parse(data.socials);
+    }
+
+    if (Array.isArray(data.socials)) {
+      for (let i = 0; i < data.socials.length; i++) {
+        const file = files[`socialIcon_${i}`];
+
+        if (file) {
+          const adapted = await toUploadFile(file);
+
+          const uploaded = await cloudinaryService.upload(
+            adapted,
+            "contact/socials",
+          );
+
+          data.socials[i].icon = {
+            url: uploaded.url,
+            publicId: uploaded.publicId,
+          };
+        } else {
+          data.socials[i].icon = null;
+        }
+      }
+    }
+
+    const sanitized = sanitizeInput(data);
 
     const result = await createUC.execute(sanitized, req.user);
 
@@ -92,17 +150,93 @@ const getHandler = async (req) => {
 
 const updateHandler = async (req) => {
   try {
+    console.log("🚀 PATCH START");
+
     await connectDB();
+    console.log("✅ DB connected");
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("contactId");
+    console.log("📌 contactId:", id);
 
     validateObjectId(id, "contactId");
 
-    const raw = await safeJson(req);
-    const sanitized = sanitizeInput(raw);
+    const existing = await repo.findById(id);
+    console.log("📦 existing:", JSON.stringify(existing, null, 2));
+
+    if (!existing) {
+      throw new ValidationError("Contact not found");
+    }
+
+    const formData = await safeFormData(req);
+
+    console.log("📥 RAW FORM DATA:");
+    for (const [k, v] of formData.entries()) {
+      console.log("   ", k, v instanceof File ? `File(${v.name})` : v);
+    }
+
+    const { data, files } = parseFormData(formData);
+
+    console.log("📄 PARSED DATA:", data);
+    console.log("📁 FILES:", Object.keys(files));
+
+    if (data.socials) {
+      try {
+        data.socials = JSON.parse(data.socials);
+      } catch (e) {
+        console.error("❌ JSON PARSE ERROR:", e);
+        throw new ValidationError("Invalid socials JSON");
+      }
+    }
+
+    console.log("🧩 SOCIALS:", data.socials);
+
+    if (Array.isArray(data.socials)) {
+      for (let i = 0; i < data.socials.length; i++) {
+        console.log(`➡️ Processing socials[${i}]`);
+
+        const file = files[`socialIcon_${i}`];
+        console.log(`   file:`, file ? file.name : "❌ NO FILE");
+
+        if (file) {
+          console.log("   🔄 Uploading new file...");
+
+          const adapted = await toUploadFile(file);
+          console.log("   ✅ adapted");
+
+          const oldPublicId = existing?.socials?.[i]?.icon?.publicId;
+
+          console.log("   🗑 oldPublicId:", oldPublicId);
+
+          const uploaded = await cloudinaryService.replace(
+            oldPublicId,
+            adapted,
+            "contact/socials",
+          );
+
+          console.log("   ☁️ uploaded:", uploaded);
+
+          data.socials[i].icon = {
+            url: uploaded.url,
+            publicId: uploaded.publicId,
+          };
+        } else {
+          console.log("   ♻️ Keeping old icon");
+
+          data.socials[i].icon = existing?.socials?.[i]?.icon || null;
+        }
+      }
+    }
+
+    console.log("🧼 Before sanitize:", data);
+
+    const sanitized = sanitizeInput(data);
+
+    console.log("🧼 After sanitize:", sanitized);
 
     const result = await updateUC.execute(id, sanitized, req.user);
+
+    console.log("✅ UPDATE RESULT:", result);
 
     auditLogger.log({
       action: "CONTACT_UPDATE",
@@ -112,6 +246,7 @@ const updateHandler = async (req) => {
 
     return ok(result);
   } catch (err) {
+    console.error("🔥 ERROR:", err);
     return fail(err);
   }
 };
@@ -124,6 +259,16 @@ const deleteHandler = async (req) => {
     const id = searchParams.get("contactId");
 
     validateObjectId(id, "contactId");
+
+    const existing = await repo.findById(id);
+
+    if (existing?.socials?.length) {
+      for (const social of existing.socials) {
+        if (social?.icon?.publicId) {
+          await cloudinaryService.delete(social.icon.publicId, "image");
+        }
+      }
+    }
 
     await deleteUC.execute(id);
 

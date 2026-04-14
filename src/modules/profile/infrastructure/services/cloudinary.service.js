@@ -65,9 +65,18 @@ class CloudinaryService {
       throw new ValidationError("Invalid MIME type");
     }
 
-    const type = await fileTypeFromBuffer(file.buffer);
+    let ext;
 
-    const ext = type?.ext || this.getExtensionFromName(file.originalname);
+    if (file.mimetype === "image/svg+xml") {
+      ext = "svg";
+    } else {
+      const type = await fileTypeFromBuffer(file.buffer);
+      ext = type?.ext || this.getExtensionFromName(file.originalname);
+    }
+
+    if (!ext || !this.allowedFormats.includes(ext)) {
+      throw new ValidationError("Invalid file format");
+    }
 
     if (!ext || !this.allowedFormats.includes(ext)) {
       throw new ValidationError("Invalid file format");
