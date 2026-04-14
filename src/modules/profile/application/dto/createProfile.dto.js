@@ -21,9 +21,13 @@ export const createProfileDTO = z
     dateOfBirth: z.coerce.date().optional(),
 
     maritalStatus: z
-      .enum(["SINGLE", "MARRIED", "OTHER"])
-      .transform((val) => val.toLowerCase())
-      .optional(),
+      .string()
+      .optional()
+      .transform((val) => val?.toUpperCase())
+      .refine((val) => !val || ["SINGLE", "MARRIED", "OTHER"].includes(val), {
+        message: "Invalid marital status",
+      })
+      .transform((val) => val?.toLowerCase()),
 
     languages: z.array(z.string()).optional(),
   })

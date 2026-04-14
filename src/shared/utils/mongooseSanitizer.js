@@ -1,25 +1,33 @@
 const dangerousKeys = ["__proto__", "constructor", "prototype"];
 
-export const sanitizeStrings = (obj) => {
+export const sanitizeStrings = (obj, seen = new WeakSet()) => {
+  if (obj === null || typeof obj !== "object") {
+    return typeof obj === "string" ? obj.trim() : obj;
+  }
+
+  if (seen.has(obj)) return obj;
+  seen.add(obj);
+
+  if (
+    obj instanceof Date ||
+    obj instanceof RegExp ||
+    obj instanceof Buffer ||
+    obj._bsontype === "ObjectId"
+  ) {
+    return obj;
+  }
+
   if (Array.isArray(obj)) {
-    return obj.map(sanitizeStrings);
+    return obj.map((item) => sanitizeStrings(item, seen));
   }
 
-  if (obj && typeof obj === "object") {
-    const result = {};
+  const result = {};
 
-    for (const key in obj) {
-      if (dangerousKeys.includes(key)) continue;
+  for (const key of Object.keys(obj)) {
+    if (dangerousKeys.includes(key)) continue;
 
-      result[key] = sanitizeStrings(obj[key]);
-    }
-
-    return result;
+    result[key] = sanitizeStrings(obj[key], seen);
   }
 
-  if (typeof obj === "string") {
-    return obj.trim();
-  }
-
-  return obj;
+  return result;
 };

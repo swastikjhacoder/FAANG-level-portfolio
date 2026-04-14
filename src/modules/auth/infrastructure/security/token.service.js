@@ -18,7 +18,6 @@ if (!REFRESH_TOKEN_SECRET) {
 const generateJTI = () => crypto.randomUUID();
 
 export const generateAccessToken = (payload) => {
-  console.log("SIGN SECRET:", process.env.ACCESS_TOKEN_SECRET);
   return jwt.sign(
     {
       userId: payload.userId,
@@ -34,7 +33,6 @@ export const generateAccessToken = (payload) => {
 };
 
 export const verifyAccessToken = (token) => {
-  console.log("VERIFY SECRET:", process.env.ACCESS_TOKEN_SECRET);
   try {
     return jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
   } catch (err) {

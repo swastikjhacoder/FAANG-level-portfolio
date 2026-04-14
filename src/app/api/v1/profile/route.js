@@ -34,15 +34,68 @@ const safeJson = async (req) => {
 };
 
 const ok = (data) => Response.json({ success: true, data });
-const fail = (error) =>
-  Response.json(
+const fail = (error) => {
+  console.error("🔥 PROFILE ERROR:", {
+    message: error.message,
+    stack: error.stack,
+    code: error.code,
+  });
+
+  let status = error.status || 500;
+  let message = "Internal Server Error";
+  let code = "INTERNAL_ERROR";
+
+  if (error.name === "ZodError") {
+    status = 400;
+    message = error.errors?.[0]?.message || "Validation failed";
+    code = "BAD_USER_INPUT";
+  }
+
+  else if (error.name === "ValidationError") {
+    status = 400;
+    message = error.message;
+    code = "BAD_USER_INPUT";
+  }
+
+  else if (error.name === "NotFoundError") {
+    status = 404;
+    message = error.message;
+    code = "NOT_FOUND";
+  }
+
+  else if (error.message === "Forbidden") {
+    status = 403;
+    message = "Forbidden";
+    code = "FORBIDDEN";
+  }
+
+  else if (error.message === "Unauthorized") {
+    status = 401;
+    message = "Unauthorized";
+    code = "UNAUTHORIZED";
+  }
+
+  else if (error.code === 11000) {
+    status = 409;
+    message = "Duplicate resource";
+    code = "CONFLICT";
+  }
+
+  if (!DEV && status === 500) {
+    message = "Something went wrong";
+  } else if (DEV && status === 500) {
+    message = error.message;
+  }
+
+  return Response.json(
     {
       success: false,
-      message: error.message || "Internal Server Error",
-      code: error.code || "INTERNAL_ERROR",
+      message,
+      code,
     },
-    { status: error.status || 500 },
+    { status },
   );
+};
 
 const createHandler = async (req) => {
   try {
