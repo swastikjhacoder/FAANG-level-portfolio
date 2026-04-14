@@ -1,9 +1,19 @@
 export const sanitizeStrings = (obj) => {
-  for (const key in obj) {
-    if (typeof obj[key] === "string") {
-      obj[key] = obj[key].trim();
-    } else if (typeof obj[key] === "object" && obj[key] !== null) {
-      sanitizeStrings(obj[key]);
-    }
+  if (Array.isArray(obj)) {
+    return obj.map(sanitizeStrings);
   }
+
+  if (obj && typeof obj === "object") {
+    const result = {};
+    for (const key in obj) {
+      result[key] = sanitizeStrings(obj[key]);
+    }
+    return result;
+  }
+
+  if (typeof obj === "string") {
+    return obj.trim();
+  }
+
+  return obj;
 };

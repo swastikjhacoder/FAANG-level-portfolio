@@ -1,6 +1,14 @@
 import { gql } from "graphql-tag";
 
 export const profileTypeDefs = gql`
+  scalar Date
+
+  enum MaritalStatus {
+    SINGLE
+    MARRIED
+    OTHER
+  }
+
   type Image {
     url: String!
     publicId: String!
@@ -25,8 +33,8 @@ export const profileTypeDefs = gql`
     profileId: ID!
     company: String!
     role: String!
-    startDate: String!
-    endDate: String
+    startDate: Date!
+    endDate: Date
     history: [String!]
     achievements: [String!]
     projects: [String!]
@@ -43,8 +51,8 @@ export const profileTypeDefs = gql`
     name: String!
     liveUrl: String
     githubUrl: String
-    techStack: [TechStack!]
-    description: [String!]
+    techStack: [TechStack!]!
+    description: [String!]!
     screenshot: Image
   }
 
@@ -64,17 +72,17 @@ export const profileTypeDefs = gql`
     roles: [String!]!
     description: [String!]!
     profileImage: Image
-    dateOfBirth: String
-    maritalStatus: String
-    languages: [String!]
+    dateOfBirth: Date
+    maritalStatus: MaritalStatus
+    languages: [String!]!
 
-    skills: [Skill!]
-    experiences: [Experience!]
-    projects: [Project!]
-    testimonials: [Testimonial!]
+    skills: [Skill!]!
+    experiences: [Experience!]!
+    projects: [Project!]!
+    testimonials: [Testimonial!]!
 
-    createdAt: String
-    updatedAt: String
+    createdAt: Date
+    updatedAt: Date
   }
 
   input ImageInput {
@@ -92,8 +100,8 @@ export const profileTypeDefs = gql`
     roles: [String!]!
     description: [String!]!
     profileImage: ImageInput
-    dateOfBirth: String
-    maritalStatus: String
+    dateOfBirth: Date
+    maritalStatus: MaritalStatus
     languages: [String!]
   }
 
@@ -102,8 +110,8 @@ export const profileTypeDefs = gql`
     roles: [String!]
     description: [String!]
     profileImage: ImageInput
-    dateOfBirth: String
-    maritalStatus: String
+    dateOfBirth: Date
+    maritalStatus: MaritalStatus
     languages: [String!]
   }
 
@@ -119,8 +127,8 @@ export const profileTypeDefs = gql`
     profileId: ID!
     company: String!
     role: String!
-    startDate: String!
-    endDate: String
+    startDate: Date!
+    endDate: Date
     history: [String!]
     achievements: [String!]
     projects: [String!]
@@ -128,7 +136,7 @@ export const profileTypeDefs = gql`
 
   input TechStackInput {
     name: String!
-    icon: ImageInput!
+    icon: ImageInput
   }
 
   input ProjectInput {
@@ -151,17 +159,30 @@ export const profileTypeDefs = gql`
 
   type Query {
     profile(profileId: ID!): Profile
+    profiles(page: Int = 1, limit: Int = 10): ProfilesResponse!
+  }
+
+  type ProfilesResponse {
+    data: [Profile!]!
+    meta: Meta!
+  }
+
+  type Meta {
+    total: Int!
+    page: Int!
+    limit: Int!
+    pages: Int!
   }
 
   type Mutation {
-    createProfile(input: CreateProfileInput!): Profile
-    updateProfile(profileId: ID!, input: UpdateProfileInput!): Profile
-    deleteProfile(profileId: ID!): Profile
+    createProfile(input: CreateProfileInput!): Profile!
+    updateProfile(profileId: ID!, input: UpdateProfileInput!): Profile!
+    deleteProfile(profileId: ID!): Boolean!
 
-    addSkill(input: SkillInput!): Skill
-    addExperience(input: ExperienceInput!): Experience
-    addProject(input: ProjectInput!): Project
+    addSkill(input: SkillInput!): Skill!
+    addExperience(input: ExperienceInput!): Experience!
+    addProject(input: ProjectInput!): Project!
 
-    approveTestimonial(testimonialId: ID!): Testimonial
+    approveTestimonial(testimonialId: ID!): Testimonial!
   }
 `;

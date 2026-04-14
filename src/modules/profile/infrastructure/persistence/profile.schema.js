@@ -55,16 +55,13 @@ profileSchema.set("toJSON", {
 profileSchema.index({ roles: 1 });
 profileSchema.index({ languages: 1 });
 
-schema.pre("save", async function () {
+profileSchema.pre("save", function () {
   sanitizeStrings(this);
 });
 
-schema.pre(["findOneAndUpdate", "updateOne"], async function () {
+profileSchema.pre(["findOneAndUpdate", "updateOne"], function () {
   const update = this.getUpdate();
-
-  if (update) {
-    sanitizeStrings(update);
-  }
+  if (update) sanitizeStrings(update);
 });
 
 export const ProfileModel =

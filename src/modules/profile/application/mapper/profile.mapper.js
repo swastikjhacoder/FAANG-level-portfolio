@@ -1,30 +1,33 @@
+import { Experience } from "../../domain/entities/Experience.entity.js";
+import { Profile } from "../../domain/entities/Profile.entity.js";
+import { Project } from "../../domain/entities/Project.entity.js";
+import { Skill } from "../../domain/entities/Skill.entity.js";
+import { Testimonial } from "../../domain/entities/Testimonial.entity.js";
+
 export const toProfileEntity = (data) => {
-  return {
-    name: {
-      first: data.name.first,
-      last: data.name.last,
-    },
+  return new Profile({
+    name: data.name,
     roles: data.roles,
     description: data.description,
     profileImage: data.profileImage || null,
     dateOfBirth: data.dateOfBirth || null,
     maritalStatus: data.maritalStatus || null,
     languages: data.languages || [],
-  };
+  });
 };
 
 export const toSkillEntity = (data) => {
-  return {
+  return new Skill({
     profileId: data.profileId,
     name: data.name,
     experience: data.experience,
     proficiency: data.proficiency,
     icon: data.icon || null,
-  };
+  });
 };
 
 export const toExperienceEntity = (data) => {
-  return {
+  return new Experience({
     profileId: data.profileId,
     company: data.company,
     role: data.role,
@@ -33,11 +36,11 @@ export const toExperienceEntity = (data) => {
     history: data.history || [],
     achievements: data.achievements || [],
     projects: data.projects || [],
-  };
+  });
 };
 
 export const toProjectEntity = (data) => {
-  return {
+  return new Project({
     profileId: data.profileId,
     name: data.name,
     liveUrl: data.liveUrl || null,
@@ -48,34 +51,57 @@ export const toProjectEntity = (data) => {
     })),
     description: data.description || [],
     screenshot: data.screenshot || null,
-  };
+  });
 };
 
 export const toTestimonialEntity = (data) => {
-  return {
+  return new Testimonial({
     profileId: data.profileId,
     quote: data.quote,
     senderName: data.senderName,
     senderRole: data.senderRole || null,
     company: data.company || null,
     approved: false,
-  };
+  });
 };
 
 export const toPersistenceProfile = (entity, userId) => {
   return {
-    ...entity,
+    name: entity.name,
+    roles: entity.roles,
+    description: entity.description,
+    profileImage: entity.profileImage,
+    dateOfBirth: entity.dateOfBirth,
+    maritalStatus: entity.maritalStatus,
+    languages: entity.languages,
     createdBy: userId,
     updatedBy: userId,
   };
 };
 
 export const toPersistenceUpdate = (entity, userId) => {
-  return {
-    ...entity,
-    updatedBy: userId,
-  };
+  const data = {};
+
+  if (entity.name !== undefined) data.name = entity.name;
+  if (entity.roles !== undefined) data.roles = entity.roles;
+  if (entity.description !== undefined) data.description = entity.description;
+  if (entity.profileImage !== undefined)
+    data.profileImage = entity.profileImage;
+  if (entity.dateOfBirth !== undefined) data.dateOfBirth = entity.dateOfBirth;
+  if (entity.maritalStatus !== undefined)
+    data.maritalStatus = entity.maritalStatus;
+  if (entity.languages !== undefined) data.languages = entity.languages;
+
+  data.updatedBy = userId;
+
+  return data;
 };
+
+const mapSubDoc = (doc) => ({
+  id: doc._id?.toString(),
+  profileId: doc.profileId,
+  ...doc,
+});
 
 export const toResponseProfile = (doc) => {
   if (!doc) return null;
@@ -107,10 +133,10 @@ export const toResponseFullProfile = (doc) => {
     maritalStatus: doc.maritalStatus,
     languages: doc.languages,
 
-    skills: doc.skills || [],
-    experiences: doc.experiences || [],
-    projects: doc.projects || [],
-    testimonials: doc.testimonials || [],
+    skills: (doc.skills || []).map(mapSubDoc),
+    experiences: (doc.experiences || []).map(mapSubDoc),
+    projects: (doc.projects || []).map(mapSubDoc),
+    testimonials: (doc.testimonials || []).map(mapSubDoc),
 
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,

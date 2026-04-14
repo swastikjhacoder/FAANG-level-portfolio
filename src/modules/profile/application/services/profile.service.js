@@ -10,7 +10,11 @@ export class ProfileService {
   }
 
   validateAdmin(user) {
-    if (!user || !["ADMIN", "SUPER_ADMIN"].includes(user.role)) {
+    if (
+      !user ||
+      !Array.isArray(user.roles) ||
+      !user.roles.some((r) => ["ADMIN", "SUPER_ADMIN"].includes(r))
+    ) {
       throw new Error("Forbidden");
     }
   }
@@ -35,19 +39,18 @@ export class ProfileService {
     session.startTransaction();
 
     try {
-      const profile = await ProfileModel.create(
-        [
-          {
-            ...data,
-            createdBy: user.id,
-          },
-        ],
+      const profile = await this.repo.create(
+        {
+          ...data,
+          createdBy: user.id,
+          updatedBy: user.id,
+        },
         { session },
       );
 
       await session.commitTransaction();
 
-      return profile[0];
+      return profile;
     } catch (err) {
       await session.abortTransaction();
       throw err;

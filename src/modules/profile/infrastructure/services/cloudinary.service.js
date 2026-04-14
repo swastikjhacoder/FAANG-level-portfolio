@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 import streamifier from "streamifier";
+import { fileTypeFromBuffer } from "file-type";
 
 class CloudinaryService {
   constructor() {
@@ -14,17 +15,16 @@ class CloudinaryService {
     this.maxSize = 2 * 1024 * 1024;
   }
 
-  validateFile(file) {
-    if (!file) {
-      throw new Error("File is required");
-    }
+  async validateFile(file) {
+    if (!file) throw new Error("File is required");
 
     if (file.size > this.maxSize) {
       throw new Error("File size exceeds limit");
     }
 
-    const format = file.mimetype.split("/")[1];
-    if (!this.allowedFormats.includes(format)) {
+    const type = await fileTypeFromBuffer(file.buffer);
+
+    if (!type || !this.allowedFormats.includes(type.ext)) {
       throw new Error("Invalid file format");
     }
   }
@@ -53,13 +53,12 @@ class CloudinaryService {
   }
 
   async upload(file, folder = "profile") {
-    this.validateFile(file);
+    await this.validateFile(file); // ✅ FIX
     return this.uploadBuffer(file.buffer, folder);
   }
 
   async delete(publicId) {
     if (!publicId) return;
-
     return cloudinary.uploader.destroy(publicId, {
       resource_type: "image",
     });

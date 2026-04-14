@@ -1,4 +1,4 @@
-import { profileValidation } from "../validation/profile.schema.js";
+import { createProfileDTO } from "../../application/dto/createProfile.dto.js";
 import { sanitizeProfileInput } from "../../security/sanitizers/profile.sanitizer.js";
 import { ProfileService } from "../../application/services/profile.service.js";
 
@@ -6,7 +6,7 @@ const service = new ProfileService();
 
 export const createProfile = async (req, res) => {
   try {
-    const parsed = profileValidation.parse(req.body);
+    const parsed = createProfileDTO.parse(req.body);
 
     const cleanData = sanitizeProfileInput(parsed);
 

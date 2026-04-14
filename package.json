@@ -23,6 +23,7 @@
     "express": "^5.2.1",
     "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^8.3.2",
+    "file-type": "^21.3.4",
     "graphql": "^16.13.2",
     "graphql-depth-limit": "^1.1.0",
     "graphql-tag": "^2.12.6",

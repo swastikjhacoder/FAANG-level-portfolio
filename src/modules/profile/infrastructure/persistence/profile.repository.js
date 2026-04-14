@@ -45,6 +45,7 @@ export class ProfileRepository {
       {
         ...updateData,
         updatedAt: new Date(),
+        updatedBy: data.updatedBy,
       },
       {
         new: true,
@@ -80,6 +81,18 @@ export class ProfileRepository {
         session,
       },
     );
+  }
+  
+  async assertOwnership(profileId, userId) {
+    const exists = await ProfileModel.exists({
+      _id: profileId,
+      createdBy: userId,
+      isDeleted: false,
+    });
+
+    if (!exists) {
+      throw new Error("Forbidden");
+    }
   }
 
   async hardDelete(profileId, { session } = {}) {
