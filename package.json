@@ -15,6 +15,7 @@
     "@graphql-tools/schema": "^10.0.32",
     "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.2",
+    "bullmq": "^5.73.5",
     "cloudinary": "^2.9.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",

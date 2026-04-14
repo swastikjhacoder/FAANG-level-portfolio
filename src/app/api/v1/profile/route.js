@@ -18,11 +18,11 @@ import { ProfileService } from "@/modules/profile/application/services/profile.s
 import { validateObjectId } from "@/shared/utils/validateObjectId";
 import { ValidationError } from "@/shared/errors";
 import auditLogger from "@/shared/security/audit/audit.logger";
+import { extractRequestMeta } from "@/shared/utils/requestMeta";
 
 const service = new ProfileService();
 
 const ADMIN_ROLES = [ROLES.ADMIN, ROLES.SUPER_ADMIN];
-
 const DEV = process.env.NODE_ENV === "development";
 
 const safeJson = async (req) => {
@@ -34,8 +34,12 @@ const safeJson = async (req) => {
 };
 
 const ok = (data) => Response.json({ success: true, data });
-const fail = (error) => {
+
+const fail = (req, error) => {
+  const meta = extractRequestMeta(req);
+
   console.error("🔥 PROFILE ERROR:", {
+    ...meta,
     message: error.message,
     stack: error.stack,
     code: error.code,
@@ -49,33 +53,23 @@ const fail = (error) => {
     status = 400;
     message = error.errors?.[0]?.message || "Validation failed";
     code = "BAD_USER_INPUT";
-  }
-
-  else if (error.name === "ValidationError") {
+  } else if (error.name === "ValidationError") {
     status = 400;
     message = error.message;
     code = "BAD_USER_INPUT";
-  }
-
-  else if (error.name === "NotFoundError") {
+  } else if (error.name === "NotFoundError") {
     status = 404;
     message = error.message;
     code = "NOT_FOUND";
-  }
-
-  else if (error.message === "Forbidden") {
+  } else if (error.message === "Forbidden") {
     status = 403;
     message = "Forbidden";
     code = "FORBIDDEN";
-  }
-
-  else if (error.message === "Unauthorized") {
+  } else if (error.message === "Unauthorized") {
     status = 401;
     message = "Unauthorized";
     code = "UNAUTHORIZED";
-  }
-
-  else if (error.code === 11000) {
+  } else if (error.code === 11000) {
     status = 409;
     message = "Duplicate resource";
     code = "CONFLICT";
@@ -87,26 +81,70 @@ const fail = (error) => {
     message = error.message;
   }
 
-  return Response.json(
-    {
-      success: false,
-      message,
-      code,
-    },
-    { status },
-  );
+  return Response.json({ success: false, message, code }, { status });
+};
+
+const parseMultipart = async (req) => {
+  const formData = await req.formData();
+  const data = {};
+
+  for (const [key, value] of formData.entries()) {
+    if (value instanceof File) {
+      data[key] = value;
+      continue;
+    }
+
+    if (key.endsWith("[]")) {
+      const cleanKey = key.replace("[]", "");
+      if (!data[cleanKey]) data[cleanKey] = [];
+      data[cleanKey].push(value);
+      continue;
+    }
+
+    try {
+      data[key] = JSON.parse(value);
+    } catch {
+      data[key] = value;
+    }
+  }
+
+  return data;
+};
+
+const getRequestBody = async (req) => {
+  const contentType = req.headers.get("content-type") || "";
+
+  if (contentType.includes("multipart/form-data")) {
+    return parseMultipart(req);
+  }
+
+  return safeJson(req);
 };
 
 const createHandler = async (req) => {
   try {
     await connectDB();
 
-    const raw = await safeJson(req);
+    const raw = await getRequestBody(req);
+
+    const profileImageFile = raw.profileImage;
+
+    delete raw.profileImage;
 
     const sanitized = sanitizeInput(raw);
-    const validated = createProfileDTO.parse(sanitized);
 
-    const result = await service.createProfile(validated, req.user);
+    const validated = createProfileDTO.parse({
+      ...sanitized,
+      profileImage: undefined,
+    });
+
+    const result = await service.createProfile(
+      {
+        ...validated,
+        profileImage: profileImageFile,
+      },
+      req.user,
+    );
 
     auditLogger.log({
       action: "PROFILE_CREATE",
@@ -116,7 +154,7 @@ const createHandler = async (req) => {
 
     return ok(result);
   } catch (err) {
-    return fail(err);
+    return fail(req, err);
   }
 };
 
@@ -126,13 +164,21 @@ const getHandler = async (req) => {
 
     const { searchParams } = new URL(req.url);
 
-    const page = Math.max(1, Number(searchParams.get("page") || 1));
-    const limit = Math.min(
-      Math.max(1, Number(searchParams.get("limit") || 10)),
-      50,
-    );
+    const safeNumber = (val, def) => {
+      const n = Number(val);
+      return Number.isFinite(n) && n > 0 ? n : def;
+    };
 
-    const result = await service.repo.list({ page, limit });
+    const page = safeNumber(searchParams.get("page"), 1);
+    const limit = Math.min(safeNumber(searchParams.get("limit"), 10), 50);
+
+    auditLogger.log({
+      action: "PROFILE_LIST",
+      userId: req.user?.id || null,
+      meta: { page, limit },
+    });
+
+    const result = await service.listProfiles({ page, limit });
 
     return ok(result);
   } catch (err) {
@@ -149,12 +195,26 @@ const updateHandler = async (req) => {
 
     validateObjectId(profileId, "profileId");
 
-    const raw = await safeJson(req);
+    const raw = await getRequestBody(req);
+
+    const profileImageFile = raw.profileImage;
+    delete raw.profileImage;
 
     const sanitized = sanitizeInput(raw);
-    const validated = updateProfileDTO.parse(sanitized);
 
-    const result = await service.updateProfile(profileId, validated, req.user);
+    const validated = updateProfileDTO.parse({
+      ...sanitized,
+      profileImage: undefined,
+    });
+
+    const result = await service.updateProfile(
+      profileId,
+      {
+        ...validated,
+        profileImage: profileImageFile,
+      },
+      req.user,
+    );
 
     auditLogger.log({
       action: "PROFILE_UPDATE",
@@ -185,7 +245,7 @@ const deleteHandler = async (req) => {
       resourceId: profileId,
     });
 
-    return ok({ success: true });
+    return ok(true);
   } catch (err) {
     return fail(err);
   }
