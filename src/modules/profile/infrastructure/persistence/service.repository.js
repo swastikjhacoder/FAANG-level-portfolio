@@ -22,6 +22,13 @@ export class ServiceRepository {
       .lean();
   }
 
+  async findById(id) {
+    return ServiceModel.findOne({
+      _id: id,
+      isDeleted: false,
+    }).lean();
+  }
+
   async update(id, data, userId) {
     return ServiceModel.findOneAndUpdate(
       { _id: id, isDeleted: false },

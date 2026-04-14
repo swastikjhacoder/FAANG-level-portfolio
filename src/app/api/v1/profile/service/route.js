@@ -20,6 +20,8 @@ import { validateObjectId } from "@/shared/utils/validateObjectId";
 import { ValidationError } from "@/shared/errors";
 import auditLogger from "@/shared/security/audit/audit.logger";
 
+import { cloudinaryService } from "@/modules/profile/infrastructure/services/cloudinary.service";
+
 const repo = new ServiceRepository();
 
 const createUC = new AddServiceUseCase(repo);
@@ -35,6 +37,32 @@ const safeFormData = async (req) => {
   } catch {
     throw new ValidationError("Invalid multipart/form-data");
   }
+};
+
+const parseFormData = (formData) => {
+  const data = {};
+  const files = {};
+
+  for (const [key, value] of formData.entries()) {
+    if (value instanceof File) {
+      files[key] = value;
+    } else {
+      data[key] = value;
+    }
+  }
+
+  return { data, files };
+};
+
+const toUploadFile = async (file) => {
+  const buffer = Buffer.from(await file.arrayBuffer());
+
+  return {
+    buffer,
+    size: file.size,
+    mimetype: file.type,
+    originalname: file.name,
+  };
 };
 
 const ok = (data) => Response.json({ success: true, data });
@@ -56,8 +84,23 @@ const createHandler = async (req) => {
   try {
     await connectDB();
 
-    const raw = await safeJson(req);
-    const sanitized = sanitizeInput(raw);
+    const formData = await safeFormData(req);
+    const { data, files } = parseFormData(formData);
+
+    if (files.icon) {
+      const adapted = await toUploadFile(files.icon);
+
+      const uploaded = await cloudinaryService.upload(adapted, "service/icon");
+
+      data.icon = {
+        url: uploaded.url,
+        publicId: uploaded.publicId,
+      };
+    }
+
+    validateObjectId(data.profileId, "profileId");
+
+    const sanitized = sanitizeInput(data);
 
     const result = await createUC.execute(sanitized, req.user);
 
@@ -69,6 +112,7 @@ const createHandler = async (req) => {
 
     return ok(result);
   } catch (err) {
+    console.error("🔥 CREATE ERROR:", err);
     return fail(err);
   }
 };
@@ -99,8 +143,27 @@ const updateHandler = async (req) => {
 
     validateObjectId(id, "serviceId");
 
-    const raw = await safeJson(req);
-    const sanitized = sanitizeInput(raw);
+    const existing = await repo.findById(id);
+
+    const formData = await safeFormData(req);
+    const { data, files } = parseFormData(formData);
+
+    if (files.icon) {
+      const adapted = await toUploadFile(files.icon);
+
+      const uploaded = await cloudinaryService.replace(
+        existing?.icon?.publicId,
+        adapted,
+        "service/icon",
+      );
+
+      data.icon = {
+        url: uploaded.url,
+        publicId: uploaded.publicId,
+      };
+    }
+
+    const sanitized = sanitizeInput(data);
 
     const result = await updateUC.execute(id, sanitized, req.user);
 
@@ -112,6 +175,7 @@ const updateHandler = async (req) => {
 
     return ok(result);
   } catch (err) {
+    console.error("🔥 UPDATE ERROR:", err);
     return fail(err);
   }
 };
@@ -124,6 +188,12 @@ const deleteHandler = async (req) => {
     const id = searchParams.get("serviceId");
 
     validateObjectId(id, "serviceId");
+
+    const existing = await repo.findById(id);
+
+    if (existing?.icon?.publicId) {
+      await cloudinaryService.delete(existing.icon.publicId);
+    }
 
     await deleteUC.execute(id);
 
