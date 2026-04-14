@@ -1,15 +1,13 @@
-export const roleGuard = (requiredRoles = []) => {
-  return (user) => {
-    if (!user || !user.roles) {
-      throw new Error("Unauthorized");
+import { hasRole } from "@/shared/constants/roles";
+
+export const roleGuard = (handler, requiredRole) => {
+  return async (req) => {
+    const user = req.user;
+
+    if (!hasRole(user.roles, requiredRole)) {
+      return new Response("Forbidden", { status: 403 });
     }
 
-    const hasRole = requiredRoles.some((role) => user.roles.includes(role));
-
-    if (!hasRole) {
-      throw new Error("Forbidden: Insufficient permissions");
-    }
-
-    return true;
+    return handler(req);
   };
 };

@@ -17,29 +17,36 @@ const extractToken = (req) => {
   return authHeader.split(" ")[1];
 };
 
-export const authGuard = async (req) => {
-  const token = extractToken(req);
+export const authGuard = (handler) => {
+  return async (req) => {
+    try {
+      const token = extractToken(req);
 
-  if (!token) {
-    throw new Error("Unauthorized: Missing token");
-  }
+      if (!token) {
+        return new Response("Unauthorized: Missing token", { status: 401 });
+      }
 
-  const payload = verifyAccessToken(token);
+      const payload = verifyAccessToken(token);
+      const jti = extractJTI(token);
 
-  const jti = extractJTI(token);
+      if (jti) {
+        const isBlacklisted = await redis.isBlacklisted(jti);
 
-  if (jti) {
-    const isBlacklisted = await redis.isBlacklisted(jti);
+        if (isBlacklisted) {
+          return new Response("Unauthorized: Token revoked", { status: 401 });
+        }
+      }
 
-    if (isBlacklisted) {
-      throw new Error("Unauthorized: Token revoked");
+      req.user = {
+        userId: payload.userId,
+        roles: payload.roles || [],
+        sessionVersion: payload.sessionVersion,
+        jti,
+      };
+
+      return handler(req);
+    } catch (err) {
+      return new Response(err.message || "Unauthorized", { status: 401 });
     }
-  }
-  
-  return {
-    userId: payload.userId,
-    roles: payload.roles || [],
-    sessionVersion: payload.sessionVersion,
-    jti,
   };
 };

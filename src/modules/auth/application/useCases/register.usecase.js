@@ -3,14 +3,12 @@ import { Password } from "../../domain/valueObjects/Password.vo";
 import { Name } from "../../domain/valueObjects/Name.vo";
 
 import { UserRepository } from "../../infrastructure/persistence/user.repository";
-import { hashPassword } from "@/shared/utils/hash";
+import { hashPassword, generateTokenWithMeta } from "@/shared/utils/hash";
 
 import { toSafeUser } from "../mapper/user.mapper";
 
 import auditLogger from "@/shared/security/audit/audit.logger";
-
-import crypto from "crypto";
-import { generateTokenWithMeta } from "@/shared/utils/hash";
+import { ROLES } from "@/shared/constants/roles";
 
 export class RegisterUseCase {
   constructor() {
@@ -18,13 +16,14 @@ export class RegisterUseCase {
   }
 
   async execute(dto, context = {}) {
-    const { ip, userAgent, deviceFingerprint } = context;
+    const { ip, userAgent } = context;
 
     const emailVO = new Email(dto.email);
     const passwordVO = new Password(dto.password);
     const nameVO = new Name(dto.name);
 
     const email = emailVO.value;
+
     const { raw: rawToken, hash: hashedToken } = generateTokenWithMeta();
 
     const existingUser = await this.userRepository.findByEmail(email);
@@ -42,6 +41,12 @@ export class RegisterUseCase {
 
     const passwordHash = await hashPassword(passwordVO.value);
 
+    // const existingAnyUser = await this.userRepository.exists();
+
+    // const roles = !existingAnyUser ? [ROLES.SUPER_ADMIN] : [ROLES.USER];
+
+    const roles = [ROLES.USER];
+
     const userData = {
       email,
       passwordHash,
@@ -52,7 +57,7 @@ export class RegisterUseCase {
         displayName: nameVO.displayName,
       },
 
-      roles: ["USER"],
+      roles,
       isVerified: false,
 
       emailVerificationToken: hashedToken,
@@ -75,6 +80,7 @@ export class RegisterUseCase {
       email,
       ip,
       userAgent,
+      roleAssigned: roles[0],
     });
 
     return {

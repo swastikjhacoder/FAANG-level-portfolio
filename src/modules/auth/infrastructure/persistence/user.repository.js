@@ -69,6 +69,15 @@ export class UserRepository {
     return await UserModel.updateOne({ _id: safeId }, { $set: update });
   }
 
+  async count() {
+    return await UserModel.countDocuments();
+  }
+
+  async exists() {
+    const result = await UserModel.exists({});
+    return !!result;
+  }
+
   async incrementFailedAttempts(userId) {
     const safeId = new mongoose.Types.ObjectId(userId);
 

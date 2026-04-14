@@ -13,8 +13,7 @@ import {
 import { toSafeUser } from "../mapper/user.mapper";
 
 import auditLogger from "@/shared/security/audit/audit.logger";
-import { signAccessToken as generateAccessToken } from "@/shared/utils/jwt";
-import bcrypt from "bcryptjs";
+import { generateAccessToken } from "../../infrastructure/security/token.service";
 
 const DUMMY_HASH =
   "$2b$12$C6UzMDM.H6dfI/f/IKcEeO9r9GqQ8K/ux6j7a8qG9Q5e5e5e5e5eO";

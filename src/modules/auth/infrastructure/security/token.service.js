@@ -18,22 +18,27 @@ if (!REFRESH_TOKEN_SECRET) {
 const generateJTI = () => crypto.randomUUID();
 
 export const generateAccessToken = (payload) => {
-  const tokenPayload = {
-    userId: payload.userId,
-    roles: payload.roles,
-    sessionVersion: payload.sessionVersion,
-  };
-
-  return jwt.sign(tokenPayload, ACCESS_TOKEN_SECRET, {
-    expiresIn: ACCESS_TOKEN_EXPIRY,
-    jwtid: generateJTI(),
-  });
+  console.log("SIGN SECRET:", process.env.ACCESS_TOKEN_SECRET);
+  return jwt.sign(
+    {
+      userId: payload.userId,
+      roles: payload.roles,
+      sessionVersion: payload.sessionVersion,
+    },
+    process.env.ACCESS_TOKEN_SECRET,
+    {
+      expiresIn: ACCESS_TOKEN_EXPIRY,
+      jwtid: generateJTI(),
+    },
+  );
 };
 
 export const verifyAccessToken = (token) => {
+  console.log("VERIFY SECRET:", process.env.ACCESS_TOKEN_SECRET);
   try {
-    return jwt.verify(token, ACCESS_TOKEN_SECRET);
+    return jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
   } catch (err) {
+    console.error("JWT ERROR:", err.message);
     throw new Error("Invalid or expired access token");
   }
 };
