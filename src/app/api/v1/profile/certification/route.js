@@ -55,24 +55,32 @@ const fail = (error) =>
   );
 
 const createHandler = async (req) => {
+  console.log("🚀 CERT CREATE START");
+
   try {
     await connectDB();
+    console.log("✅ DB connected");
 
-    const raw = await safeJson(req);
+    const raw = await req.json();
+    console.log("📥 RAW:", raw);
+
     const sanitized = sanitizeInput(raw);
+    console.log("🧹 SANITIZED:", sanitized);
 
     const validated = addCertificationDTO.parse(sanitized);
+    console.log("✅ VALIDATED:", validated);
+
+    validateObjectId(validated.profileId, "profileId");
+    console.log("✅ profileId valid");
+
+    console.log("👤 USER:", req.user);
 
     const result = await createUC.execute(validated, req.user);
-
-    auditLogger.log({
-      action: "CERTIFICATION_CREATE",
-      userId: req.user.id,
-      resourceId: result._id,
-    });
+    console.log("📦 RESULT:", result);
 
     return ok(result);
   } catch (err) {
+    console.error("🔥 CERT CREATE ERROR:", err);
     return fail(err);
   }
 };
