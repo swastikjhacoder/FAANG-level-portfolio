@@ -73,7 +73,7 @@ export const registerController = async (req) => {
 
     const emailService = new EmailService();
 
-    const verifyUrl = `${process.env.APP_URL}/api/auth/verify-email?token=${result.verificationToken}`;
+    const verifyUrl = `${process.env.APP_URL}/verify-email?token=${result.verificationToken}`;
 
     await emailService.sendVerificationEmail(result.user.email, verifyUrl);
 

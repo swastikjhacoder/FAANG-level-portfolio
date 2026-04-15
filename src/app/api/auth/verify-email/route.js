@@ -3,6 +3,7 @@ import { verifyEmailUseCase } from "@/modules/auth/application/useCases/verifyEm
 import { UserRepository } from "@/modules/auth/infrastructure/persistence/user.repository";
 import { withRateLimit } from "@/shared/security/middleware/rateLimit.middleware";
 import logger from "@/shared/lib/logger";
+import { ValidationError } from "@/shared/errors";
 
 const handler = withRateLimit(
   async (req) => {
@@ -10,6 +11,10 @@ const handler = withRateLimit(
 
     const { searchParams } = new URL(req.url);
     const token = searchParams.get("token");
+
+    if (!token) {
+      throw new ValidationError("Verification token is required");
+    }
 
     const userRepository = new UserRepository();
 

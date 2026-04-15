@@ -3,7 +3,7 @@ import {
   extractJTI,
 } from "../../infrastructure/security/token.service";
 import { RedisService } from "../../infrastructure/cache/redis.service";
-import { UserRepository } from "../../infrastructure/persistence/user.repository";
+import { UserRepository } from "@/modules/auth/infrastructure/persistence/user.repository";
 
 const redis = new RedisService();
 const userRepository = new UserRepository();

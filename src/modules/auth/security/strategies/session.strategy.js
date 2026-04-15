@@ -5,7 +5,7 @@ import {
   extractJTI,
 } from "../../infrastructure/security/token.service";
 import { SessionRepository } from "../../infrastructure/persistence/session.repository";
-import { UserRepository } from "../../infrastructure/persistence/user.repository";
+import { UserRepository } from "@/modules/auth/infrastructure/persistence/user.repository";
 import { RedisService } from "../../infrastructure/cache/redis.service";
 
 const sessionRepository = new SessionRepository();

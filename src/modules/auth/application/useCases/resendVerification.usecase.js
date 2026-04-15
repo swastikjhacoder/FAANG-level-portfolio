@@ -32,7 +32,7 @@ export class ResendVerificationUseCase {
       emailVerificationExpires: Date.now() + 1000 * 60 * 15,
     });
 
-    const verifyUrl = `${process.env.APP_URL}/api/auth/verify-email?token=${rawToken}`;
+    const verifyUrl = `${process.env.APP_URL}/verify-email?token=${rawToken}`;
 
     await this.emailService.sendVerificationEmail(user.email, verifyUrl);
 

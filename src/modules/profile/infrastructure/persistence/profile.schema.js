@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
- import { sanitizeStrings } from "@/shared/utils/mongooseSanitizer";
+import { sanitizeStrings } from "@/shared/utils/mongooseSanitizer";
 
 const profileSchema = new mongoose.Schema(
   {
@@ -11,7 +11,6 @@ const profileSchema = new mongoose.Schema(
     roles: {
       type: [String],
       required: true,
-      index: true,
     },
 
     description: {

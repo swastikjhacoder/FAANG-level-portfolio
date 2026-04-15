@@ -1,7 +1,7 @@
 import { Email } from "../../domain/valueObjects/Email.vo";
 import { Password } from "../../domain/valueObjects/Password.vo";
 
-import { UserRepository } from "../../infrastructure/persistence/user.repository";
+import { UserRepository } from "@/modules/auth/infrastructure/persistence/user.repository";
 import { SessionRepository } from "../../infrastructure/persistence/session.repository";
 
 import {

@@ -1,34 +1,22 @@
-import crypto from "crypto";
+import { ValidationError } from "@/shared/errors";
+import { hashToken } from "@/shared/utils/hash";
 
-/**
- *
- * @param {Object} deps
- * @param {Object} deps.userRepository
- * @param {Object} deps.logger
- *
- * @param {Object} input
- * @param {string} input.token
- *
- * @returns {Promise<{ success: boolean }>}
- */
 export const verifyEmailUseCase = async (
   { userRepository, logger },
   { token },
 ) => {
   try {
-    if (!token) {
-      throw new Error("Token is required");
+    if (!token || typeof token !== "string") {
+      throw new ValidationError("Verification token is required");
     }
 
-    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+    const normalizedToken = token.trim();
+    const hashedToken = hashToken(normalizedToken);
 
-    const user = await userRepository.findOne({
-      emailVerificationToken: hashedToken,
-      emailVerificationExpires: { $gt: Date.now() },
-    });
+    const user = await userRepository.findByVerificationToken(hashedToken);
 
     if (!user) {
-      throw new Error("Invalid or expired verification token");
+      throw new ValidationError("Invalid or expired verification token");
     }
 
     if (user.isVerified) {
@@ -38,13 +26,13 @@ export const verifyEmailUseCase = async (
       };
     }
 
-    user.isVerified = true;
-    user.emailVerificationToken = null;
-    user.emailVerificationExpires = null;
+    await userRepository.updateById(user._id, {
+      isVerified: true,
+      emailVerificationToken: null,
+      emailVerificationExpires: null,
+    });
 
-    await userRepository.save(user);
-
-    logger.info("Email verified", {
+    logger.info("EMAIL_VERIFIED", {
       userId: user._id?.toString(),
       email: user.email,
     });
@@ -54,7 +42,7 @@ export const verifyEmailUseCase = async (
       message: "Email verified successfully",
     };
   } catch (err) {
-    logger.error("Email verification failed", {
+    logger.error("EMAIL_VERIFICATION_FAILED", {
       message: err.message,
       stack: err.stack,
     });

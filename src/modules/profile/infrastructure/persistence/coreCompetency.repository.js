@@ -1,47 +1,99 @@
 import { CompetencyModel } from "./coreCompetency.schema.js";
 
 export class CoreCompetencyRepository {
-  async create(data, userId) {
-    const [doc] = await CompetencyModel.create([
-      {
-        ...data,
-        createdBy: userId,
-        updatedBy: userId,
-      },
-    ]);
-
-    return doc.toObject();
-  }
-
-  async findByProfile(profileId) {
-    return CompetencyModel.find({
-      profileId,
-      isDeleted: false,
-    })
-      .sort({ createdAt: -1 })
-      .lean();
-  }
-
-  async update(id, data, userId) {
+  async upsert(profileId, data, userId) {
     return CompetencyModel.findOneAndUpdate(
-      { _id: id, isDeleted: false },
+      { profileId, isDeleted: false },
       {
-        ...data,
-        updatedBy: userId,
-        updatedAt: new Date(),
+        $set: {
+          heading: data.heading,
+          subHeading: data.subHeading,
+          description: data.description,
+          updatedBy: userId,
+        },
+        $setOnInsert: {
+          profileId,
+          createdBy: userId,
+        },
       },
-      { new: true, runValidators: true },
+      {
+        returnDocument: "after",
+        upsert: true,
+        runValidators: true,
+      },
     ).lean();
   }
 
-  async softDelete(id) {
+  async findByProfile(profileId) {
+    return CompetencyModel.findOne({
+      profileId,
+      isDeleted: false,
+    }).lean();
+  }
+
+  async addItem(profileId, item, userId, version) {
     return CompetencyModel.findOneAndUpdate(
-      { _id: id, isDeleted: false },
+      { profileId, version, isDeleted: false },
+      {
+        $push: { data: item },
+        $inc: { version: 1 },
+        $set: { updatedBy: userId },
+      },
+      {
+        returnDocument: "after",
+      },
+    ).lean();
+  }
+
+  async updateItem(profileId, itemId, item, userId, version) {
+    return CompetencyModel.findOneAndUpdate(
+      {
+        profileId,
+        version,
+        isDeleted: false,
+        "data._id": itemId,
+      },
+      {
+        $set: {
+          "data.$.title": item.title,
+          "data.$.description": item.description,
+          "data.$.updatedAt": new Date(),
+          updatedBy: userId,
+        },
+        $inc: { version: 1 },
+      },
+      {
+        returnDocument: "after",
+      },
+    ).lean();
+  }
+
+  async updateSection(profileId, data, userId) {
+    return CompetencyModel.findOneAndUpdate(
+      { profileId, isDeleted: false },
+      {
+        $set: {
+          ...data,
+          updatedBy: userId,
+        },
+      },
+      {
+        returnDocument: "after",
+        runValidators: true,
+      },
+    ).lean();
+  }
+
+  async softDelete(profileId) {
+    return CompetencyModel.findOneAndUpdate(
+      { profileId, isDeleted: false },
       {
         isDeleted: true,
         deletedAt: new Date(),
       },
-      { new: true },
+      {
+        returnDocument: "after",
+      },
     ).lean();
   }
 }

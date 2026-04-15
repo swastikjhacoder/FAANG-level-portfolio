@@ -2,7 +2,7 @@ import { Email } from "../../domain/valueObjects/Email.vo";
 import { Password } from "../../domain/valueObjects/Password.vo";
 import { Name } from "../../domain/valueObjects/Name.vo";
 
-import { UserRepository } from "../../infrastructure/persistence/user.repository";
+import { UserRepository } from "@/modules/auth/infrastructure/persistence/user.repository";
 import { hashPassword, generateTokenWithMeta } from "@/shared/utils/hash";
 
 import { toSafeUser } from "../mapper/user.mapper";
@@ -41,11 +41,11 @@ export class RegisterUseCase {
 
     const passwordHash = await hashPassword(passwordVO.value);
 
-    // const existingAnyUser = await this.userRepository.exists();
+    const existingAnyUser = await this.userRepository.exists();
 
-    // const roles = !existingAnyUser ? [ROLES.SUPER_ADMIN] : [ROLES.USER];
+    const roles = !existingAnyUser ? [ROLES.SUPER_ADMIN] : [ROLES.USER];
 
-    const roles = [ROLES.USER];
+    // const roles = [ROLES.USER];
 
     const userData = {
       email,

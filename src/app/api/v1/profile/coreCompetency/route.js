@@ -3,28 +3,26 @@ import connectDB from "@/shared/lib/db";
 import { withRateLimit } from "@/shared/security/middleware/rateLimit.middleware";
 import { withCsrf } from "@/shared/security/middleware/csrf.middleware";
 
-import { sanitizeInput } from "@/shared/security/sanitizers/input.sanitizer";
-
-import { AddCoreCompetencyUseCase } from "@/modules/profile/application/useCases/addCoreCompetency.usecase";
-import { UpdateCoreCompetencyUseCase } from "@/modules/profile/application/useCases/updateCoreCompetency.usecase";
+import { UpsertCoreCompetencySectionUseCase } from "@/modules/profile/application/useCases/upsertCoreCompetencySection.usecase";
+import { AddCoreCompetencyItemUseCase } from "@/modules/profile/application/useCases/addCoreCompetency.usecase";
 import { DeleteCoreCompetencyUseCase } from "@/modules/profile/application/useCases/deleteCoreCompetency.usecase";
 
 import { CoreCompetencyRepository } from "@/modules/profile/infrastructure/persistence/coreCompetency.repository";
+import { ProfileRepository } from "@/modules/profile/infrastructure/persistence/profile.repository";
 
 import { authGuard } from "@/modules/auth/security/guards/auth.guard";
 import { roleGuard } from "@/modules/auth/security/guards/role.guard";
 
 import { ROLES } from "@/shared/constants/roles";
 
-import { validateObjectId } from "@/shared/utils/validateObjectId";
 import { ValidationError } from "@/shared/errors";
 import auditLogger from "@/shared/security/audit/audit.logger";
-import { addCoreCompetencyDTO } from "@/modules/profile/application/dto/addCoreCompetency.dto";
 
 const repo = new CoreCompetencyRepository();
+const profileRepo = new ProfileRepository();
 
-const createUC = new AddCoreCompetencyUseCase(repo);
-const updateUC = new UpdateCoreCompetencyUseCase(repo);
+const sectionUC = new UpsertCoreCompetencySectionUseCase(repo, profileRepo);
+const itemUC = new AddCoreCompetencyItemUseCase(repo, profileRepo, null);
 const deleteUC = new DeleteCoreCompetencyUseCase(repo);
 
 const DEV = process.env.NODE_ENV === "development";
@@ -41,45 +39,44 @@ const safeJson = async (req) => {
 const ok = (data) => Response.json({ success: true, data });
 
 const fail = (error) => {
-  console.error("🔥 FULL ERROR:", error);
+  console.error("🔥 CORE ERROR:", error);
 
   return Response.json(
     {
       success: false,
-      message:
-        error?.code === "BAD_USER_INPUT"
-          ? error.message
-          : "Internal Server Error",
-      code: error.code || "INTERNAL_ERROR",
+      message: error.message,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     },
     { status: error.status || 500 },
   );
 };
 
+// ✅ POST → Create/Update Section
 const createHandler = async (req) => {
-  console.log("🚀 CORE CREATE START");
-
   try {
     await connectDB();
-    console.log("✅ DB connected");
 
-    const raw = await req.json();
-    console.log("📥 RAW:", raw);
+    const raw = await safeJson(req);
 
-    const sanitized = sanitizeInput(raw);
-    console.log("🧹 SANITIZED:", sanitized);
-
-    const validated = addCoreCompetencyDTO.parse(sanitized);
-    console.log("✅ VALIDATED:", validated);
-
-    validateObjectId(validated.profileId, "profileId");
-
-    const result = await createUC.execute(validated, req.user);
-    console.log("📦 RESULT:", result);
+    const result = await sectionUC.execute(raw, req.user);
 
     return ok(result);
   } catch (err) {
-    console.error("🔥 CORE CREATE ERROR:", err); // 👈 IMPORTANT
+    return fail(err);
+  }
+};
+
+// ✅ PATCH → Add Item
+const updateHandler = async (req) => {
+  try {
+    await connectDB();
+
+    const raw = await safeJson(req);
+
+    const result = await itemUC.execute(raw, req.user);
+
+    return ok(result);
+  } catch (err) {
     return fail(err);
   }
 };
@@ -91,37 +88,9 @@ const getHandler = async (req) => {
     const { searchParams } = new URL(req.url);
     const profileId = searchParams.get("profileId");
 
-    validateObjectId(profileId, "profileId");
-
     const data = await repo.findByProfile(profileId);
 
     return ok(data);
-  } catch (err) {
-    return fail(err);
-  }
-};
-
-const updateHandler = async (req) => {
-  try {
-    await connectDB();
-
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get("coreCompetencyId");
-
-    validateObjectId(id, "coreCompetencyId");
-
-    const raw = await safeJson(req);
-    const sanitized = sanitizeInput(raw);
-
-    const result = await updateUC.execute(id, sanitized, req.user);
-
-    auditLogger.log({
-      action: "COMPETENCY_UPDATE",
-      userId: req.user.id,
-      resourceId: id,
-    });
-
-    return ok(result);
   } catch (err) {
     return fail(err);
   }
@@ -132,16 +101,14 @@ const deleteHandler = async (req) => {
     await connectDB();
 
     const { searchParams } = new URL(req.url);
-    const id = searchParams.get("coreCompetencyId");
+    const profileId = searchParams.get("profileId");
 
-    validateObjectId(id, "coreCompetencyId");
+    await deleteUC.execute(profileId);
 
-    await deleteUC.execute(id);
-
-    auditLogger.log({
-      action: "COMPETENCY_DELETE",
-      userId: req.user.id,
-      resourceId: id,
+    auditLogger.info("COMPETENCY_SECTION_DELETED", {
+      actor: { userId: req.user.id, roles: req.user.roles },
+      resource: { type: "CoreCompetency", profileId },
+      meta: { requestId: req.user.requestId },
     });
 
     return ok({ success: true });
@@ -174,12 +141,12 @@ export async function POST(req) {
   return create(req);
 }
 
-export async function GET(req) {
-  return get(req);
-}
-
 export async function PATCH(req) {
   return update(req);
+}
+
+export async function GET(req) {
+  return get(req);
 }
 
 export async function DELETE(req) {

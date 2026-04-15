@@ -42,7 +42,7 @@ const safeJson = async (req) => {
 const ok = (data) => Response.json({ success: true, data });
 
 const fail = (error) => {
-  console.error("🔥 EXPERIENCE CREATE ERROR:", error); // 👈 add
+  console.error("🔥 EXPERIENCE CREATE ERROR:", error);
 
   return Response.json(
     {

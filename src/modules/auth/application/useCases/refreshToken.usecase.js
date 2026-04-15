@@ -2,7 +2,7 @@ import { hashToken, generateTokenWithMeta } from "@/shared/utils/hash";
 import { signAccessToken as generateAccessToken } from "@/shared/utils/jwt";
 
 import { SessionRepository } from "../../infrastructure/persistence/session.repository";
-import { UserRepository } from "../../infrastructure/persistence/user.repository";
+import { UserRepository } from "@/modules/auth/infrastructure/persistence/user.repository";
 
 import auditLogger from "@/shared/security/audit/audit.logger";
 import crypto from "crypto";

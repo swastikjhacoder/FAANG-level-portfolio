@@ -1,7 +1,7 @@
-import { UserRepository } from "../../infrastructure/persistence/user.repository";
 import { hashPassword } from "@/shared/utils/hash";
 import { User } from "../../domain/entities/User.entity";
 import { ROLES, isValidRole } from "@/shared/constants/roles";
+import { UserRepository } from "@/modules/user/infrastructure/user.repository";
 
 export class CreateUserUseCase {
   constructor() {

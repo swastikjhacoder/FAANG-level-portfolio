@@ -12,38 +12,52 @@ export class UserRepository {
       ? "+passwordHash email roles name isLocked isVerified failedLoginAttempts sessionVersion"
       : "email roles name isLocked isVerified failedLoginAttempts sessionVersion";
 
-    return await UserModel.findOne(safeQuery).select(projection).lean();
+    return UserModel.findOne(safeQuery).select(projection).lean();
+  }
+
+  async findById(userId, { includeSensitive = false } = {}) {
+    const safeId = new mongoose.Types.ObjectId(userId);
+
+    let query = UserModel.findById(safeId);
+
+    if (includeSensitive) {
+      query = query.select("+passwordHash +mfaSecret");
+    }
+
+    return query.lean();
   }
 
   async findOne(filter) {
     const safeQuery = sanitizeMongoQuery(filter);
+    return UserModel.findOne(safeQuery).lean();
+  }
 
-    return await UserModel.findOne(safeQuery).lean();
+  async findByVerificationToken(tokenHash) {
+    const safeQuery = sanitizeMongoQuery({
+      emailVerificationToken: tokenHash,
+      emailVerificationExpires: { $gt: new Date() },
+    });
+
+    return UserModel.findOne(safeQuery).lean();
   }
 
   async create(userData) {
     const safeData = {
       email: userData.email,
       passwordHash: userData.passwordHash,
-
       name: {
         firstName: userData.name.firstName,
         lastName: userData.name.lastName,
         displayName: userData.name.displayName,
       },
-
       roles: userData.roles || ["USER"],
       isVerified: false,
-
       emailVerificationToken: userData.emailVerificationToken,
       emailVerificationExpires: userData.emailVerificationExpires,
-
       failedLoginAttempts: 0,
       isLocked: false,
-
       mfaEnabled: false,
       sessionVersion: 0,
-
       createdByIp: userData.createdByIp,
       lastLoginIp: userData.lastLoginIp,
     };
@@ -59,18 +73,15 @@ export class UserRepository {
     }
   }
 
-  async save(user) {
-    return await user.save();
-  }
-
   async updateById(userId, update) {
     const safeId = new mongoose.Types.ObjectId(userId);
+    const safeUpdate = sanitizeMongoQuery(update);
 
-    return await UserModel.updateOne({ _id: safeId }, { $set: update });
+    return UserModel.updateOne({ _id: safeId }, { $set: safeUpdate });
   }
 
   async count() {
-    return await UserModel.countDocuments();
+    return UserModel.countDocuments();
   }
 
   async exists() {
@@ -78,23 +89,29 @@ export class UserRepository {
     return !!result;
   }
 
+  async existsByEmail(email) {
+    const safeQuery = sanitizeMongoQuery({
+      email: email.trim().toLowerCase(),
+    });
+
+    const result = await UserModel.exists(safeQuery);
+    return !!result;
+  }
+
   async incrementFailedAttempts(userId) {
     const safeId = new mongoose.Types.ObjectId(userId);
 
-    return await UserModel.findByIdAndUpdate(
+    return UserModel.findByIdAndUpdate(
       safeId,
       { $inc: { failedLoginAttempts: 1 } },
-      {
-        new: true,
-        projection: { failedLoginAttempts: 1 },
-      },
+      { new: true, projection: { failedLoginAttempts: 1 } },
     ).lean();
   }
 
   async resetFailedAttempts(userId) {
     const safeId = new mongoose.Types.ObjectId(userId);
 
-    return await UserModel.updateOne(
+    return UserModel.updateOne(
       { _id: safeId },
       { $set: { failedLoginAttempts: 0 } },
     );
@@ -103,20 +120,62 @@ export class UserRepository {
   async lockAccount(userId) {
     const safeId = new mongoose.Types.ObjectId(userId);
 
-    return await UserModel.updateOne(
+    return UserModel.updateOne({ _id: safeId }, { $set: { isLocked: true } });
+  }
+
+  async unlockAccount(userId) {
+    const safeId = new mongoose.Types.ObjectId(userId);
+
+    return UserModel.updateOne(
       { _id: safeId },
-      { $set: { isLocked: true } },
+      {
+        $set: {
+          isLocked: false,
+          failedLoginAttempts: 0,
+        },
+      },
     );
   }
 
-  async updateLoginMetadata(userId, data) {
+  async updateLoginMetadata(userId, { lastLoginAt, lastLoginIp }) {
     const safeId = new mongoose.Types.ObjectId(userId);
 
-    const safeUpdate = {
-      lastLoginAt: data.lastLoginAt,
-      lastLoginIp: data.lastLoginIp,
-    };
+    return UserModel.updateOne(
+      { _id: safeId },
+      {
+        $set: {
+          lastLoginAt,
+          lastLoginIp,
+        },
+      },
+    );
+  }
 
-    return await UserModel.updateOne({ _id: safeId }, { $set: safeUpdate });
+  async incrementSessionVersion(userId) {
+    const safeId = new mongoose.Types.ObjectId(userId);
+
+    return UserModel.updateOne(
+      { _id: safeId },
+      { $inc: { sessionVersion: 1 } },
+    );
+  }
+
+  async updatePassword(userId, passwordHash) {
+    const safeId = new mongoose.Types.ObjectId(userId);
+
+    return UserModel.updateOne(
+      { _id: safeId },
+      {
+        $set: {
+          passwordHash,
+          passwordChangedAt: new Date(),
+        },
+      },
+    );
+  }
+
+  async delete(userId) {
+    const safeId = new mongoose.Types.ObjectId(userId);
+    return UserModel.deleteOne({ _id: safeId });
   }
 }
