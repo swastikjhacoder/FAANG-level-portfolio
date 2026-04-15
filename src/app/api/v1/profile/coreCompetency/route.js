@@ -19,6 +19,7 @@ import { ROLES } from "@/shared/constants/roles";
 import { validateObjectId } from "@/shared/utils/validateObjectId";
 import { ValidationError } from "@/shared/errors";
 import auditLogger from "@/shared/security/audit/audit.logger";
+import { addCoreCompetencyDTO } from "@/modules/profile/application/dto/addCoreCompetency.dto";
 
 const repo = new CoreCompetencyRepository();
 
@@ -39,8 +40,10 @@ const safeJson = async (req) => {
 
 const ok = (data) => Response.json({ success: true, data });
 
-const fail = (error) =>
-  Response.json(
+const fail = (error) => {
+  console.error("🔥 FULL ERROR:", error);
+
+  return Response.json(
     {
       success: false,
       message:
@@ -51,24 +54,32 @@ const fail = (error) =>
     },
     { status: error.status || 500 },
   );
+};
 
 const createHandler = async (req) => {
+  console.log("🚀 CORE CREATE START");
+
   try {
     await connectDB();
+    console.log("✅ DB connected");
 
-    const raw = await safeJson(req);
+    const raw = await req.json();
+    console.log("📥 RAW:", raw);
+
     const sanitized = sanitizeInput(raw);
+    console.log("🧹 SANITIZED:", sanitized);
 
-    const result = await createUC.execute(sanitized, req.user);
+    const validated = addCoreCompetencyDTO.parse(sanitized);
+    console.log("✅ VALIDATED:", validated);
 
-    auditLogger.log({
-      action: "COMPETENCY_CREATE",
-      userId: req.user.id,
-      resourceId: result._id,
-    });
+    validateObjectId(validated.profileId, "profileId");
+
+    const result = await createUC.execute(validated, req.user);
+    console.log("📦 RESULT:", result);
 
     return ok(result);
   } catch (err) {
+    console.error("🔥 CORE CREATE ERROR:", err); // 👈 IMPORTANT
     return fail(err);
   }
 };
@@ -95,9 +106,9 @@ const updateHandler = async (req) => {
     await connectDB();
 
     const { searchParams } = new URL(req.url);
-    const id = searchParams.get("competencyId");
+    const id = searchParams.get("coreCompetencyId");
 
-    validateObjectId(id, "competencyId");
+    validateObjectId(id, "coreCompetencyId");
 
     const raw = await safeJson(req);
     const sanitized = sanitizeInput(raw);
@@ -121,9 +132,9 @@ const deleteHandler = async (req) => {
     await connectDB();
 
     const { searchParams } = new URL(req.url);
-    const id = searchParams.get("competencyId");
+    const id = searchParams.get("coreCompetencyId");
 
-    validateObjectId(id, "competencyId");
+    validateObjectId(id, "coreCompetencyId");
 
     await deleteUC.execute(id);
 
