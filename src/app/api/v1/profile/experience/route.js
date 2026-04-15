@@ -41,18 +41,21 @@ const safeJson = async (req) => {
 
 const ok = (data) => Response.json({ success: true, data });
 
-const fail = (error) =>
-  Response.json(
+const fail = (error) => {
+  console.error("🔥 EXPERIENCE CREATE ERROR:", error); // 👈 add
+
+  return Response.json(
     {
       success: false,
       message:
         error?.code === "BAD_USER_INPUT"
           ? error.message
-          : "Internal Server Error",
+          : error?.message || "Internal Server Error",
       code: error.code || "INTERNAL_ERROR",
     },
     { status: error.status || 500 },
   );
+};
 
 const createHandler = async (req) => {
   try {
