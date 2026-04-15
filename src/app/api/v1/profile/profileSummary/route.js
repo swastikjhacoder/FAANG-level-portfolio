@@ -39,18 +39,21 @@ const safeJson = async (req) => {
 
 const ok = (data) => Response.json({ success: true, data });
 
-const fail = (error) =>
-  Response.json(
+const fail = (error) => {
+  console.error("🔥 PROFILE SUMMARY UPDATE ERROR:", error);
+
+  return Response.json(
     {
       success: false,
       message:
         error?.code === "BAD_USER_INPUT"
           ? error.message
-          : "Internal Server Error",
+          : error?.message || "Internal Server Error",
       code: error.code || "INTERNAL_ERROR",
     },
     { status: error.status || 500 },
   );
+};
 
 const createHandler = async (req) => {
   try {
@@ -95,9 +98,9 @@ const updateHandler = async (req) => {
     await connectDB();
 
     const { searchParams } = new URL(req.url);
-    const id = searchParams.get("summaryId");
+    const id = searchParams.get("profileSummaryId");
 
-    validateObjectId(id, "summaryId");
+    validateObjectId(id, "profileSummaryId");
 
     const raw = await safeJson(req);
     const sanitized = sanitizeInput(raw);
@@ -121,9 +124,9 @@ const deleteHandler = async (req) => {
     await connectDB();
 
     const { searchParams } = new URL(req.url);
-    const id = searchParams.get("summaryId");
+    const id = searchParams.get("profileSummaryId");
 
-    validateObjectId(id, "summaryId");
+    validateObjectId(id, "profileSummaryId");
 
     await deleteUC.execute(id);
 
