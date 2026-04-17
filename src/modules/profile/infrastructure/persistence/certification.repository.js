@@ -1,10 +1,11 @@
-import { CertificationModel } from "./certification.schema.js";
+import { CertificationModel } from "./certification.schema";
 
 export class CertificationRepository {
   async create(data, userId) {
     const [doc] = await CertificationModel.create([
       {
-        ...data,
+        profileId: data.profileId,
+        content: data.content,
         createdBy: userId,
         updatedBy: userId,
       },
@@ -18,17 +19,33 @@ export class CertificationRepository {
       profileId,
       isDeleted: false,
     })
-      .sort({ startDate: -1 })
+      .sort({ "content.issueDate": -1 })
       .lean();
   }
 
+  async findById(id) {
+    return CertificationModel.findById(id).lean();
+  }
+
   async update(id, data, userId) {
+    const updateFields = {};
+
+    if (data.content) {
+      for (const key in data.content) {
+        if (data.content[key] !== undefined) {
+          updateFields[`content.${key}`] = data.content[key];
+        }
+      }
+    }
+
     return CertificationModel.findOneAndUpdate(
       { _id: id, isDeleted: false },
       {
-        ...data,
-        updatedBy: userId,
-        updatedAt: new Date(),
+        $set: {
+          ...updateFields,
+          updatedBy: userId,
+          updatedAt: new Date(),
+        },
       },
       { new: true, runValidators: true },
     ).lean();

@@ -22,22 +22,24 @@ import { validateObjectId } from "@/shared/utils/validateObjectId";
 import { ValidationError } from "@/shared/errors";
 import auditLogger from "@/shared/security/audit/audit.logger";
 
+import { CertificationSectionRepository } from "@/modules/profile/infrastructure/persistence/certificationSection.repository";
+import { UpsertCertificationSectionUseCase } from "@/modules/profile/application/useCases/upsertCertificationSection.usecase";
+
+import { updateCertificationDTO } from "@/modules/profile/application/dto/updateCertification.dto";
+import { certificationSectionDTO } from "@/modules/profile/application/dto/certificationSection.dto";
+
+import { cloudinaryService } from "@/modules/profile/infrastructure/services/cloudinary.service";
+
 const repo = new CertificationRepository();
 
 const createUC = new AddCertificationUseCase(repo);
 const updateUC = new UpdateCertificationUseCase(repo);
 const deleteUC = new DeleteCertificationUseCase(repo);
+const sectionRepo = new CertificationSectionRepository();
+const sectionUC = new UpsertCertificationSectionUseCase(sectionRepo);
 
 const DEV = process.env.NODE_ENV === "development";
 const ADMIN = [ROLES.ADMIN, ROLES.SUPER_ADMIN];
-
-const safeJson = async (req) => {
-  try {
-    return await req.json();
-  } catch {
-    throw new ValidationError("Invalid JSON body");
-  }
-};
 
 const ok = (data) => Response.json({ success: true, data });
 
@@ -54,33 +56,100 @@ const fail = (error) =>
     { status: error.status || 500 },
   );
 
-const createHandler = async (req) => {
-  console.log("🚀 CERT CREATE START");
-
+const sectionHandler = async (req) => {
   try {
     await connectDB();
-    console.log("✅ DB connected");
 
     const raw = await req.json();
-    console.log("📥 RAW:", raw);
+
+    if ("content" in raw) {
+      throw new ValidationError("Content not allowed in section update");
+    }
 
     const sanitized = sanitizeInput(raw);
-    console.log("🧹 SANITIZED:", sanitized);
+    const validated = certificationSectionDTO.parse(sanitized);
 
-    const validated = addCertificationDTO.parse(sanitized);
-    console.log("✅ VALIDATED:", validated);
+    const result = await sectionUC.execute(validated, req.user);
 
-    validateObjectId(validated.profileId, "profileId");
-    console.log("✅ profileId valid");
-
-    console.log("👤 USER:", req.user);
-
-    const result = await createUC.execute(validated, req.user);
-    console.log("📦 RESULT:", result);
+    auditLogger.log({
+      action: "CERTIFICATION_SECTION_UPDATE",
+      userId: req.user.id,
+      resourceId: "certification",
+    });
 
     return ok(result);
   } catch (err) {
-    console.error("🔥 CERT CREATE ERROR:", err);
+    return fail(err);
+  }
+};
+
+const createHandler = async (req) => {
+  try {
+    await connectDB();
+
+    const formData = await req.formData();
+
+    const file = formData.get("file");
+    const rawData = formData.get("data");
+
+    if (!rawData) {
+      throw new ValidationError("Missing data payload");
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(rawData);
+    } catch {
+      throw new ValidationError("Invalid JSON in data field");
+    }
+
+    if ("heading" in parsed) {
+      throw new ValidationError("Invalid field for this operation");
+    }
+
+    const sanitized = sanitizeInput(parsed);
+    const validated = addCertificationDTO.parse(sanitized);
+
+    validateObjectId(validated.profileId, "profileId");
+
+    let certificateData = {};
+
+    if (file && typeof file === "object") {
+      const uploaded = await cloudinaryService.upload(
+        {
+          buffer: Buffer.from(await file.arrayBuffer()),
+          size: file.size,
+          mimetype: file.type,
+          originalname: file.name,
+        },
+        "certifications",
+      );
+
+      certificateData = {
+        certificateDownloadUrl: uploaded.url,
+        certificatePublicId: uploaded.publicId,
+      };
+    }
+
+    const result = await createUC.execute(
+      {
+        profileId: validated.profileId,
+        content: {
+          ...validated.content,
+          ...certificateData,
+        },
+      },
+      req.user,
+    );
+
+    auditLogger.log({
+      action: "CERTIFICATION_CREATE",
+      userId: req.user.id,
+      resourceId: result._id,
+    });
+
+    return ok(result);
+  } catch (err) {
     return fail(err);
   }
 };
@@ -94,9 +163,15 @@ const getHandler = async (req) => {
 
     validateObjectId(profileId, "profileId");
 
-    const data = await repo.findByProfile(profileId);
+    const [section, items] = await Promise.all([
+      sectionRepo.get(),
+      repo.findByProfile(profileId),
+    ]);
 
-    return ok(data);
+    return ok({
+      section,
+      certifications: items,
+    });
   } catch (err) {
     return fail(err);
   }
@@ -111,15 +186,66 @@ const updateHandler = async (req) => {
 
     validateObjectId(id, "certificationId");
 
-    const raw = await safeJson(req);
-    const sanitized = sanitizeInput(raw);
+    const formData = await req.formData();
 
-    const result = await updateUC.execute(id, sanitized, req.user);
+    const file = formData.get("file");
+    const rawData = formData.get("data");
+
+    if (!rawData) {
+      throw new ValidationError("Missing data payload");
+    }
+
+    let parsed;
+    try {
+      parsed = JSON.parse(rawData);
+    } catch {
+      throw new ValidationError("Invalid JSON in data field");
+    }
+
+    if ("heading" in parsed) {
+      throw new ValidationError("Invalid field for this operation");
+    }
+
+    const sanitized = sanitizeInput(parsed);
+    const validated = updateCertificationDTO.parse(sanitized);
+
+    let certificateData = {};
+
+    if (file && typeof file === "object") {
+      const existing = await repo.findById(id);
+
+      const uploaded = await cloudinaryService.replace(
+        existing?.content?.certificatePublicId,
+        {
+          buffer: Buffer.from(await file.arrayBuffer()),
+          size: file.size,
+          mimetype: file.type,
+          originalname: file.name,
+        },
+        "certifications",
+      );
+
+      certificateData = {
+        certificateDownloadUrl: uploaded.url,
+        certificatePublicId: uploaded.publicId,
+      };
+    }
+
+    const result = await updateUC.execute(
+      id,
+      {
+        content: {
+          ...validated.content,
+          ...certificateData,
+        },
+      },
+      req.user,
+    );
 
     auditLogger.log({
       action: "CERTIFICATION_UPDATE",
       userId: req.user.id,
-      resourceId: id,
+      resourceId: result._id,
     });
 
     return ok(result);
@@ -136,6 +262,15 @@ const deleteHandler = async (req) => {
     const id = searchParams.get("certificationId");
 
     validateObjectId(id, "certificationId");
+
+    const existing = await repo.findById(id);
+
+    if (existing?.content?.certificatePublicId) {
+      await cloudinaryService.delete(
+        existing.content.certificatePublicId,
+        "raw",
+      );
+    }
 
     await deleteUC.execute(id);
 
@@ -175,12 +310,17 @@ export async function POST(req) {
   return create(req);
 }
 
-export async function GET(req) {
-  return get(req);
+export async function PUT(req) {
+  console.log("🔥 HIT PUT ROUTE");
+  return sectionHandler(req);
 }
 
 export async function PATCH(req) {
   return update(req);
+}
+
+export async function GET(req) {
+  return get(req);
 }
 
 export async function DELETE(req) {

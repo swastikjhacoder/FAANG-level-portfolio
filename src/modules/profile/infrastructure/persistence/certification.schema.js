@@ -9,11 +9,21 @@ const certificationSchema = new mongoose.Schema(
       index: true,
     },
 
-    organization: { type: String, required: true, trim: true },
-    certificationName: { type: String, required: true, trim: true },
+    content: {
+      certificationName: { type: String, required: true, trim: true },
+      organization: { type: String, required: true, trim: true },
 
-    startDate: Date,
-    endDate: Date,
+      issueDate: Date,
+      expiryDate: Date,
+
+      credentialId: String,
+      credentialUrl: String,
+
+      certificateDownloadUrl: String,
+      certificatePublicId: String,
+
+      description: String,
+    },
 
     isDeleted: { type: Boolean, default: false, index: true },
     deletedAt: Date,
@@ -24,7 +34,11 @@ const certificationSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-certificationSchema.index({ profileId: 1, organization: 1 });
+certificationSchema.index({
+  profileId: 1,
+  isDeleted: 1,
+  "content.issueDate": -1,
+});
 
 export const CertificationModel =
   mongoose.models.Certification ||
