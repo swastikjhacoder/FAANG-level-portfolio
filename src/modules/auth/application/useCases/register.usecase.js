@@ -9,6 +9,7 @@ import { toSafeUser } from "../mapper/user.mapper";
 
 import auditLogger from "@/shared/security/audit/audit.logger";
 import { ROLES } from "@/shared/constants/roles";
+import { cloudinaryService } from "@/modules/profile/infrastructure/services/cloudinary.service";
 
 export class RegisterUseCase {
   constructor() {
@@ -16,7 +17,7 @@ export class RegisterUseCase {
   }
 
   async execute(dto, context = {}) {
-    const { ip, userAgent } = context;
+    const { ip, userAgent, file } = context;
 
     const emailVO = new Email(dto.email);
     const passwordVO = new Password(dto.password);
@@ -37,6 +38,12 @@ export class RegisterUseCase {
       });
 
       throw new Error("User already exists");
+    }
+
+    let uploadedImage = null;
+
+    if (file) {
+      uploadedImage = await cloudinaryService.upload(file, "users");
     }
 
     const passwordHash = await hashPassword(passwordVO.value);
@@ -61,7 +68,7 @@ export class RegisterUseCase {
       isVerified: false,
 
       emailVerificationToken: hashedToken,
-      emailVerificationExpires: Date.now() + 1000 * 60 * 15,
+      emailVerificationExpires: new Date(Date.now() + 1000 * 60 * 15),
 
       failedLoginAttempts: 0,
       isLocked: false,
@@ -71,6 +78,14 @@ export class RegisterUseCase {
       createdByIp: ip,
       lastLoginIp: ip,
     };
+
+    if (uploadedImage) {
+      userData.userImage = {
+        url: uploadedImage.url,
+        publicId: uploadedImage.publicId,
+        resourceType: uploadedImage.resourceType,
+      };
+    }
 
     const createdUser = await this.userRepository.create(userData);
 

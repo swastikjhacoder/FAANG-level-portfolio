@@ -52,13 +52,9 @@ const handler = withRateLimit(
 
     const validatedBody = validateSchema(loginSchema, sanitizedBody);
 
-    const newReq = new Request(req.url, {
-      method: req.method,
-      headers: req.headers,
-      body: JSON.stringify(validatedBody),
+    return await loginController(req, {
+      body: validatedBody,
     });
-
-    return await loginController(newReq);
   }),
   { limit: 5, window: 60, prefix: "login" },
 );

@@ -8,6 +8,7 @@ const UserSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       index: true,
+      match: [/^\S+@\S+\.\S+$/, "Invalid email"],
     },
 
     passwordHash: {
@@ -32,6 +33,15 @@ const UserSchema = new mongoose.Schema(
         trim: true,
         index: true,
       },
+    },
+
+    userImage: {
+      type: {
+        url: String,
+        publicId: String,
+        resourceType: String,
+      },
+      default: null,
     },
 
     roles: {
@@ -98,6 +108,17 @@ const UserSchema = new mongoose.Schema(
 
 UserSchema.index({ sessionVersion: 1 });
 UserSchema.index({ createdAt: -1 });
+UserSchema.index(
+  {
+    emailVerificationToken: 1,
+    emailVerificationExpires: 1,
+  },
+  {
+    partialFilterExpression: {
+      emailVerificationToken: { $ne: null },
+    },
+  },
+);
 
 UserSchema.set("toJSON", {
   transform: (_, ret) => {

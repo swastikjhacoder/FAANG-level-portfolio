@@ -46,19 +46,73 @@ export async function OPTIONS(req) {
 const handler = withRateLimit(
   withCsrf(async (req) => {
     await connectDB();
-    const rawBody = await req.json();
 
-    const sanitizedBody = sanitizeInput(rawBody);
+    const contentType = req.headers.get("content-type") || "";
 
-    const validatedBody = validateSchema(registerSchema, sanitizedBody);
+    let validatedBody;
+    let file = null;
 
-    const newReq = new Request(req.url, {
-      method: req.method,
-      headers: req.headers,
-      body: JSON.stringify(validatedBody),
+    const clonedReq = req.clone();
+
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await clonedReq.formData();
+
+      const body = {};
+      for (const [key, value] of formData.entries()) {
+        if (key !== "file") {
+          body[key] = value;
+        }
+      }
+
+      const uploadedFile = formData.get("file");
+
+      if (
+        uploadedFile &&
+        uploadedFile.size > 0 &&
+        uploadedFile.name &&
+        uploadedFile.type
+      ) {
+        const buffer = Buffer.from(await uploadedFile.arrayBuffer());
+
+        file = {
+          buffer,
+          size: uploadedFile.size,
+          mimetype: uploadedFile.type,
+          originalname: uploadedFile.name,
+        };
+      }
+
+      const sanitizedBody = sanitizeInput(body);
+
+      const normalizedBody = {
+        ...sanitizedBody,
+        name: {
+          firstName: sanitizedBody.firstName || sanitizedBody.name?.firstName,
+          lastName: sanitizedBody.lastName || sanitizedBody.name?.lastName,
+        },
+      };
+
+      validatedBody = validateSchema(registerSchema, normalizedBody);
+    } else {
+      const rawBody = await clonedReq.json();
+
+      const sanitizedBody = sanitizeInput(rawBody);
+
+      const normalizedBody = {
+        ...sanitizedBody,
+        name: {
+          firstName: sanitizedBody.firstName || sanitizedBody.name?.firstName,
+          lastName: sanitizedBody.lastName || sanitizedBody.name?.lastName,
+        },
+      };
+
+      validatedBody = validateSchema(registerSchema, normalizedBody);
+    }
+
+    return await registerController(req, {
+      body: validatedBody,
+      file,
     });
-
-    return await registerController(newReq);
   }),
   { limit: 5, window: 60, prefix: "register" },
 );

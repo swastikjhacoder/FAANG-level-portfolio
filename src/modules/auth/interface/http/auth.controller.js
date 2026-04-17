@@ -7,22 +7,33 @@ import { RefreshTokenUseCase } from "../../application/useCases/refreshToken.use
 
 import { extractRequestMeta } from "@/shared/utils/requestMeta";
 import { EmailService } from "@/modules/auth/infrastructure/communication/email.service";
+import { RegisterDTO } from "../../application/dto/register.dto";
+import auditLogger from "@/shared/security/audit/audit.logger";
 
 const COOKIE_NAME = "refreshToken";
 
+const isProd = process.env.NODE_ENV === "production";
+
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "strict",
+  secure: isProd,
+  sameSite: isProd ? "strict" : "lax",
   path: "/",
   maxAge: 60 * 60 * 24 * 7,
 };
 
-export const loginController = async (req) => {
+const jsonResponse = (data, status = 200) =>
+  new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+
+export const loginController = async (req, context = {}) => {
   try {
     await connectDB();
 
-    const body = await req.json();
+    const body = context.body || (await req.json());
+
     const { ip, userAgent } = extractRequestMeta(req);
 
     const useCase = new LoginUseCase();
@@ -32,24 +43,23 @@ export const loginController = async (req) => {
       userAgent,
     });
 
-    const response = Response.json({
+    const cookieStore = await cookies();
+
+    cookieStore.set("refreshToken", result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
+    return Response.json({
       success: true,
       user: result.user,
       accessToken: result.accessToken,
-      sessionId: result.sessionId,
     });
-
-    response.headers.set(
-      "Set-Cookie",
-      `${COOKIE_NAME}=${result.refreshToken}; Path=/; HttpOnly; ${
-        process.env.NODE_ENV === "production" ? "Secure;" : ""
-      } SameSite=Strict; Max-Age=${60 * 60 * 24 * 7}`,
-    );
-
-    return response;
   } catch (error) {
-    console.error("FULL ERROR:", error);
-    console.error("STACK TRACE:", error.stack);
+    console.error("LOGIN ERROR:", error);
 
     return new Response(
       JSON.stringify({
@@ -61,34 +71,54 @@ export const loginController = async (req) => {
   }
 };
 
-export const registerController = async (req) => {
+export const registerController = async (req, context = {}) => {
   try {
-    const body = await req.json();
+    await connectDB();
+
+    const body = context.body || (await req.json());
+
+    const dto = new RegisterDTO({
+      email: body.email,
+      password: body.password,
+      firstName: String(body.firstName || body.name?.firstName || "").trim(),
+      lastName: String(body.lastName || body.name?.lastName || "").trim(),
+    });
 
     const { ip, userAgent } = extractRequestMeta(req);
 
     const useCase = new RegisterUseCase();
 
-    const result = await useCase.execute(body, { ip, userAgent });
+    const result = await useCase.execute(dto, {
+      ip,
+      userAgent,
+      file: context.file,
+    });
 
     const emailService = new EmailService();
-
     const verifyUrl = `${process.env.APP_URL}/verify-email?token=${result.verificationToken}`;
 
-    await emailService.sendVerificationEmail(result.user.email, verifyUrl);
+    emailService
+      .sendVerificationEmail(result.user.email, verifyUrl)
+      .catch((err) => {
+        auditLogger.log({
+          action: "EMAIL_SEND_FAILED",
+          email: result.user.email,
+          error: err.message,
+        });
+      });
 
-    return Response.json({
+    return jsonResponse({
       success: true,
       user: result.user,
       message: "Verification email sent",
     });
   } catch (error) {
-    return new Response(
-      JSON.stringify({
+    return jsonResponse(
+      {
         success: false,
         message: error.message || "Registration failed",
-      }),
-      { status: 400 },
+      },
+      400,
     );
   }
 };
@@ -101,7 +131,7 @@ export const refreshController = async (req) => {
     const refreshToken = cookieStore.get(COOKIE_NAME)?.value;
 
     if (!refreshToken) {
-      return new Response("Unauthorized", { status: 401 });
+      return jsonResponse({ success: false, message: "Unauthorized" }, 401);
     }
 
     const { ip, userAgent } = extractRequestMeta(req);
@@ -113,25 +143,19 @@ export const refreshController = async (req) => {
       userAgent,
     });
 
-    cookieStore.set(COOKIE_NAME, result.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
-    });
+    cookieStore.set(COOKIE_NAME, result.refreshToken, COOKIE_OPTIONS);
 
-    return Response.json({
+    return jsonResponse({
       success: true,
       accessToken: result.accessToken,
     });
   } catch (error) {
-    return new Response(
-      JSON.stringify({
+    return jsonResponse(
+      {
         success: false,
         message: error.message || "Token refresh failed",
-      }),
-      { status: 401 },
+      },
+      401,
     );
   }
 };
@@ -146,17 +170,17 @@ export const logoutController = async () => {
       expires: new Date(0),
     });
 
-    return Response.json({
+    return jsonResponse({
       success: true,
       message: "Logged out successfully",
     });
   } catch (error) {
-    return new Response(
-      JSON.stringify({
+    return jsonResponse(
+      {
         success: false,
         message: error.message || "Logout failed",
-      }),
-      { status: 500 },
+      },
+      500,
     );
   }
 };

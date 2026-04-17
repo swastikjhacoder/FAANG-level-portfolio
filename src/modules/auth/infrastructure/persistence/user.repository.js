@@ -9,8 +9,8 @@ export class UserRepository {
     });
 
     const projection = includePassword
-      ? "+passwordHash email roles name isLocked isVerified failedLoginAttempts sessionVersion"
-      : "email roles name isLocked isVerified failedLoginAttempts sessionVersion";
+      ? "+passwordHash email roles name userImage isLocked isVerified failedLoginAttempts sessionVersion"
+      : "email roles name userImage isLocked isVerified failedLoginAttempts sessionVersion";
 
     return UserModel.findOne(safeQuery).select(projection).lean();
   }
@@ -41,6 +41,19 @@ export class UserRepository {
     return UserModel.findOne(safeQuery).lean();
   }
 
+  async updateUserImage(userId, imageData) {
+    const safeId = new mongoose.Types.ObjectId(userId);
+
+    return UserModel.updateOne(
+      { _id: safeId },
+      {
+        $set: {
+          userImage: imageData,
+        },
+      },
+    );
+  }
+
   async create(userData) {
     const safeData = {
       email: userData.email,
@@ -50,6 +63,7 @@ export class UserRepository {
         lastName: userData.name.lastName,
         displayName: userData.name.displayName,
       },
+      userImage: userData.userImage || null,
       roles: userData.roles || ["USER"],
       isVerified: false,
       emailVerificationToken: userData.emailVerificationToken,

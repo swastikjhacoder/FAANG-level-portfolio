@@ -3,4 +3,5 @@ export const toSafeUser = (user) => ({
   email: user.email,
   name: user.name,
   roles: user.roles,
+  userImageUrl: user.userImage?.url || null,
 });
