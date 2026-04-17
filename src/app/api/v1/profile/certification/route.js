@@ -60,7 +60,21 @@ const sectionHandler = async (req) => {
   try {
     await connectDB();
 
-    const raw = await req.json();
+    if (!req.headers.get("content-type")?.includes("application/json")) {
+      throw new ValidationError("Content-Type must be application/json");
+    }
+
+    let raw;
+
+    try {
+      raw = await req.json();
+    } catch {
+      throw new ValidationError("Invalid or empty JSON body");
+    }
+
+    if (!raw || typeof raw !== "object") {
+      throw new ValidationError("Invalid payload");
+    }
 
     if ("content" in raw) {
       throw new ValidationError("Content not allowed in section update");
@@ -71,21 +85,24 @@ const sectionHandler = async (req) => {
 
     const result = await sectionUC.execute(validated, req.user);
 
-    auditLogger.log({
-      action: "CERTIFICATION_SECTION_UPDATE",
-      userId: req.user.id,
-      resourceId: "certification",
-    });
-
     return ok(result);
   } catch (err) {
     return fail(err);
   }
 };
 
+const section = withRateLimit(
+  withCsrf(authGuard(roleGuard(sectionHandler, ADMIN))),
+  DEV ? { limit: 1000, window: 60 } : { limit: 20, window: 60 },
+);
+
 const createHandler = async (req) => {
   try {
     await connectDB();
+
+    if (!req.headers.get("content-type")?.includes("multipart/form-data")) {
+      throw new ValidationError("Content-Type must be multipart/form-data");
+    }
 
     const formData = await req.formData();
 
@@ -181,6 +198,10 @@ const updateHandler = async (req) => {
   try {
     await connectDB();
 
+    if (!req.headers.get("content-type")?.includes("multipart/form-data")) {
+      throw new ValidationError("Content-Type must be multipart/form-data");
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("certificationId");
 
@@ -208,6 +229,13 @@ const updateHandler = async (req) => {
 
     const sanitized = sanitizeInput(parsed);
     const validated = updateCertificationDTO.parse(sanitized);
+
+    if (
+      !file &&
+      (!validated.content || !Object.keys(validated.content).length)
+    ) {
+      throw new ValidationError("No valid fields to update");
+    }
 
     let certificateData = {};
 
@@ -266,9 +294,15 @@ const deleteHandler = async (req) => {
     const existing = await repo.findById(id);
 
     if (existing?.content?.certificatePublicId) {
+      const resourceType = existing.content.certificateDownloadUrl?.includes(
+        "/image/",
+      )
+        ? "image"
+        : "raw";
+
       await cloudinaryService.delete(
         existing.content.certificatePublicId,
-        "raw",
+        resourceType,
       );
     }
 
@@ -311,8 +345,7 @@ export async function POST(req) {
 }
 
 export async function PUT(req) {
-  console.log("🔥 HIT PUT ROUTE");
-  return sectionHandler(req);
+  return section(req);
 }
 
 export async function PATCH(req) {

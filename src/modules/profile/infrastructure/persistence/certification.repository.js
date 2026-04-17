@@ -24,7 +24,10 @@ export class CertificationRepository {
   }
 
   async findById(id) {
-    return CertificationModel.findById(id).lean();
+    return CertificationModel.findOne({
+      _id: id,
+      isDeleted: false,
+    }).lean();
   }
 
   async update(id, data, userId) {
