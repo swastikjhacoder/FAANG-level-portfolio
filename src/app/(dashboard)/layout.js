@@ -3,6 +3,9 @@
 import Sidebar from "@/components/dashboard/layout/Sidebar";
 import Header from "@/components/dashboard/layout/Header";
 import DashboardThemeProvider from "@/components/dashboard/layout/DashboardThemeProvider";
+import ErrorBoundary from "@/components/shared/ErrorBoundary";
+import { Suspense } from "react";
+import Loader from "@/components/shared/Loader";
 
 export default function DashboardLayout({ children }) {
   return (
@@ -17,7 +20,11 @@ export default function DashboardLayout({ children }) {
             <Header />
           </header>
 
-          <main className="flex-1 p-6">{children}</main>
+          <main className="flex-1 p-6">
+            <ErrorBoundary>
+              <Suspense fallback={<Loader fullScreen />}>{children}</Suspense>
+            </ErrorBoundary>
+          </main>
         </div>
       </div>
     </DashboardThemeProvider>

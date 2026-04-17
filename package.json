@@ -17,6 +17,7 @@
     "body-parser": "^2.2.2",
     "bullmq": "^5.73.5",
     "cloudinary": "^2.9.0",
+    "clsx": "^2.1.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "csrf": "^3.1.0",
