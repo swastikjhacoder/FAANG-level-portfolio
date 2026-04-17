@@ -81,13 +81,15 @@ export default function Header() {
           >
             <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-300 dark:bg-gray-700 flex items-center justify-center">
               {user?.userImageUrl ? (
-                <Image
-                  src={user.userImageUrl}
-                  alt="User Avatar"
-                  width={32}
-                  height={32}
-                  className="object-cover"
-                />
+                <div className="relative w-8 h-8 rounded-full overflow-hidden">
+                  <Image
+                    src={user.userImageUrl}
+                    alt="User Avatar"
+                    fill
+                    sizes="32px"
+                    className="object-cover"
+                  />
+                </div>
               ) : (
                 <User size={16} />
               )}

@@ -32,7 +32,7 @@ export default class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-[200px] p-6 text-center">
+        <div className="flex flex-col items-center justify-center min-h-50 p-6 text-center">
           <h2 className="text-xl font-semibold text-red-500">
             Something went wrong
           </h2>
