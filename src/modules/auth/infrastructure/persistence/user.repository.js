@@ -188,6 +188,23 @@ export class UserRepository {
     );
   }
 
+  async resetPassword(userId, passwordHash) {
+    const safeId = new mongoose.Types.ObjectId(userId);
+
+    return UserModel.updateOne(
+      { _id: safeId },
+      {
+        $set: {
+          passwordHash,
+          resetPasswordToken: null,
+          resetPasswordExpiry: null,
+          passwordChangedAt: new Date(),
+        },
+        $inc: { sessionVersion: 1 },
+      },
+    );
+  }
+
   async delete(userId) {
     const safeId = new mongoose.Types.ObjectId(userId);
     return UserModel.deleteOne({ _id: safeId });

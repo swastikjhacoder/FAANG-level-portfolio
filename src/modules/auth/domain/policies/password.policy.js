@@ -2,12 +2,10 @@ export class PasswordPolicy {
   constructor(options = {}) {
     this.minLength = options.minLength || 8;
     this.maxLength = options.maxLength || 128;
-
     this.requireUppercase = options.requireUppercase ?? true;
     this.requireLowercase = options.requireLowercase ?? true;
     this.requireNumbers = options.requireNumbers ?? true;
     this.requireSpecialChars = options.requireSpecialChars ?? true;
-
     this.forbiddenPasswords = new Set(
       options.forbiddenPasswords || [
         "password",
@@ -19,9 +17,6 @@ export class PasswordPolicy {
     );
   }
 
-  /**
-   * @param {string} password
-   */
   validate(password) {
     if (!password || typeof password !== "string") {
       throw new Error("Password is required");

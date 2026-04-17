@@ -71,6 +71,47 @@ export const useAuthStore = create(
         return data;
       },
 
+      updateProfile: async (formDataInput) => {
+        const csrfRes = await fetch("/api/csrf");
+        const { csrfToken } = await csrfRes.json();
+
+        const formData = new FormData();
+
+        formData.append("firstName", formDataInput.firstName);
+        formData.append("lastName", formDataInput.lastName);
+
+        if (formDataInput.password) {
+          formData.append("password", formDataInput.password);
+        }
+
+        if (formDataInput.image) {
+          formData.append("file", formDataInput.image);
+        }
+
+        const res = await fetch("/api/profile/update", {
+          method: "PUT",
+          headers: {
+            "x-csrf-token": csrfToken,
+          },
+          body: formData,
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.message || "Update failed");
+        }
+
+        set((state) => ({
+          user: {
+            ...state.user,
+            ...data.user,
+          },
+        }));
+
+        return data;
+      },
+
       logout: () => {
         set({
           user: null,
