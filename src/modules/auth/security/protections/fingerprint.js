@@ -28,24 +28,30 @@ const hashFingerprint = (fingerprintString) => {
   return crypto.createHash(HASH_ALGO).update(fingerprintString).digest("hex");
 };
 
-/**
- * @param {Request} req
- */
 export const generateFingerprint = (req) => {
-  const data = extractFingerprintData(req);
+  if (!req || !req.headers) {
+    throw new Error("Invalid request object");
+  }
 
+  const data = extractFingerprintData(req);
   const fingerprintString = buildFingerprintString(data);
 
   return hashFingerprint(fingerprintString);
 };
 
 export const compareFingerprint = (fp1, fp2) => {
-  if (!fp1 || !fp2) return false;
+  if (!fp1 || !fp2 || typeof fp1 !== "string" || typeof fp2 !== "string") {
+    return false;
+  }
 
-  const buf1 = Buffer.from(fp1, "hex");
-  const buf2 = Buffer.from(fp2, "hex");
+  try {
+    const buf1 = Buffer.from(fp1, "hex");
+    const buf2 = Buffer.from(fp2, "hex");
 
-  if (buf1.length !== buf2.length) return false;
+    if (buf1.length !== buf2.length) return false;
 
-  return crypto.timingSafeEqual(buf1, buf2);
+    return crypto.timingSafeEqual(buf1, buf2);
+  } catch {
+    return false;
+  }
 };

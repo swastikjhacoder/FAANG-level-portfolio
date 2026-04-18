@@ -7,6 +7,7 @@ import ErrorBoundary from "@/components/shared/ErrorBoundary";
 import { Suspense } from "react";
 import Loader from "@/components/shared/Loader";
 import AuthGuard from "@/components/dashboard/auth/AuthGuard";
+import Footer from "@/components/dashboard/layout/Footer";
 
 export default function DashboardLayout({ children }) {
   return (
@@ -27,6 +28,9 @@ export default function DashboardLayout({ children }) {
                 <Suspense fallback={<Loader fullScreen />}>{children}</Suspense>
               </ErrorBoundary>
             </main>
+            <footer className="border-t border-gray-200 dark:border-gray-800">
+              <Footer />
+            </footer>
           </div>
         </div>
       </DashboardThemeProvider>

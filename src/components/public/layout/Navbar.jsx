@@ -28,14 +28,11 @@ export default function Navbar() {
 
   return (
     <nav className="fixed top-0 left-0 w-full z-50">
-      {/* Top Bar */}
-      <div className="w-full backdrop-blur-xl bg-[var(--glass-bg)] border-b border-[var(--glass-border)] shadow-[var(--glass-shadow)] px-6 py-3 flex items-center justify-between">
-        {/* Logo */}
+      <div className="w-full backdrop-blur-xl bg-(--glass-bg) border-b border-(--glass-border) shadow-(--glass-shadow) px-6 py-3 flex items-center justify-between">
         <div className="text-xl md:text-2xl font-bold gradient-text animate-gradient">
           Swastik Jha
         </div>
 
-        {/* Desktop */}
         <div className="hidden md:flex items-center gap-6">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -43,7 +40,7 @@ export default function Navbar() {
               <a
                 key={item.name}
                 href={`#${item.name.toLowerCase()}`}
-                className="flex items-center gap-2 text-[var(--text-muted)] hover:text-[var(--text-color)] transition"
+                className="flex items-center gap-2 text-(--text-muted) hover:text-(--text-color) transition"
               >
                 <Icon size={18} />
                 {item.name}
@@ -56,10 +53,9 @@ export default function Navbar() {
           </button>
         </div>
 
-        {/* Mobile Toggle */}
         <div className="md:hidden">
           <button
-            className="text-[var(--text-color)]"
+            className="text-(--text-color)"
             onClick={() => setOpen(!open)}
           >
             {open ? <X /> : <Menu />}
@@ -67,21 +63,20 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* ✅ Mobile Menu */}
       <div
         className={`md:hidden transition-all duration-300 overflow-hidden ${
           open ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
         }`}
       >
-        <div className="backdrop-blur-xl bg-[var(--glass-bg)] border-b border-[var(--glass-border)] shadow-[var(--glass-shadow)] px-6 py-4 flex flex-col gap-4">
+        <div className="backdrop-blur-xl bg-(--glass-bg) border-b border-(--glass-border) shadow-(--glass-shadow) px-6 py-4 flex flex-col gap-4">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
               <a
                 key={item.name}
                 href={`#${item.name.toLowerCase()}`}
-                onClick={() => setOpen(false)} // close on click
-                className="flex items-center gap-3 text-[var(--text-muted)] hover:text-[var(--text-color)] transition"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-3 text-(--text-muted) hover:text-(--text-color) transition"
               >
                 <Icon size={18} />
                 {item.name}

@@ -68,7 +68,6 @@ export default function PublicLayout({ children }) {
 
         <Footer />
 
-        {/* Floating Theme UI */}
         <ThemeSwitcher />
       </div>
     </ThemeProvider>

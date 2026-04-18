@@ -51,7 +51,6 @@ const fail = (error) => {
   );
 };
 
-// ✅ POST → Create/Update Section
 const createHandler = async (req) => {
   try {
     await connectDB();
@@ -66,7 +65,6 @@ const createHandler = async (req) => {
   }
 };
 
-// ✅ PATCH → Add Item
 const updateHandler = async (req) => {
   try {
     await connectDB();

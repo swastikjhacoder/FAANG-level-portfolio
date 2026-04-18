@@ -1,15 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   BarChart3,
   Settings,
   User,
-  LogOut,
 } from "lucide-react";
-import { useAuthStore } from "@/store/useAuthStore";
 
 const navItems = [
   {
@@ -36,31 +34,13 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-
-  const logout = useAuthStore((s) => s.logout);
-
-  // 🔥 Logout handler
-  const handleLogout = () => {
-    logout();
-
-    // Extra safety: remove persisted auth manually
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("auth-storage");
-    }
-
-    // Prevent going back to dashboard
-    router.replace("/login");
-  };
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-r border-gray-200 dark:border-gray-800">
-      {/* Logo / Brand */}
       <div className="h-16 flex items-center px-6 border-b border-gray-200 dark:border-gray-800">
         <span className="text-lg font-semibold">Dashboard</span>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 px-4 py-6 space-y-2">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
