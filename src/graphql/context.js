@@ -1,6 +1,6 @@
 import { verifyAccessToken } from "@/shared/utils/jwt";
-import { UserRepository } from "@/modules/user/infrastructure/user.repository";
-import { SessionRepository } from "@/modules/session/infrastructure/session.repository";
+import { UserRepository } from "@/modules/auth/infrastructure/persistence/user.repository";
+import { SessionRepository } from "@/modules/auth/infrastructure/persistence/session.repository";
 
 const userRepo = new UserRepository();
 const sessionRepo = new SessionRepository();

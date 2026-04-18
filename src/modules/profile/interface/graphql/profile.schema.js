@@ -175,32 +175,19 @@ export const profileTypeDefs = gql`
   }
 
   type Mutation {
-    createProfile(input: CreateProfileInput!): Profile!
-      @auth(role: "ADMIN")
-      @rateLimit(window: "1m", max: 10)
+    createProfile(input: CreateProfileInput!): Profile! @auth(role: "ADMIN")
 
     updateProfile(profileId: ID!, input: UpdateProfileInput!): Profile!
       @auth(role: "ADMIN")
-      @rateLimit(window: "1m", max: 20)
 
-    deleteProfile(profileId: ID!): Boolean!
-      @auth(role: "ADMIN")
-      @rateLimit(window: "1m", max: 10)
+    deleteProfile(profileId: ID!): Boolean! @auth(role: "ADMIN")
 
-    addSkill(input: SkillInput!): Skill!
-      @auth(role: "ADMIN")
-      @rateLimit(window: "1m", max: 50)
+    addSkill(input: SkillInput!): Skill! @auth(role: "ADMIN")
 
-    addExperience(input: ExperienceInput!): Experience!
-      @auth(role: "ADMIN")
-      @rateLimit(window: "1m", max: 30)
+    addExperience(input: ExperienceInput!): Experience! @auth(role: "ADMIN")
 
-    addProject(input: ProjectInput!): Project!
-      @auth(role: "ADMIN")
-      @rateLimit(window: "1m", max: 20)
+    addProject(input: ProjectInput!): Project! @auth(role: "ADMIN")
 
-    approveTestimonial(testimonialId: ID!): Testimonial!
-      @auth(role: "ADMIN")
-      @rateLimit(window: "1m", max: 20)
+    approveTestimonial(testimonialId: ID!): Testimonial! @auth(role: "ADMIN")
   }
 `;

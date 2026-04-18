@@ -1,10 +1,6 @@
 import { gql } from "graphql-tag";
 
 export const authTypeDefs = gql`
-  # ======================
-  # 🔐 TYPES
-  # ======================
-
   type User {
     id: ID!
     email: String!
@@ -17,10 +13,6 @@ export const authTypeDefs = gql`
     lastName: String
     displayName: String
   }
-
-  # ======================
-  # 🔐 RESPONSES
-  # ======================
 
   type AuthResponse {
     success: Boolean!
@@ -47,10 +39,6 @@ export const authTypeDefs = gql`
     user: User
   }
 
-  # ======================
-  # 🔐 INPUTS
-  # ======================
-
   input RegisterInput {
     email: String!
     password: String!
@@ -67,10 +55,6 @@ export const authTypeDefs = gql`
     sessionId: ID
     logoutAll: Boolean
   }
-
-  # ======================
-  # 🔐 ROOT TYPES
-  # ======================
 
   type Query {
     _empty: String

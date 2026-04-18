@@ -239,7 +239,7 @@ export default function ServicesPage() {
                           src={s.icon.url}
                           alt={s.heading}
                           fill
-                          sizes="32px"
+                          sizes="(max-width: 768px) 32px, 32px"
                           className="object-contain"
                         />
                       </div>

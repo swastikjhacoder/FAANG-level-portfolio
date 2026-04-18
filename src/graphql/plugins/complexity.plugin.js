@@ -6,25 +6,21 @@ import {
 import { GraphQLError } from "graphql";
 
 export const complexityPlugin = (schema, maxComplexity = 1000) => ({
-  async requestDidStart() {
-    return {
-      didResolveOperation({ request, document }) {
-        const complexity = getComplexity({
-          schema,
-          query: document,
-          variables: request.variables,
-          estimators: [
-            fieldExtensionsEstimator(),
-            simpleEstimator({ defaultComplexity: 1 }),
-          ],
-        });
+  onExecute({ args }) {
+    const complexity = getComplexity({
+      schema,
+      query: args.document,
+      variables: args.variableValues,
+      estimators: [
+        fieldExtensionsEstimator(),
+        simpleEstimator({ defaultComplexity: 1 }),
+      ],
+    });
 
-        if (complexity > maxComplexity) {
-          throw new GraphQLError("Query too complex", {
-            extensions: { code: "QUERY_TOO_COMPLEX" },
-          });
-        }
-      },
-    };
+    if (complexity > maxComplexity) {
+      throw new GraphQLError("Query too complex", {
+        extensions: { code: "QUERY_TOO_COMPLEX" },
+      });
+    }
   },
 });

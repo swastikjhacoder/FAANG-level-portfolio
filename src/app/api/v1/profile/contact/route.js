@@ -1,6 +1,6 @@
 import connectDB from "@/shared/lib/db";
 
-import { withRateLimit } from "@/shared/security/middleware/rateLimit.middleware";
+import withRateLimit from "@/shared/security/middleware/rateLimit.middleware";
 import { withCsrf } from "@/shared/security/middleware/csrf.middleware";
 
 import { sanitizeInput } from "@/shared/security/sanitizers/input.sanitizer";
@@ -20,7 +20,6 @@ import { validateObjectId } from "@/shared/utils/validateObjectId";
 import { ValidationError } from "@/shared/errors";
 import auditLogger from "@/shared/security/audit/audit.logger";
 import { cloudinaryService } from "@/modules/profile/infrastructure/services/cloudinary.service";
-
 
 const repo = new ContactRepository();
 

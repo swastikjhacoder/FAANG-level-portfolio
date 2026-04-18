@@ -1,7 +1,7 @@
 import connectDB from "@/shared/lib/db";
 import { verifyEmailUseCase } from "@/modules/auth/application/useCases/verifyEmail.usecase";
 import { UserRepository } from "@/modules/auth/infrastructure/persistence/user.repository";
-import { withRateLimit } from "@/shared/security/middleware/rateLimit.middleware";
+import withRateLimit from "@/shared/security/middleware/rateLimit.middleware";
 import logger from "@/shared/lib/logger";
 import { ValidationError } from "@/shared/errors";
 

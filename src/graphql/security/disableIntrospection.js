@@ -1,6 +1,6 @@
 import { GraphQLError } from "graphql";
 
-export const disableIntrospectionRule = () => ({
+export const disableIntrospectionRule = (context) => ({
   Field(node) {
     if (node.name.value === "__schema" || node.name.value === "__type") {
       throw new GraphQLError(

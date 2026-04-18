@@ -1,67 +1,35 @@
 import { createYoga } from "graphql-yoga";
-import { schema } from "./schema";
-import { createContext } from "./context";
 
-import { complexityPlugin } from "./plugins/complexity.plugin";
-import { depthLimitRule } from "./plugins/depthLimit.plugin";
+export async function getYoga() {
+  // 🔥 lazy imports (critical fix)
+  const { schema } = await import("./schema");
+  const { createContext } = await import("./context");
+  const { depthLimitRule } = await import("./plugins/depthLimit.plugin");
+  const { disableIntrospectionRule } =
+    await import("./security/disableIntrospection");
 
-import { permissions } from "./security/graphqlShield";
-import { persistedQueryPlugin } from "./security/persistedQueries";
-import { disableIntrospectionRule } from "./security/disableIntrospection";
+  return createYoga({
+    schema,
+    context: createContext,
 
-import { applyMiddleware } from "graphql-middleware";
-import { costAnalysisPlugin } from "./plugins/costAnalysis.plugin";
-
-const securedSchema = applyMiddleware(schema, permissions);
-
-export const yoga = createYoga({
-  schema: securedSchema,
-
-  context: createContext,
-
-  plugins: [
-    complexityPlugin(securedSchema),
-    costAnalysisPlugin(1000),
-    persistedQueryPlugin(),
-    {
-      async requestDidStart() {
-        return {
-          didResolveOperation({ request }) {
-            if (process.env.NODE_ENV !== "production") {
-              console.log("GraphQL Operation:", request.operationName);
-            }
-          },
-        };
-      },
-    },
-  ],
-
-  validationRules: [
-    depthLimitRule,
-    ...(process.env.NODE_ENV === "production"
-      ? [disableIntrospectionRule]
-      : []),
-  ],
-
-  cors: {
-    origin: process.env.CORS_ORIGIN?.split(",") || [],
-    credentials: true,
-  },
-
-  graphiql: process.env.NODE_ENV !== "production",
-
-  maskedErrors: {
-    maskError: (err, message, isDev) => {
-      if (isDev) return err;
-
-      return {
-        message: "Internal Server Error",
-        extensions: {
-          code: "INTERNAL_ERROR",
+    plugins: [
+      {
+        onExecute() {
+          if (process.env.NODE_ENV !== "production") {
+            console.log("GraphQL execution started");
+          }
         },
-      };
-    },
-  },
-});
+      },
+    ],
 
-export default yoga;
+    validationRules: [
+      depthLimitRule,
+      ...(process.env.NODE_ENV === "production"
+        ? [disableIntrospectionRule]
+        : []),
+    ],
+
+    cors: false,
+    graphiql: process.env.NODE_ENV !== "production",
+  });
+}

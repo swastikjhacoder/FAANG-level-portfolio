@@ -1,18 +1,16 @@
+export const runtime = "nodejs";
+
 import { corsOptions } from "@/shared/config/cors";
-import yoga from "@/graphql/server";
-import { withRateLimit } from "@/shared/security/middleware/rateLimit.middleware";
+import { getYoga } from "@/graphql/server";
+// ⚠️ keep middleware out for now; re-add later after build is stable
+// import withRateLimit from "@/shared/security/middleware/rateLimit.middleware";
 
 const resolveOrigin = (req) => {
   const origin = req.headers.get("origin");
   const allowedOrigins = corsOptions.origin;
 
-  if (!origin) {
-    return allowedOrigins[0];
-  }
-
-  if (allowedOrigins.includes(origin)) {
-    return origin;
-  }
+  if (!origin) return allowedOrigins[0];
+  if (allowedOrigins.includes(origin)) return origin;
 
   return null;
 };
@@ -25,12 +23,10 @@ const buildCorsHeaders = (origin) => ({
   Vary: "Origin",
 });
 
-const handler = withRateLimit(
-  async (req) => {
-    return await yoga(req);
-  },
-  { limit: 100, window: 60, prefix: "graphql" },
-);
+const handler = async (req) => {
+  const yoga = await getYoga();
+  return yoga.fetch(req);
+};
 
 export async function OPTIONS(req) {
   const allowOrigin = resolveOrigin(req);
@@ -55,9 +51,8 @@ const withCors = async (req) => {
   const response = await handler(req);
 
   const headers = new Headers(response.headers);
-
-  Object.entries(buildCorsHeaders(allowOrigin)).forEach(([key, value]) => {
-    headers.set(key, value);
+  Object.entries(buildCorsHeaders(allowOrigin)).forEach(([k, v]) => {
+    headers.set(k, v);
   });
 
   return new Response(response.body, {

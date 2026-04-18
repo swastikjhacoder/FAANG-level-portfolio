@@ -1,6 +1,6 @@
 import connectDB from "@/shared/lib/db";
 
-import { withRateLimit } from "@/shared/security/middleware/rateLimit.middleware";
+import withRateLimit from "@/shared/security/middleware/rateLimit.middleware";
 import { withCsrf } from "@/shared/security/middleware/csrf.middleware";
 
 import { sanitizeInput } from "@/shared/security/sanitizers/input.sanitizer";

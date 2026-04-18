@@ -42,13 +42,15 @@ export default function Sidebar({ collapsed, setMobileOpen }) {
   return (
     <div className="h-full flex flex-col bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800">
       <div className="flex flex-col items-center px-4 py-6 border-b border-gray-200 dark:border-gray-800">
-        <Image
-          src={image}
-          alt="User"
-          width={collapsed ? 40 : 80}
-          height={collapsed ? 40 : 80}
-          className="rounded-full object-cover border"
-        />
+        <div className={`relative ${collapsed ? "w-10 h-10" : "w-20 h-20"}`}>
+          <Image
+            src={image}
+            alt="User"
+            fill
+            sizes={collapsed ? "40px" : "80px"}
+            className="rounded-full object-cover border"
+          />
+        </div>
 
         {!collapsed && (
           <>

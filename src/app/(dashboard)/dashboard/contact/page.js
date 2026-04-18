@@ -198,7 +198,7 @@ export default function ContactPage() {
                         src={s.icon.url}
                         alt={s.name}
                         fill
-                        sizes="20px"
+                        sizes="(max-width: 768px) 20px, 20px"
                         className="object-contain"
                       />
                     </div>

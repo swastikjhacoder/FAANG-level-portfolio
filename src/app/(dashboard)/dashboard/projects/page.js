@@ -262,7 +262,7 @@ export default function ProjectsPage() {
                           src={p.screenshot.url}
                           alt={p.name}
                           fill
-                          sizes="40px"
+                          sizes="(max-width: 768px) 100vw, 300px"
                           className="object-cover rounded"
                         />
                       </div>

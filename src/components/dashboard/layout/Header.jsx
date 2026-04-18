@@ -148,12 +148,16 @@ export default function Header({ collapsed, setCollapsed, setMobileOpen }) {
             >
               <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-300">
                 {user?.userImageUrl ? (
-                  <Image
-                    src={user.userImageUrl}
-                    alt="User"
-                    width={32}
-                    height={32}
-                  />
+                  <div className="relative w-8 h-8">
+                    <Image
+                      src={user.userImageUrl}
+                      alt="User"
+                      fill
+                      sizes="32px"
+                      className="rounded-full object-cover"
+                      priority
+                    />
+                  </div>
                 ) : (
                   <User size={16} />
                 )}

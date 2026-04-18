@@ -1,7 +1,7 @@
 import { loginController } from "@/modules/auth/interface/http/auth.controller";
 import { corsOptions } from "@/shared/config/cors";
 import { withCsrf } from "@/shared/security/middleware/csrf.middleware";
-import { withRateLimit } from "@/shared/security/middleware/rateLimit.middleware";
+import withRateLimit from "@/shared/security/middleware/rateLimit.middleware";
 import { sanitizeInput } from "@/shared/security/sanitizers/input.sanitizer";
 import { validateSchema } from "@/shared/security/validators/schema.validator";
 import { loginSchema } from "@/modules/auth/interface/validation/login.schema";

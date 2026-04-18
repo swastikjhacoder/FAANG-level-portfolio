@@ -30,7 +30,7 @@ const checkRateLimit = async ({ key, limit, window }) => {
   };
 };
 
-export const withRateLimit = (handler, options = {}) => {
+const withRateLimit = (handler, options = {}) => {
   const {
     limit = DEFAULT_LIMIT,
     window = DEFAULT_WINDOW,
@@ -88,3 +88,5 @@ export const withRateLimit = (handler, options = {}) => {
     }
   };
 };
+
+export default withRateLimit;

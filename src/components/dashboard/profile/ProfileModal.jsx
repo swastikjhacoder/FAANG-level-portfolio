@@ -118,7 +118,15 @@ export default function ProfileModal({ onClose }) {
             {imageLoading ? (
               <div className="w-6 h-6 border-2 border-gray-300 border-t-black rounded-full animate-spin" />
             ) : preview ? (
-              <Image src={preview} alt="avatar" fill className="object-cover" />
+              <div className="relative w-24 h-24">
+                <Image
+                  src={preview}
+                  alt="avatar"
+                  fill
+                  sizes="96px"
+                  className="object-cover rounded-full"
+                />
+              </div>
             ) : (
               <span className="text-xs">Upload</span>
             )}

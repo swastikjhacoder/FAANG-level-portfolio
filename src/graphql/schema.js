@@ -1,19 +1,23 @@
 import { makeExecutableSchema } from "@graphql-tools/schema";
 import { mergeResolvers } from "@graphql-tools/merge";
+import gql from "graphql-tag";
 
 import { authDirective } from "./directives/auth.directive";
-import { rateLimitDirective } from "./directives/rateLimit.directive";
 
-import authTypeDefs from "@/modules/auth/interface/graphql/auth.schema";
-import authResolvers from "@/modules/auth/interface/graphql/auth.resolver";
+import { authTypeDefs } from "@/modules/auth/interface/graphql/auth.schema";
+import { authResolvers } from "@/modules/auth/interface/graphql/auth.resolver";
 
-import profileTypeDefs from "@/modules/profile/interface/graphql/profile.schema";
-import profileResolvers from "@/modules/profile/interface/graphql/profile.resolver";
+import { profileTypeDefs } from "@/modules/profile/interface/graphql/profile.schema";
+import { profileResolvers } from "@/modules/profile/interface/graphql/profile.resolver";
 
-const { rateLimitDirectiveTypeDefs, rateLimitDirectiveTransformer } =
-  rateLimitDirective;
+import {
+  rateLimitDirectiveTypeDefs,
+  rateLimitDirectiveTransformer,
+} from "./directives/rateLimit.directive";
 
-const baseTypeDefs = `
+const { transformer: authDirectiveTransformer } = authDirective();
+
+const baseTypeDefs = gql`
   directive @auth(role: String) on FIELD_DEFINITION
 
   type Query {
@@ -25,27 +29,23 @@ const baseTypeDefs = `
   }
 `;
 
-const baseResolvers = {
-  Query: {
-    _empty: () => "OK",
-  },
-};
-
 let schema = makeExecutableSchema({
   typeDefs: [
     baseTypeDefs,
-    rateLimitDirectiveTypeDefs,
+    rateLimitDirectiveTypeDefs, 
     authTypeDefs,
     profileTypeDefs,
   ],
   resolvers: mergeResolvers([
-    baseResolvers,
+    {
+      Query: { _empty: () => "OK" },
+    },
     authResolvers,
     profileResolvers,
   ]),
 });
 
-schema = authDirective(schema);
+schema = authDirectiveTransformer(schema);
 schema = rateLimitDirectiveTransformer(schema);
 
 export { schema };

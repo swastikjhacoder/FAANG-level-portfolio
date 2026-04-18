@@ -268,7 +268,7 @@ export default function SkillsPage() {
                           src={skill.icon.url}
                           alt={skill.name}
                           fill
-                          sizes="24px"
+                          sizes="(max-width: 768px) 24px, 24px"
                           className="object-contain"
                         />
                       </div>
