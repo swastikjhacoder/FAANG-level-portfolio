@@ -238,7 +238,7 @@ export default function ProjectsPage() {
                 <TableHeaderCell className="w-[30%] text-center">
                   Tech
                 </TableHeaderCell>
-                <TableHeaderCell className="w-[120px] text-center">
+                <TableHeaderCell className="w-30 text-center">
                   Action
                 </TableHeaderCell>
               </TableRow>

@@ -215,7 +215,7 @@ export default function ServicesPage() {
                 <TableHeaderCell className="w-[40%] text-center">
                   Description
                 </TableHeaderCell>
-                <TableHeaderCell className="w-[120px] text-center">
+                <TableHeaderCell className="w-30 text-center">
                   Action
                 </TableHeaderCell>
               </TableRow>
