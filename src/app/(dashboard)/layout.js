@@ -55,7 +55,6 @@ export default function DashboardLayout({ children }) {
             <Footer />
           </div>
         </div>
-        ₹
       </DashboardThemeProvider>
     </AuthGuard>
   );
