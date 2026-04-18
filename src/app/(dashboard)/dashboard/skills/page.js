@@ -222,7 +222,7 @@ export default function SkillsPage() {
                 <TableHeaderCell className="w-[33%] text-center">
                   Prof
                 </TableHeaderCell>
-                <TableHeaderCell className="w-[120px] text-center">
+                <TableHeaderCell className="w-30 text-center">
                   Action
                 </TableHeaderCell>
               </TableRow>
