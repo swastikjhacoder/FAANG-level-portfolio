@@ -6,6 +6,8 @@ import { dashboardRoutes } from "@/config/dashboardRoutes";
 import { useAuthStore } from "@/store/useAuthStore";
 import Button from "@/components/dashboard/ui/Button";
 import Input from "@/components/dashboard/ui/Input";
+import Modal from "@/components/dashboard/ui/Modal";
+
 import {
   Table,
   TableHead,
@@ -203,11 +205,14 @@ export default function ExperiencePage() {
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <PageHeader title={route.name} icon={route.icon} />
-      <div className="border-t" />
 
-      <div className="border rounded-lg p-4 bg-white dark:bg-gray-900">
+      <div className="border-t border-[var(--glass-border)]" />
+
+      <div className="rounded-xl p-4 bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-[var(--glass-shadow)]">
         <div className="flex justify-between">
-          <h2 className="text-lg font-semibold">Experience Section</h2>
+          <h2 className="text-lg font-semibold text-[var(--text-color)]">
+            Experience Section
+          </h2>
           <Button onClick={() => setIsSectionModalOpen(true)}>
             {section ? "Edit" : "Add"}
           </Button>
@@ -216,13 +221,15 @@ export default function ExperiencePage() {
         {section && (
           <div className="mt-3">
             <h3 className="font-semibold">{section.heading}</h3>
-            <p className="text-sm text-gray-400">{section.subHeading}</p>
+            <p className="text-sm text-[var(--text-muted)]">
+              {section.subHeading}
+            </p>
             <p className="mt-2">{section.description}</p>
           </div>
         )}
       </div>
 
-      <div className="border rounded-lg bg-white dark:bg-gray-900">
+      <div className="rounded-xl bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-[var(--glass-shadow)]">
         <div className="p-4 flex justify-between">
           <h2 className="text-lg font-semibold">Experiences</h2>
           <Button size="sm" onClick={openAdd}>
@@ -230,7 +237,7 @@ export default function ExperiencePage() {
           </Button>
         </div>
 
-        <div className="p-4 border-t">
+        <div className="p-4 border-t border-[var(--glass-border)]">
           <Table>
             <TableHead>
               <TableRow>
@@ -285,106 +292,114 @@ export default function ExperiencePage() {
         </div>
       </div>
 
-      {isSectionModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-900 p-6 rounded-lg w-[90%] max-w-lg space-y-3">
-            <Input
-              label="Heading"
-              value={sectionForm.heading}
-              onChange={(e) =>
-                setSectionForm({ ...sectionForm, heading: e.target.value })
-              }
-              validate={sectionValidators.heading}
-            />
-            <Input
-              label="Sub Heading"
-              value={sectionForm.subHeading}
-              onChange={(e) =>
-                setSectionForm({ ...sectionForm, subHeading: e.target.value })
-              }
-              validate={sectionValidators.subHeading}
-            />
-            <Input
-              label="Description"
-              textarea
-              value={sectionForm.description}
-              onChange={(e) =>
-                setSectionForm({
-                  ...sectionForm,
-                  description: e.target.value,
-                })
-              }
-              validate={sectionValidators.description}
-            />
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setIsSectionModalOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleSectionSubmit}>
-                {section ? "Update" : "Add"}
-              </Button>
-            </div>
-          </div>
+      <Modal
+        isOpen={isSectionModalOpen}
+        onClose={() => setIsSectionModalOpen(false)}
+        title={section ? "Edit Experience Section" : "Add Experience Section"}
+        footer={
+          <>
+            <Button
+              variant="outline"
+              onClick={() => setIsSectionModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSectionSubmit}>
+              {section ? "Update" : "Add"}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <Input
+            label="Heading"
+            value={sectionForm.heading}
+            onChange={(e) =>
+              setSectionForm({ ...sectionForm, heading: e.target.value })
+            }
+            validate={sectionValidators.heading}
+          />
+          <Input
+            label="Sub Heading"
+            value={sectionForm.subHeading}
+            onChange={(e) =>
+              setSectionForm({
+                ...sectionForm,
+                subHeading: e.target.value,
+              })
+            }
+            validate={sectionValidators.subHeading}
+          />
+          <Input
+            label="Description"
+            textarea
+            value={sectionForm.description}
+            onChange={(e) =>
+              setSectionForm({
+                ...sectionForm,
+                description: e.target.value,
+              })
+            }
+            validate={sectionValidators.description}
+          />
         </div>
-      )}
+      </Modal>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-900 p-6 rounded-lg w-[90%] max-w-lg space-y-3">
-            <Input
-              label="Company"
-              value={form.company}
-              onChange={(e) => setForm({ ...form, company: e.target.value })}
-            />
-            <Input
-              label="Role"
-              value={form.role}
-              onChange={(e) => setForm({ ...form, role: e.target.value })}
-            />
-            <Input
-              type="date"
-              label="Start Date"
-              value={form.startDate}
-              onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-            />
-            <Input
-              type="date"
-              label="End Date"
-              value={form.endDate}
-              onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-            />
-            <Input
-              label="History (comma separated)"
-              value={form.history}
-              onChange={(e) => setForm({ ...form, history: e.target.value })}
-            />
-            <Input
-              label="Achievements (comma separated)"
-              value={form.achievements}
-              onChange={(e) =>
-                setForm({ ...form, achievements: e.target.value })
-              }
-            />
-            <Input
-              label="Projects (comma separated)"
-              value={form.projects}
-              onChange={(e) => setForm({ ...form, projects: e.target.value })}
-            />
-
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSubmit}>
-                {editingExp ? "Update" : "Add"}
-              </Button>
-            </div>
-          </div>
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={editingExp ? "Edit Experience" : "Add Experience"}
+        footer={
+          <>
+            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit}>
+              {editingExp ? "Update" : "Add"}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <Input
+            label="Company"
+            value={form.company}
+            onChange={(e) => setForm({ ...form, company: e.target.value })}
+          />
+          <Input
+            label="Role"
+            value={form.role}
+            onChange={(e) => setForm({ ...form, role: e.target.value })}
+          />
+          <Input
+            type="date"
+            label="Start Date"
+            value={form.startDate}
+            onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+          />
+          <Input
+            type="date"
+            label="End Date"
+            value={form.endDate}
+            onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+          />
+          <Input
+            label="History (comma separated)"
+            value={form.history}
+            onChange={(e) => setForm({ ...form, history: e.target.value })}
+          />
+          <Input
+            label="Achievements (comma separated)"
+            value={form.achievements}
+            onChange={(e) => setForm({ ...form, achievements: e.target.value })}
+          />
+          <Input
+            label="Projects (comma separated)"
+            value={form.projects}
+            onChange={(e) => setForm({ ...form, projects: e.target.value })}
+          />
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

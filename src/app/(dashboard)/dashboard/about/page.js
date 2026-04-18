@@ -6,6 +6,8 @@ import { dashboardRoutes } from "@/config/dashboardRoutes";
 import { useAuthStore } from "@/store/useAuthStore";
 import Button from "@/components/dashboard/ui/Button";
 import Input from "@/components/dashboard/ui/Input";
+import Modal from "@/components/dashboard/ui/Modal";
+
 import {
   Table,
   TableHead,
@@ -198,9 +200,7 @@ export default function AboutPage() {
   const handleDelete = async (summaryId) => {
     await fetch(
       `/api/v1/profile/profileSummary?profileSummaryId=${summaryId}`,
-      {
-        method: "DELETE",
-      },
+      { method: "DELETE" },
     );
     refreshSummary();
   };
@@ -210,11 +210,14 @@ export default function AboutPage() {
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <PageHeader title={route.name} icon={route.icon} />
-      <div className="border-t" />
 
-      <div className="border rounded-lg p-4 bg-white dark:bg-gray-900">
+      <div className="border-t border-[var(--glass-border)]" />
+
+      <div className="rounded-xl p-4 bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-[var(--glass-shadow)]">
         <div className="flex flex-col sm:flex-row sm:justify-between gap-3">
-          <h2 className="text-lg font-semibold">About Section</h2>
+          <h2 className="text-lg font-semibold text-[var(--text-color)]">
+            About Section
+          </h2>
 
           <Button onClick={() => setIsAboutModalOpen(true)}>
             {about ? "Edit" : "Add"}
@@ -224,13 +227,15 @@ export default function AboutPage() {
         {about && (
           <div className="mt-4 space-y-1">
             <h3 className="font-semibold">{about.heading}</h3>
-            <p className="text-sm text-gray-500">{about.subHeading}</p>
+            <p className="text-sm text-[var(--text-muted)]">
+              {about.subHeading}
+            </p>
             <p className="mt-2">{about.description}</p>
           </div>
         )}
       </div>
 
-      <div className="border rounded-lg bg-white dark:bg-gray-900">
+      <div className="rounded-xl bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-[var(--glass-shadow)]">
         <div
           className="p-4 flex justify-between items-center cursor-pointer"
           onClick={() => setExpanded(!expanded)}
@@ -249,7 +254,7 @@ export default function AboutPage() {
         </div>
 
         {expanded && (
-          <div className="p-4 border-t">
+          <div className="p-4 border-t border-[var(--glass-border)]">
             <Table>
               <TableHead>
                 <TableRow>
@@ -298,90 +303,86 @@ export default function AboutPage() {
         )}
       </div>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-900 p-6 rounded-lg w-[90%] sm:w-full max-w-md">
-            <h2 className="text-lg font-semibold mb-4 text-white">
-              {modalEditing ? "Edit Item" : "Add Item"}
-            </h2>
+      <Modal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        title={modalEditing ? "Edit Item" : "Add Item"}
+        footer={
+          <>
+            <Button variant="outline" onClick={closeModal}>
+              Cancel
+            </Button>
 
-            <Input
-              label="Item"
-              value={modalInput}
-              onChange={(e) => setModalInput(e.target.value)}
-              validate={summaryValidators.item}
-            />
+            <Button
+              onClick={handleModalSubmit}
+              disabled={!!summaryValidators.item(modalInput)}
+            >
+              {modalEditing ? "Update" : "Add"}
+            </Button>
+          </>
+        }
+      >
+        <Input
+          label="Item"
+          value={modalInput}
+          onChange={(e) => setModalInput(e.target.value)}
+          validate={summaryValidators.item}
+        />
+      </Modal>
 
-            <div className="flex justify-end gap-2 mt-4">
-              <Button variant="outline" onClick={closeModal}>
-                Cancel
-              </Button>
+      <Modal
+        isOpen={isAboutModalOpen}
+        onClose={() => setIsAboutModalOpen(false)}
+        title={about ? "Edit About Section" : "Add About Section"}
+        footer={
+          <>
+            <Button
+              variant="outline"
+              onClick={() => setIsAboutModalOpen(false)}
+            >
+              Cancel
+            </Button>
 
-              <Button
-                onClick={handleModalSubmit}
-                disabled={!!summaryValidators.item(modalInput)}
-              >
-                {modalEditing ? "Update" : "Add"}
-              </Button>
-            </div>
-          </div>
+            <Button
+              onClick={handleAboutModalSubmit}
+              disabled={
+                !!aboutValidators.heading(aboutForm.heading) ||
+                !!aboutValidators.subHeading(aboutForm.subHeading) ||
+                !!aboutValidators.description(aboutForm.description)
+              }
+            >
+              {about ? "Update" : "Add"}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <Input
+            label="Heading"
+            name="heading"
+            value={aboutForm.heading}
+            onChange={handleAboutChange}
+            validate={aboutValidators.heading}
+          />
+
+          <Input
+            label="Sub Heading"
+            name="subHeading"
+            value={aboutForm.subHeading}
+            onChange={handleAboutChange}
+            validate={aboutValidators.subHeading}
+          />
+
+          <Input
+            label="Description"
+            name="description"
+            textarea
+            value={aboutForm.description}
+            onChange={handleAboutChange}
+            validate={aboutValidators.description}
+          />
         </div>
-      )}
-
-      {isAboutModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-900 p-6 rounded-lg w-[90%] sm:w-full max-w-lg space-y-3">
-            <h2 className="text-lg font-semibold text-white">
-              {about ? "Edit About Section" : "Add About Section"}
-            </h2>
-
-            <Input
-              label="Heading"
-              name="heading"
-              value={aboutForm.heading}
-              onChange={handleAboutChange}
-              validate={aboutValidators.heading}
-            />
-
-            <Input
-              label="Sub Heading"
-              name="subHeading"
-              value={aboutForm.subHeading}
-              onChange={handleAboutChange}
-              validate={aboutValidators.subHeading}
-            />
-
-            <Input
-              label="Description"
-              name="description"
-              textarea
-              value={aboutForm.description}
-              onChange={handleAboutChange}
-              validate={aboutValidators.description}
-            />
-
-            <div className="flex justify-end gap-2 pt-2">
-              <Button
-                variant="outline"
-                onClick={() => setIsAboutModalOpen(false)}
-              >
-                Cancel
-              </Button>
-
-              <Button
-                onClick={handleAboutModalSubmit}
-                disabled={
-                  !!aboutValidators.heading(aboutForm.heading) ||
-                  !!aboutValidators.subHeading(aboutForm.subHeading) ||
-                  !!aboutValidators.description(aboutForm.description)
-                }
-              >
-                {about ? "Update" : "Add"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

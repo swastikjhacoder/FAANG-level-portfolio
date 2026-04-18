@@ -6,6 +6,7 @@ import { dashboardRoutes } from "@/config/dashboardRoutes";
 import { useAuthStore } from "@/store/useAuthStore";
 import Button from "@/components/dashboard/ui/Button";
 import Input from "@/components/dashboard/ui/Input";
+import Modal from "@/components/dashboard/ui/Modal";
 import Image from "next/image";
 
 export default function ContactPage() {
@@ -69,7 +70,11 @@ export default function ContactPage() {
 
         if (json2.data) {
           setSection(json2.data);
-          setSectionForm(json2.data);
+          setSectionForm({
+            heading: json2.data.heading || "",
+            subHeading: json2.data.subHeading || "",
+            description: json2.data.description || "",
+          });
         }
       } catch (err) {
         console.error(err);
@@ -146,11 +151,14 @@ export default function ContactPage() {
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <PageHeader title={route.name} icon={route.icon} />
-      <div className="border-t" />
 
-      <div className="border rounded-lg p-4 bg-white dark:bg-gray-900">
+      <div className="border-t border-[var(--glass-border)]" />
+
+      <div className="rounded-xl p-4 bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-[var(--glass-shadow)]">
         <div className="flex justify-between">
-          <h2 className="text-lg font-semibold">Contact Section</h2>
+          <h2 className="text-lg font-semibold text-[var(--text-color)]">
+            Contact Section
+          </h2>
           <Button onClick={() => setIsSectionModalOpen(true)}>
             {section ? "Edit" : "Add"}
           </Button>
@@ -159,13 +167,15 @@ export default function ContactPage() {
         {section && (
           <div className="mt-3">
             <h3>{section.heading}</h3>
-            <p className="text-sm text-gray-400">{section.subHeading}</p>
+            <p className="text-sm text-[var(--text-muted)]">
+              {section.subHeading}
+            </p>
             <p className="mt-2">{section.description}</p>
           </div>
         )}
       </div>
 
-      <div className="border rounded-lg p-4 bg-white dark:bg-gray-900">
+      <div className="rounded-xl p-4 bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-[var(--glass-shadow)]">
         <div className="flex justify-between">
           <h2 className="text-lg font-semibold">Contact Info</h2>
           <Button onClick={() => setIsModalOpen(true)}>
@@ -201,107 +211,117 @@ export default function ContactPage() {
         )}
       </div>
 
-      {isSectionModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
-          <div className="bg-gray-900 p-6 rounded-lg w-full max-w-lg space-y-3">
-            <Input
-              label="Heading"
-              value={sectionForm.heading}
-              onChange={(e) =>
-                setSectionForm({ ...sectionForm, heading: e.target.value })
-              }
-            />
-            <Input
-              label="SubHeading"
-              value={sectionForm.subHeading}
-              onChange={(e) =>
-                setSectionForm({ ...sectionForm, subHeading: e.target.value })
-              }
-            />
-            <Input
-              label="Description"
-              textarea
-              value={sectionForm.description}
-              onChange={(e) =>
-                setSectionForm({ ...sectionForm, description: e.target.value })
-              }
-            />
-
-            <div className="flex justify-end gap-2">
-              <Button onClick={() => setIsSectionModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSectionSubmit}>Save</Button>
-            </div>
-          </div>
+      <Modal
+        isOpen={isSectionModalOpen}
+        onClose={() => setIsSectionModalOpen(false)}
+        title={section ? "Edit Contact Section" : "Add Contact Section"}
+        footer={
+          <>
+            <Button onClick={() => setIsSectionModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleSectionSubmit}>Save</Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <Input
+            label="Heading"
+            value={sectionForm.heading}
+            onChange={(e) =>
+              setSectionForm({ ...sectionForm, heading: e.target.value })
+            }
+          />
+          <Input
+            label="SubHeading"
+            value={sectionForm.subHeading}
+            onChange={(e) =>
+              setSectionForm({
+                ...sectionForm,
+                subHeading: e.target.value,
+              })
+            }
+          />
+          <Input
+            label="Description"
+            textarea
+            value={sectionForm.description}
+            onChange={(e) =>
+              setSectionForm({
+                ...sectionForm,
+                description: e.target.value,
+              })
+            }
+          />
         </div>
-      )}
+      </Modal>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
-          <div className="bg-gray-900 p-6 rounded-lg w-full max-w-lg space-y-3">
-            <Input
-              label="Email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              validate={validators.email}
-            />
-            <Input
-              label="Mobile"
-              value={form.mobile}
-              onChange={(e) => setForm({ ...form, mobile: e.target.value })}
-            />
-            <Input
-              label="Address"
-              value={form.address}
-              onChange={(e) => setForm({ ...form, address: e.target.value })}
-            />
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={contact ? "Edit Contact Info" : "Add Contact Info"}
+        footer={
+          <>
+            <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleSubmit}>Save</Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <Input
+            label="Email"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            validate={validators.email}
+          />
+          <Input
+            label="Mobile"
+            value={form.mobile}
+            onChange={(e) => setForm({ ...form, mobile: e.target.value })}
+          />
+          <Input
+            label="Address"
+            value={form.address}
+            onChange={(e) => setForm({ ...form, address: e.target.value })}
+          />
 
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <h3 className="text-sm">Socials</h3>
-                <Button size="sm" onClick={addSocial}>
-                  ➕
+          <div className="space-y-2">
+            <div className="flex justify-between">
+              <h3 className="text-sm">Socials</h3>
+              <Button size="sm" onClick={addSocial}>
+                ➕
+              </Button>
+            </div>
+
+            {form.socials.map((s, i) => (
+              <div key={i} className="flex gap-2 items-center">
+                <Input
+                  placeholder="Name"
+                  value={s.name}
+                  onChange={(e) => updateSocial(i, "name", e.target.value)}
+                />
+                <Input
+                  placeholder="URL"
+                  value={s.url}
+                  onChange={(e) => updateSocial(i, "url", e.target.value)}
+                />
+                <input
+                  type="file"
+                  onChange={(e) =>
+                    updateSocial(i, "iconFile", e.target.files[0])
+                  }
+                  className="text-xs text-[var(--text-color)]"
+                />
+                <Button
+                  size="sm"
+                  variant="danger"
+                  onClick={() => removeSocial(i)}
+                >
+                  ❌
                 </Button>
               </div>
-
-              {form.socials.map((s, i) => (
-                <div key={i} className="flex gap-2 items-center">
-                  <Input
-                    placeholder="Name"
-                    value={s.name}
-                    onChange={(e) => updateSocial(i, "name", e.target.value)}
-                  />
-                  <Input
-                    placeholder="URL"
-                    value={s.url}
-                    onChange={(e) => updateSocial(i, "url", e.target.value)}
-                  />
-                  <input
-                    type="file"
-                    onChange={(e) =>
-                      updateSocial(i, "iconFile", e.target.files[0])
-                    }
-                    className="text-xs text-white"
-                  />
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    onClick={() => removeSocial(i)}
-                  >
-                    ❌
-                  </Button>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
-              <Button onClick={handleSubmit}>Save</Button>
-            </div>
+            ))}
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }

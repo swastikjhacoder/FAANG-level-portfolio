@@ -14,11 +14,8 @@ export default function Modal({
   closeOnOverlayClick = true,
 }) {
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
-    }
+    if (isOpen) document.body.style.overflow = "hidden";
+    else document.body.style.overflow = "auto";
 
     return () => {
       document.body.style.overflow = "auto";
@@ -28,7 +25,7 @@ export default function Modal({
   if (!isOpen) return null;
 
   const sizes = {
-    sm: "max-w-md",
+    sm: "max-w-sm",
     md: "max-w-lg",
     lg: "max-w-2xl",
     xl: "max-w-4xl",
@@ -39,7 +36,7 @@ export default function Modal({
   };
 
   const modalContent = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4">
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={handleOverlayClick}
@@ -47,27 +44,33 @@ export default function Modal({
 
       <div
         className={clsx(
-          "relative w-full bg-gray-900 text-white rounded-2xl shadow-xl border border-gray-700",
+          "relative w-full rounded-2xl shadow-xl border",
+          "bg-[var(--bg-color)] text-[var(--text-color)] border-[var(--glass-border)]",
+          "max-h-[95vh] flex flex-col",
+          "animate-in fade-in zoom-in-95 duration-200",
           sizes[size],
         )}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700">
-            <h2 className="text-lg font-semibold">{title}</h2>
+          <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--glass-border)]">
+            <h2 className="text-sm sm:text-lg font-semibold truncate">
+              {title}
+            </h2>
+
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-white transition"
+              className="text-[var(--text-muted)] hover:text-[var(--text-color)] transition text-lg"
             >
               ✕
             </button>
           </div>
         )}
 
-        <div className="p-6">{children}</div>
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1">{children}</div>
 
         {footer && (
-          <div className="px-6 py-4 border-t border-gray-700 flex justify-end gap-2">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-[var(--glass-border)] flex flex-col sm:flex-row justify-end gap-2">
             {footer}
           </div>
         )}

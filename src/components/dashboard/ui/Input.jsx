@@ -35,7 +35,10 @@ export default function Input({
   };
 
   const baseStyles =
-    "peer w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition";
+    "peer w-full rounded-lg px-4 py-3 text-sm transition outline-none " +
+    "bg-[var(--glass-bg)] border border-[var(--glass-border)] " +
+    "text-[var(--text-color)] placeholder-transparent " +
+    "focus:ring-2 focus:ring-purple-500";
 
   return (
     <div className={clsx("relative", fullWidth && "w-full")}>
@@ -81,8 +84,8 @@ export default function Input({
         className={clsx(
           "absolute left-4 transition-all duration-200 pointer-events-none",
           isActive
-            ? "top-1 text-xs text-blue-400"
-            : "top-3 text-sm text-gray-400",
+            ? "top-1 text-xs text-purple-400"
+            : "top-3 text-sm text-(--text-muted)",
         )}
       >
         {label}

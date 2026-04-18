@@ -6,6 +6,7 @@ import { dashboardRoutes } from "@/config/dashboardRoutes";
 import { useAuthStore } from "@/store/useAuthStore";
 import Button from "@/components/dashboard/ui/Button";
 import Input from "@/components/dashboard/ui/Input";
+import Modal from "@/components/dashboard/ui/Modal";
 import {
   Table,
   TableHead,
@@ -200,11 +201,14 @@ export default function ProjectsPage() {
   return (
     <div className="p-4 sm:p-6 space-y-6">
       <PageHeader title={route.name} icon={route.icon} />
-      <div className="border-t" />
 
-      <div className="border rounded-lg p-4 bg-white dark:bg-gray-900">
+      <div className="border-t border-[var(--glass-border)]" />
+
+      <div className="rounded-xl p-4 bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-[var(--glass-shadow)]">
         <div className="flex justify-between">
-          <h2 className="text-lg font-semibold">Projects Section</h2>
+          <h2 className="text-lg font-semibold text-[var(--text-color)]">
+            Projects Section
+          </h2>
           <Button onClick={() => setIsSectionModalOpen(true)}>
             {section ? "Edit" : "Add"}
           </Button>
@@ -213,13 +217,15 @@ export default function ProjectsPage() {
         {section && (
           <div className="mt-3">
             <h3 className="font-semibold">{section.heading}</h3>
-            <p className="text-sm text-gray-400">{section.subHeading}</p>
+            <p className="text-sm text-[var(--text-muted)]">
+              {section.subHeading}
+            </p>
             <p className="mt-2">{section.description}</p>
           </div>
         )}
       </div>
 
-      <div className="border rounded-lg bg-white dark:bg-gray-900">
+      <div className="rounded-xl bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-[var(--glass-shadow)]">
         <div className="p-4 flex justify-between">
           <h2 className="text-lg font-semibold">Projects</h2>
           <Button size="sm" onClick={openAdd}>
@@ -227,7 +233,7 @@ export default function ProjectsPage() {
           </Button>
         </div>
 
-        <div className="p-4 border-t">
+        <div className="p-4 border-t border-[var(--glass-border)]">
           <Table>
             <TableHead>
               <TableRow>
@@ -298,95 +304,98 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      {isSectionModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-900 p-6 rounded-lg w-[90%] max-w-lg space-y-3">
-            <Input
-              label="Heading"
-              value={sectionForm.heading}
-              onChange={(e) =>
-                setSectionForm({ ...sectionForm, heading: e.target.value })
-              }
-            />
-            <Input
-              label="Sub Heading"
-              value={sectionForm.subHeading}
-              onChange={(e) =>
-                setSectionForm({
-                  ...sectionForm,
-                  subHeading: e.target.value,
-                })
-              }
-            />
-            <Input
-              label="Description"
-              textarea
-              value={sectionForm.description}
-              onChange={(e) =>
-                setSectionForm({
-                  ...sectionForm,
-                  description: e.target.value,
-                })
-              }
-            />
-            <div className="flex justify-end gap-2">
-              <Button onClick={() => setIsSectionModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleSectionSubmit}>Save</Button>
-            </div>
-          </div>
+      <Modal
+        isOpen={isSectionModalOpen}
+        onClose={() => setIsSectionModalOpen(false)}
+        title={section ? "Edit Projects Section" : "Add Projects Section"}
+        footer={
+          <>
+            <Button onClick={() => setIsSectionModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleSectionSubmit}>Save</Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <Input
+            label="Heading"
+            value={sectionForm.heading}
+            onChange={(e) =>
+              setSectionForm({ ...sectionForm, heading: e.target.value })
+            }
+          />
+          <Input
+            label="Sub Heading"
+            value={sectionForm.subHeading}
+            onChange={(e) =>
+              setSectionForm({
+                ...sectionForm,
+                subHeading: e.target.value,
+              })
+            }
+          />
+          <Input
+            label="Description"
+            textarea
+            value={sectionForm.description}
+            onChange={(e) =>
+              setSectionForm({
+                ...sectionForm,
+                description: e.target.value,
+              })
+            }
+          />
         </div>
-      )}
+      </Modal>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-900 p-6 rounded-lg w-[90%] max-w-lg space-y-3">
-            <Input
-              label="Project Name"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-            <Input
-              label="Live URL"
-              value={form.liveUrl}
-              onChange={(e) => setForm({ ...form, liveUrl: e.target.value })}
-            />
-            <Input
-              label="GitHub URL"
-              value={form.githubUrl}
-              onChange={(e) => setForm({ ...form, githubUrl: e.target.value })}
-            />
-            <Input
-              label="Tech Stack (comma separated)"
-              value={form.techStack}
-              onChange={(e) => setForm({ ...form, techStack: e.target.value })}
-            />
-            <Input
-              label="Description (comma separated)"
-              value={form.description}
-              onChange={(e) =>
-                setForm({ ...form, description: e.target.value })
-              }
-            />
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={editingProject ? "Edit Project" : "Add Project"}
+        footer={
+          <>
+            <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleSubmit}>
+              {editingProject ? "Update" : "Add"}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <Input
+            label="Project Name"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+          />
+          <Input
+            label="Live URL"
+            value={form.liveUrl}
+            onChange={(e) => setForm({ ...form, liveUrl: e.target.value })}
+          />
+          <Input
+            label="GitHub URL"
+            value={form.githubUrl}
+            onChange={(e) => setForm({ ...form, githubUrl: e.target.value })}
+          />
+          <Input
+            label="Tech Stack (comma separated)"
+            value={form.techStack}
+            onChange={(e) => setForm({ ...form, techStack: e.target.value })}
+          />
+          <Input
+            label="Description (comma separated)"
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+          />
 
-            <input
-              type="file"
-              onChange={(e) =>
-                setForm({ ...form, screenshot: e.target.files[0] })
-              }
-              className="text-white text-sm"
-            />
-
-            <div className="flex justify-end gap-2">
-              <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
-              <Button onClick={handleSubmit}>
-                {editingProject ? "Update" : "Add"}
-              </Button>
-            </div>
-          </div>
+          <input
+            type="file"
+            onChange={(e) =>
+              setForm({ ...form, screenshot: e.target.files[0] })
+            }
+            className="text-[var(--text-color)] text-sm"
+          />
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
