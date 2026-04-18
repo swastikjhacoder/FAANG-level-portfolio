@@ -1,33 +1,17 @@
-"use client";
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/useAuthStore";
+import PageHeader from "@/components/dashboard/ui/PageHeader";
+import { dashboardRoutes } from "@/config/dashboardRoutes";
 
 export default function DashboardPage() {
-  const router = useRouter();
+  const route = dashboardRoutes.find((r) => r.href === "/dashboard");
 
-  const user = useAuthStore((s) => s.user);
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const hydrated = useAuthStore((s) => s.hydrated);
-
-  console.log("Dashboard user:", user);
-
-  useEffect(() => {
-    if (!hydrated) return;
-
-    if (!isAuthenticated) {
-      router.replace("/login");
-    }
-  }, [hydrated, isAuthenticated, router]);
-
-  if (!hydrated) return null;
-  if (!isAuthenticated) return null;
+  if (!route) return null;
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold">Dashboard</h1>
-      <p>Welcome to your protected dashboard 🚀</p>
-    </div>
+          <PageHeader title={route.name} icon={route.icon} />
+          <div className="border-t border-gray-200 dark:border-gray-800 mb-6" />
+    
+          <div>{/* Your content will go here */}</div>
+        </div>
   );
 }
