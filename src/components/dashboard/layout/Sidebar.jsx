@@ -6,6 +6,28 @@ import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { dashboardRoutes } from "@/config/dashboardRoutes";
 
+import {
+  LayoutDashboard,
+  User,
+  Code,
+  Briefcase,
+  GraduationCap,
+  FolderKanban,
+  Wrench,
+  Mail,
+} from "lucide-react";
+
+const iconMap = {
+  dashboard: LayoutDashboard,
+  user: User,
+  code: Code,
+  briefcase: Briefcase,
+  academic: GraduationCap,
+  projects: FolderKanban,
+  services: Wrench,
+  contact: Mail,
+};
+
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, hydrated } = useAuthStore();
@@ -41,7 +63,7 @@ export default function Sidebar() {
               ? pathname === item.href
               : pathname.startsWith(item.href);
 
-          const Icon = item.icon;
+          const Icon = iconMap[item.icon];
 
           return (
             <div key={item.name}>
@@ -58,7 +80,7 @@ export default function Sidebar() {
                       : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                   }`}
               >
-                <Icon size={18} />
+                {Icon && <Icon size={18} />}
                 <span>{item.name}</span>
               </Link>
             </div>
