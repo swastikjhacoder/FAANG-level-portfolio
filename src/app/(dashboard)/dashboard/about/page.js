@@ -238,12 +238,27 @@ export default function AboutPage() {
         </div>
 
         {about && (
-          <div className="mt-4 space-y-1">
-            <h3 className="font-semibold">{about.heading}</h3>
-            <p className="text-sm text-[var(--text-muted)]">
-              {about.subHeading}
-            </p>
-            <p className="mt-2">{about.description}</p>
+          <div className="mt-4 space-y-2">
+            <div>
+              <span className="text-xs text-[var(--text-muted)]">Heading</span>
+              <h3 className="font-semibold">{about.heading}</h3>
+            </div>
+
+            <div>
+              <span className="text-xs text-[var(--text-muted)]">
+                Sub Heading
+              </span>
+              <p className="text-sm text-[var(--text-muted)]">
+                {about.subHeading}
+              </p>
+            </div>
+
+            <div>
+              <span className="text-xs text-[var(--text-muted)]">
+                Description
+              </span>
+              <p className="mt-1">{about.description}</p>
+            </div>
           </div>
         )}
       </div>
