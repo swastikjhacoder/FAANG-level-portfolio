@@ -84,7 +84,7 @@ const withRateLimit = (handler, options = {}) => {
         metadata: { message: error.message },
       });
 
-      return handler(req);
+      return await handler(req);
     }
   };
 };

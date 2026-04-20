@@ -72,17 +72,20 @@ export const secureFetch = async (url, options = {}) => {
     const csrfToken = getCsrfToken();
     const isFormData = options.body instanceof FormData;
 
+    const baseHeaders = {
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
+      ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+      ...(options.headers || {}),
+    };
+
+    if (inMemoryAccessToken) {
+      baseHeaders.Authorization = `Bearer ${inMemoryAccessToken}`;
+    }
+
     let config = {
       credentials: "include",
       ...options,
-      headers: {
-        ...(isFormData ? {} : { "Content-Type": "application/json" }),
-        ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
-        ...(inMemoryAccessToken
-          ? { Authorization: `Bearer ${inMemoryAccessToken}` }
-          : {}),
-        ...(options.headers || {}),
-      },
+      headers: baseHeaders,
     };
 
     let response = await fetch(url, config);
@@ -96,19 +99,7 @@ export const secureFetch = async (url, options = {}) => {
 
       const newAccessToken = await refreshPromise;
 
-      if (newAccessToken) {
-        setAccessToken(newAccessToken);
-
-        config = {
-          ...config,
-          headers: {
-            ...config.headers,
-            Authorization: `Bearer ${newAccessToken}`,
-          },
-        };
-
-        response = await fetch(url, config);
-      } else {
+      if (!newAccessToken) {
         clearAccessToken();
 
         const { logout } = useAuthStore.getState();
@@ -120,10 +111,29 @@ export const secureFetch = async (url, options = {}) => {
 
         throw new Error("Session expired");
       }
+
+      setAccessToken(newAccessToken);
+
+      const retryHeaders = {
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
+        ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        Authorization: `Bearer ${newAccessToken}`,
+        ...(options.headers || {}),
+      };
+
+      const retryConfig = {
+        credentials: "include",
+        ...options,
+        headers: {
+          ...retryHeaders,
+          Authorization: `Bearer ${newAccessToken}`,
+        },
+      };
+
+      response = await fetch(url, retryConfig);
     }
 
     let data;
-
     try {
       data = await response.clone().json();
     } catch {
@@ -139,10 +149,7 @@ export const secureFetch = async (url, options = {}) => {
 
   if (method === "GET") {
     requestCache.set(cacheKey, fetchPromise);
-
-    setTimeout(() => {
-      requestCache.delete(cacheKey);
-    }, 5000);
+    setTimeout(() => requestCache.delete(cacheKey), 5000);
   }
 
   return fetchPromise;

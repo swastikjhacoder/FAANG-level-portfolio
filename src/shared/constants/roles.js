@@ -17,21 +17,22 @@ export const isValidRole = (role) => {
 };
 
 export const getRoleLevel = (role) => {
-  return ROLE_HIERARCHY.indexOf(role);
+  const index = ROLE_HIERARCHY.indexOf(role);
+  return index === -1 ? -1 : index;
 };
 
-export const hasRole = (userRoles = [], requiredRole) => {
-  if (!requiredRole) return true;
+export const hasRole = (userRoles, requiredRoles) => {
+  if (!Array.isArray(requiredRoles)) {
+    requiredRoles = [requiredRoles];
+  }
 
-  const requiredLevel = getRoleLevel(requiredRole);
-
-  return userRoles.some((role) => getRoleLevel(role) >= requiredLevel);
+  return requiredRoles.some((role) => userRoles.includes(role));
 };
 
 export const hasAnyRole = (userRoles = [], roles = []) => {
-  return roles.some((role) => userRoles.includes(role));
+  return roles.some((role) => isValidRole(role) && userRoles.includes(role));
 };
 
 export const hasAllRoles = (userRoles = [], roles = []) => {
-  return roles.every((role) => userRoles.includes(role));
+  return roles.every((role) => isValidRole(role) && userRoles.includes(role));
 };

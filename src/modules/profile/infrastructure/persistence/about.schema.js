@@ -6,7 +6,7 @@ const sanitize = (value) => {
   return xss(value.trim());
 };
 
-const FORBIDDEN_KEYS = ["$where", "$regex", "$gt", "$lt", "$ne", "$in"];
+const FORBIDDEN_KEYS = ["$where", "$expr", "$function"];
 
 const checkInjection = (obj) => {
   if (!obj || typeof obj !== "object") return;

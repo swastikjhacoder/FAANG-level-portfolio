@@ -34,7 +34,10 @@ export const verifyAccessToken = (token) => {
       audience: AUDIENCE,
     });
   } catch (err) {
-    throw new Error("Invalid or expired access token");
+    if (err.name === "TokenExpiredError") {
+      throw new Error("Token expired");
+    }
+    throw new Error("Invalid token");
   }
 };
 

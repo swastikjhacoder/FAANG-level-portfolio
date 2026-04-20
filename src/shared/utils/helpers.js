@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { cookies } from "next/headers";
 import { verifyAccessToken } from "@/shared/utils/jwt";
 
 export const isObject = (value) =>
@@ -73,6 +72,23 @@ export const toArray = (value) => {
 
 export const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
+export const getCookieFromRequest = (req, name) => {
+  const cookieHeader = req.headers.get("cookie") || "";
+
+  const cookies = Object.fromEntries(
+    cookieHeader
+      .split(";")
+      .map((c) => c.trim())
+      .filter(Boolean)
+      .map((c) => {
+        const [key, ...v] = c.split("=");
+        return [key, v.join("=")];
+      }),
+  );
+
+  return cookies[name];
+};
+
 export async function getUserFromRequest(req) {
   try {
     const authHeader =
@@ -80,13 +96,12 @@ export async function getUserFromRequest(req) {
 
     let token = null;
 
-    if (authHeader && authHeader.startsWith("Bearer ")) {
+    if (authHeader?.startsWith("Bearer ")) {
       token = authHeader.split(" ")[1];
     }
 
     if (!token) {
-      const cookieStore = await cookies();
-      token = cookieStore.get("accessToken")?.value;
+      token = getCookieFromRequest(req, "accessToken");
     }
 
     if (!token) return null;

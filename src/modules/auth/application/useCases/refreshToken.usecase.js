@@ -43,7 +43,7 @@ export class RefreshTokenUseCase {
       await this.sessionRepository.revokeAllUserSessions(user._id);
 
       await auditLogger.tokenReuseDetected({
-        userId: user._id,
+        userId: user._id.toString(),
         ip,
         userAgent,
       });
@@ -81,7 +81,7 @@ export class RefreshTokenUseCase {
 
       await auditLogger.log({
         action: "SESSION_HIJACK_DETECTED",
-        userId: user._id,
+        userId: user._id.toString(),
         ip,
         userAgent,
       });
@@ -98,16 +98,16 @@ export class RefreshTokenUseCase {
     });
 
     const accessToken = generateAccessToken({
-      userId: user._id,
-      roles: user.roles,
-      sessionVersion: user.sessionVersion,
-      sessionId: session._id,
+      userId: user._id.toString(),
+      roles: user.roles || [],
+      sessionVersion: user.sessionVersion || 1,
+      sessionId: session._id.toString(),
     });
 
     await auditLogger.log({
       action: "TOKEN_ROTATED",
-      userId: user._id,
-      sessionId: session._id,
+      userId: user._id.toString(),
+      sessionId: session._id.toString(),
       ip,
       userAgent,
     });
@@ -115,7 +115,7 @@ export class RefreshTokenUseCase {
     return {
       accessToken,
       refreshToken: newRefreshToken,
-      sessionId: session._id,
+      sessionId: session._id.toString(),
     };
   }
 }

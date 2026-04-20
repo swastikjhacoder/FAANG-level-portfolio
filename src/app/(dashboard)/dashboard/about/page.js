@@ -115,32 +115,41 @@ export default function AboutPage() {
   };
 
   const handleAboutModalSubmit = async () => {
-    const errors = {
-      heading: aboutValidators.heading(aboutForm.heading),
-      subHeading: aboutValidators.subHeading(aboutForm.subHeading),
-      description: aboutValidators.description(aboutForm.description),
-    };
+    try {
+      const errors = {
+        heading: aboutValidators.heading(aboutForm.heading),
+        subHeading: aboutValidators.subHeading(aboutForm.subHeading),
+        description: aboutValidators.description(aboutForm.description),
+      };
 
-    if (errors.heading || errors.subHeading || errors.description) return;
+      if (errors.heading || errors.subHeading || errors.description) {
+        return;
+      }
 
-    const method = about ? "PATCH" : "POST";
+      const method = about ? "PATCH" : "POST";
 
-    await fetch(`/api/v1/profile/aboutSection`, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        profileId,
-        ...aboutForm,
-      }),
-    });
+      await secureFetch("/api/v1/profile/aboutSection", {
+        method,
+        body: JSON.stringify({
+          profileId,
+          ...aboutForm,
+        }),
+      });
 
-    const res = await fetch(
-      `/api/v1/profile/aboutSection?profileId=${profileId}`,
-    );
-    const json = await res.json();
+      const res = await secureFetch(
+        `/api/v1/profile/aboutSection?profileId=${profileId}`,
+      );
 
-    setAbout(json.data);
-    setIsAboutModalOpen(false);
+      setAbout(res.data);
+
+      setIsAboutModalOpen(false);
+    } catch (err) {
+      console.error("About submit failed:", err);
+
+      if (err.status === 401) return;
+
+      alert(err.message || "Failed to update About section");
+    }
   };
 
   const refreshSummary = async () => {

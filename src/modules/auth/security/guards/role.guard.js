@@ -1,13 +1,20 @@
 import { hasRole } from "@/shared/constants/roles";
+import { NextResponse } from "next/server";
 
-export const roleGuard = (handler, requiredRole) => {
+export const roleGuard = (handler, allowedRoles = []) => {
   return async (req) => {
-    const user = req.user;
+    try {
+      const userRoles = req.user?.roles || [];
 
-    if (!hasRole(user.roles, requiredRole)) {
-      return new Response("Forbidden", { status: 403 });
+      const hasAccess = allowedRoles.some((role) => userRoles.includes(role));
+
+      if (!hasAccess) {
+        return new Response("Forbidden", { status: 403 });
+      }
+
+      return await handler(req);
+    } catch (err) {
+      return new Response("Authorization error", { status: 403 });
     }
-
-    return handler(req);
   };
 };

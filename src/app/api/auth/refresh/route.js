@@ -12,7 +12,6 @@ export async function POST(req) {
 
     const cookieStore = cookies();
     const refreshToken = cookieStore.get("refreshToken")?.value;
-    console.log("REFRESH COOKIE:", cookieStore.get("refreshToken"));
 
     if (!refreshToken) {
       return NextResponse.json(
@@ -24,32 +23,30 @@ export async function POST(req) {
     const { ip, userAgent } = extractRequestMeta(req);
 
     const useCase = new RefreshTokenUseCase();
+    const result = await useCase.execute(refreshToken, { ip, userAgent });
 
-    const result = await useCase.execute(refreshToken, {
-      ip,
-      userAgent,
+    const res = NextResponse.json({
+      success: true,
+      accessToken: result.accessToken,
     });
 
-    cookieStore.set("refreshToken", result.refreshToken, {
+    res.cookies.set("refreshToken", result.refreshToken, {
       httpOnly: true,
-      secure: isProd,
+      secure: false,
       sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
     });
 
-    cookieStore.set("accessToken", result.accessToken, {
+    res.cookies.set("accessToken", result.accessToken, {
       httpOnly: true,
-      secure: isProd,
+      secure: false,
       sameSite: "lax",
       path: "/",
       maxAge: 60 * 15,
     });
 
-    return NextResponse.json({
-      success: true,
-      accessToken: result.accessToken,
-    });
+    return res;
   } catch (error) {
     return NextResponse.json(
       {

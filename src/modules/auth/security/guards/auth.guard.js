@@ -22,7 +22,7 @@ const getCookieFromRequest = (req, name) => {
   return cookies[name];
 };
 
-const extractToken = async (req) => {
+const extractToken = (req) => {
   const authHeader =
     req.headers.get("authorization") || req.headers.get("Authorization");
 
@@ -36,17 +36,29 @@ const extractToken = async (req) => {
 export const authGuard = (handler) => {
   return async (req) => {
     try {
-      const token = await extractToken(req);
+      const token = extractToken(req);
+
+      console.log("TOKEN:", token);
 
       if (!token) {
         return new Response("Unauthorized: Missing token", { status: 401 });
       }
 
-      const payload = verifyAccessToken(token);
+      let payload;
+      try {
+        payload = verifyAccessToken(token);
+        console.log("PAYLOAD:", payload);
+      } catch (err) {
+        console.error("VERIFY FAILED:", err.message);
+        return new Response("Invalid token", { status: 401 });
+      }
+
       const jti = extractJTI(token);
+      console.log("JTI:", jti);
 
       if (jti) {
         const isBlacklisted = await redis.isBlacklisted(jti);
+        console.log("BLACKLISTED:", isBlacklisted);
 
         if (isBlacklisted) {
           return new Response("Unauthorized: Token revoked", {
@@ -62,8 +74,9 @@ export const authGuard = (handler) => {
         jti,
       };
 
-      return handler(req);
+      return await handler(req);
     } catch (err) {
+      console.error("AUTH ERROR:", err);
       return new Response(err.message || "Unauthorized", { status: 401 });
     }
   };

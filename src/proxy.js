@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/", "/login", "/register"];
+const isSafeMethod = (method) => {
+  return ["GET", "HEAD", "OPTIONS"].includes(method);
+};
 
 export function proxy(req) {
   const { pathname } = req.nextUrl;
+  const method = req.method;
 
   const res = NextResponse.next();
 
@@ -20,7 +23,7 @@ export function proxy(req) {
     "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
   );
 
-  if (!PUBLIC_PATHS.includes(pathname)) {
+  if (pathname.startsWith("/dashboard")) {
     const token = req.cookies.get("refreshToken")?.value;
 
     if (!token) {
@@ -28,9 +31,37 @@ export function proxy(req) {
     }
   }
 
+  if (pathname.startsWith("/api")) {
+    if (isSafeMethod(method)) {
+      return res;
+    }
+
+    if (pathname.startsWith("/api/auth") || pathname === "/api/csrf") {
+      return res;
+    }
+
+    const csrfHeader = req.headers.get("x-csrf-token");
+
+    const cookieHeader = req.headers.get("cookie") || "";
+    const csrfCookie = cookieHeader
+      .split("; ")
+      .find((c) => c.startsWith("csrfToken="))
+      ?.split("=")[1];
+
+    if (!csrfHeader || !csrfCookie || csrfHeader !== csrfCookie) {
+      return NextResponse.json(
+        { success: false, message: "Invalid CSRF token" },
+        { status: 403 },
+      );
+    }
+  }
+
   return res;
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: [
+    "/dashboard/:path*",
+    "/api/:path*",
+  ],
 };

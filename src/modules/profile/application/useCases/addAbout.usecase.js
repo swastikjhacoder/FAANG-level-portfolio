@@ -4,7 +4,7 @@ export class AddAboutUseCase {
   }
 
   async execute(payload, user) {
-    if (!user?.id) {
+    if (!user?.userId) {
       throw new Error("Unauthorized");
     }
 
@@ -13,13 +13,13 @@ export class AddAboutUseCase {
     if (existing) {
       return this.repo.update({
         ...payload,
-        updatedBy: user.id,
+        updatedBy: user.userId,
       });
     }
 
     return this.repo.create({
       ...payload,
-      createdBy: user.id,
+      createdBy: user.userId,
     });
   }
 }

@@ -8,7 +8,8 @@ const getCookieFromRequest = (req, name) => {
 
   const cookies = Object.fromEntries(
     cookieHeader
-      .split("; ")
+      .split(";")
+      .map((c) => c.trim())
       .filter(Boolean)
       .map((c) => {
         const [key, ...v] = c.split("=");
@@ -40,6 +41,9 @@ export const validateCsrf = async (req) => {
   const cookieToken = getCookieFromRequest(req, CSRF_COOKIE_NAME);
   const headerToken = req.headers.get(CSRF_HEADER_NAME);
 
+  console.log("COOKIE TOKEN:", cookieToken);
+  console.log("HEADER TOKEN:", headerToken);
+
   if (!cookieToken || !headerToken) {
     throw new Error("CSRF token missing");
   }
@@ -66,7 +70,7 @@ export const withCsrf = (handler) => {
         await validateCsrf(req);
       }
 
-      return handler(req);
+      return await handler(req);
     } catch (error) {
       return new Response(
         JSON.stringify({

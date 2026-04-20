@@ -123,10 +123,11 @@ export const useAuthStore = create(
       },
 
       logout: async () => {
-        const csrfToken = document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("csrfToken="))
-          ?.split("=")[1];
+        const csrfRes = await fetch("/api/csrf", {
+          credentials: "include",
+        });
+
+        const { csrfToken } = await csrfRes.json();
 
         await fetch("/api/auth/logout", {
           method: "POST",

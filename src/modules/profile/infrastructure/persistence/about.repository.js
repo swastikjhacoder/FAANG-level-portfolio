@@ -2,7 +2,7 @@ import AboutModel from "./about.schema";
 
 export class AboutRepository {
   async get() {
-    return AboutModel.findOne();
+    return AboutModel.findOne({ isDeleted: false });
   }
 
   async create(data) {
