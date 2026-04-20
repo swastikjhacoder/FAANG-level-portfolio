@@ -7,6 +7,8 @@ const ALLOWED_OPERATORS = new Set([
   "$nin",
   "$eq",
   "$ne",
+  "$or",
+  "$and",
 ]);
 
 export const sanitizeMongoQuery = (query) => {

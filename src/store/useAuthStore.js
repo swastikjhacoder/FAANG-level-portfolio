@@ -123,12 +123,18 @@ export const useAuthStore = create(
       },
 
       logout: async () => {
-        try {
-          await fetch("/api/auth/logout", {
-            method: "POST",
-            credentials: "include",
-          });
-        } catch {}
+        const csrfToken = document.cookie
+          .split("; ")
+          .find((row) => row.startsWith("csrfToken="))
+          ?.split("=")[1];
+
+        await fetch("/api/auth/logout", {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "x-csrf-token": csrfToken,
+          },
+        });
 
         clearAccessToken();
 
@@ -136,10 +142,6 @@ export const useAuthStore = create(
           user: null,
           isAuthenticated: false,
         });
-
-        if (typeof window !== "undefined") {
-          window.location.href = "/login";
-        }
       },
     }),
     {

@@ -1,38 +1,46 @@
-import { cookies } from "next/headers";
 import { randomBytes, timingSafeEqual } from "crypto";
 
 const CSRF_COOKIE_NAME = "csrfToken";
 const CSRF_HEADER_NAME = "x-csrf-token";
 
+const getCookieFromRequest = (req, name) => {
+  const cookieHeader = req.headers.get("cookie") || "";
+
+  const cookies = Object.fromEntries(
+    cookieHeader
+      .split("; ")
+      .filter(Boolean)
+      .map((c) => {
+        const [key, ...v] = c.split("=");
+        return [key, v.join("=")];
+      }),
+  );
+
+  return cookies[name];
+};
+
 export const generateCsrfToken = () => {
   return randomBytes(32).toString("hex");
 };
 
-export const setCsrfCookie = async () => {
+export const setCsrfCookie = (response) => {
   const token = generateCsrfToken();
 
-  const cookieStore = await cookies();
-
-  cookieStore.set(CSRF_COOKIE_NAME, token, {
+  response.cookies.set(CSRF_COOKIE_NAME, token, {
     httpOnly: false,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
     path: "/",
   });
 
-  console.log("CSRF_SET_TOKEN:", token);
-
   return token;
 };
 
 export const validateCsrf = async (req) => {
-  const cookieStore = await cookies();
-
-  const cookieToken = cookieStore.get(CSRF_COOKIE_NAME)?.value;
+  const cookieToken = getCookieFromRequest(req, CSRF_COOKIE_NAME);
   const headerToken = req.headers.get(CSRF_HEADER_NAME);
 
   if (!cookieToken || !headerToken) {
-    console.log("CSRF_ERROR: missing token");
     throw new Error("CSRF token missing");
   }
 
@@ -43,22 +51,18 @@ export const validateCsrf = async (req) => {
     cookieBuffer.length !== headerBuffer.length ||
     !timingSafeEqual(cookieBuffer, headerBuffer)
   ) {
-    console.log("CSRF_ERROR: token mismatch");
     throw new Error("Invalid CSRF token");
   }
-
-  console.log("CSRF_VALID");
 
   return true;
 };
 
 export const withCsrf = (handler) => {
   return async (req) => {
-    const method = req.method;
     const protectedMethods = ["POST", "PUT", "PATCH", "DELETE"];
 
     try {
-      if (protectedMethods.includes(method)) {
+      if (protectedMethods.includes(req.method)) {
         await validateCsrf(req);
       }
 
@@ -69,10 +73,7 @@ export const withCsrf = (handler) => {
           success: false,
           message: "CSRF validation failed",
         }),
-        {
-          status: 403,
-          headers: { "Content-Type": "application/json" },
-        },
+        { status: 403, headers: { "Content-Type": "application/json" } },
       );
     }
   };

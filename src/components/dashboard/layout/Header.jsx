@@ -61,10 +61,10 @@ export default function Header({ collapsed, setCollapsed, setMobileOpen }) {
   const firstName =
     user?.name?.firstName || user?.name?.displayName?.split(" ")[0] || "User";
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setIsOpen(false);
-    logout();
-    router.push("/login");
+    await logout();
+    router.replace("/login");
   };
 
   const handleOpenProfile = () => {

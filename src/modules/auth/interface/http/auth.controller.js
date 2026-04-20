@@ -9,18 +9,9 @@ import { extractRequestMeta } from "@/shared/utils/requestMeta";
 import { EmailService } from "@/modules/auth/infrastructure/communication/email.service";
 import { RegisterDTO } from "../../application/dto/register.dto";
 import auditLogger from "@/shared/security/audit/audit.logger";
+import { NextResponse } from "next/server";
 
 const COOKIE_NAME = "refreshToken";
-
-const isProd = process.env.NODE_ENV === "production";
-
-const COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: isProd,
-  sameSite: isProd ? "strict" : "lax",
-  path: "/",
-  maxAge: 60 * 60 * 24 * 7,
-};
 
 const jsonResponse = (data, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -33,7 +24,6 @@ export const loginController = async (req, context = {}) => {
     await connectDB();
 
     const body = context.body || (await req.json());
-
     const { ip, userAgent } = extractRequestMeta(req);
 
     const useCase = new LoginUseCase();
@@ -43,29 +33,33 @@ export const loginController = async (req, context = {}) => {
       userAgent,
     });
 
-    const cookieStore = await cookies();
+    const response = NextResponse.json({
+      success: true,
+      user: result.user,
+    });
 
-    cookieStore.set("refreshToken", result.refreshToken, {
+    const cookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
       sameSite: "lax",
       path: "/",
+    };
+
+    response.cookies.set("accessToken", result.accessToken, cookieOptions);
+    response.cookies.set("refreshToken", result.refreshToken, {
+      ...cookieOptions,
       maxAge: 60 * 60 * 24 * 7,
     });
 
-    return Response.json({
-      success: true,
-      user: result.user,
-      accessToken: result.accessToken,
-    });
+    return response;
   } catch (error) {
     console.error("LOGIN ERROR:", error);
 
-    return new Response(
-      JSON.stringify({
+    return NextResponse.json(
+      {
         success: false,
         message: error.message || "Login failed",
-      }),
+      },
       { status: 401 },
     );
   }
@@ -123,15 +117,33 @@ export const registerController = async (req, context = {}) => {
   }
 };
 
+const getCookieFromRequest = (req, name) => {
+  const cookieHeader = req.headers.get("cookie") || "";
+
+  const cookies = Object.fromEntries(
+    cookieHeader
+      .split("; ")
+      .filter(Boolean)
+      .map((c) => {
+        const [key, ...v] = c.split("=");
+        return [key, v.join("=")];
+      }),
+  );
+
+  return cookies[name];
+};
+
 export const refreshController = async (req) => {
   try {
     await connectDB();
 
-    const cookieStore = cookies();
-    const refreshToken = cookieStore.get(COOKIE_NAME)?.value;
+    const refreshToken = getCookieFromRequest(req, "refreshToken");
 
     if (!refreshToken) {
-      return jsonResponse({ success: false, message: "Unauthorized" }, 401);
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 },
+      );
     }
 
     const { ip, userAgent } = extractRequestMeta(req);
@@ -143,19 +155,31 @@ export const refreshController = async (req) => {
       userAgent,
     });
 
-    cookieStore.set(COOKIE_NAME, result.refreshToken, COOKIE_OPTIONS);
-
-    return jsonResponse({
+    const response = NextResponse.json({
       success: true,
-      accessToken: result.accessToken,
     });
+
+    const cookieOptions = {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      path: "/",
+    };
+
+    response.cookies.set("accessToken", result.accessToken, cookieOptions);
+    response.cookies.set("refreshToken", result.refreshToken, {
+      ...cookieOptions,
+      maxAge: 60 * 60 * 24 * 7,
+    });
+
+    return response;
   } catch (error) {
-    return jsonResponse(
+    return NextResponse.json(
       {
         success: false,
         message: error.message || "Token refresh failed",
       },
-      401,
+      { status: 401 },
     );
   }
 };

@@ -6,14 +6,14 @@ const DEFAULT_LIMIT = 100;
 const DEFAULT_WINDOW = 60;
 
 const getKey = (req, prefix = "rate") => {
+  const userId = req.user?.userId || "guest";
+
   const rawIp =
     req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
     req.headers.get("x-real-ip") ||
     "unknown";
 
-  const ip = rawIp.replace(/[^0-9a-fA-F:.,]/g, "");
-
-  return `${prefix}:${ip}`;
+  return `${prefix}:${userId}:${rawIp}`;
 };
 
 const checkRateLimit = async ({ key, limit, window }) => {
