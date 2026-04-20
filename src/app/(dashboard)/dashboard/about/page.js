@@ -17,12 +17,16 @@ import {
   TableHeaderCell,
   TableEmpty,
 } from "@/components/dashboard/ui/Table";
+import { secureFetch } from "@/shared/lib/secureFetch";
 
 export default function AboutPage() {
   const route = dashboardRoutes.find((r) => r.href === "/dashboard/about");
 
   const { user, hydrated } = useAuthStore();
-  const profileId = user?.profileId;
+  const profileId = user?.id;
+  console.log("USER:", user);
+
+  console.log("PROFILE ID:", profileId);
 
   const [about, setAbout] = useState(null);
   const [aboutForm, setAboutForm] = useState({
@@ -44,7 +48,7 @@ export default function AboutPage() {
     item: (value) => {
       if (!value || !value.trim()) return "Item is required";
       if (value.trim().length < 3) return "Minimum 3 characters required";
-      if (value.length > 120) return "Maximum 120 characters allowed";
+      if (value.length > 500) return "Maximum 120 characters allowed";
       return null;
     },
   };
@@ -174,20 +178,17 @@ export default function AboutPage() {
       const updatedItems = [...summary.items];
       updatedItems[modalEditing.index] = modalInput;
 
-      await fetch(
+      await secureFetch(
         `/api/v1/profile/profileSummary?profileSummaryId=${modalEditing.summaryId}`,
         {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ items: updatedItems }),
         },
       );
     } else {
-      await fetch(`/api/v1/profile/profileSummary`, {
+      await secureFetch(`/api/v1/profile/profileSummary`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          profileId,
           items: [modalInput],
         }),
       });
@@ -198,9 +199,12 @@ export default function AboutPage() {
   };
 
   const handleDelete = async (summaryId) => {
-    await fetch(
+    await secureFetch(
       `/api/v1/profile/profileSummary?profileSummaryId=${summaryId}`,
-      { method: "DELETE" },
+
+      {
+        method: "DELETE",
+      },
     );
     refreshSummary();
   };
@@ -315,7 +319,7 @@ export default function AboutPage() {
 
             <Button
               onClick={handleModalSubmit}
-              disabled={!!summaryValidators.item(modalInput)}
+              disabled={!hydrated || !!summaryValidators.item(modalInput)}
             >
               {modalEditing ? "Update" : "Add"}
             </Button>

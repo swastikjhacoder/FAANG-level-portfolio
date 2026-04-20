@@ -103,7 +103,7 @@ const approveHandler = async (req) => {
 
     auditLogger.log({
       action: "TESTIMONIAL_APPROVE",
-      userId: req.user.id,
+      userId: req.user.userId,
       resourceId: id,
     });
 
@@ -126,7 +126,7 @@ const deleteHandler = async (req) => {
 
     auditLogger.log({
       action: "TESTIMONIAL_DELETE",
-      userId: req.user.id,
+      userId: req.user.userId,
       resourceId: id,
     });
 

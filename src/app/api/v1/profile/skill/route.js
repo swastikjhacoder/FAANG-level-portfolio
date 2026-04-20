@@ -110,7 +110,7 @@ const createHandler = async (req) => {
 
     auditLogger.log({
       action: "SKILL_CREATE",
-      userId: req.user.id,
+      userId: req.user.userId,
       resourceId: result._id,
     });
 
@@ -204,7 +204,7 @@ const updateHandler = async (req) => {
 
     auditLogger.log({
       action: "SKILL_UPDATE",
-      userId: req.user.id,
+      userId: req.user.userId,
       resourceId: skillId,
     });
 
@@ -245,7 +245,7 @@ const deleteHandler = async (req) => {
 
     auditLogger.log({
       action: "SKILL_DELETE",
-      userId: req.user.id,
+      userId: req.user.userId,
       resourceId: skillId,
     });
 

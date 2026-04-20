@@ -161,7 +161,7 @@ const createHandler = async (req) => {
 
     auditLogger.log({
       action: "CERTIFICATION_CREATE",
-      userId: req.user.id,
+      userId: req.user.userId,
       resourceId: result._id,
     });
 
@@ -272,7 +272,7 @@ const updateHandler = async (req) => {
 
     auditLogger.log({
       action: "CERTIFICATION_UPDATE",
-      userId: req.user.id,
+      userId: req.user.userId,
       resourceId: result._id,
     });
 
@@ -310,7 +310,7 @@ const deleteHandler = async (req) => {
 
     auditLogger.log({
       action: "CERTIFICATION_DELETE",
-      userId: req.user.id,
+      userId: req.user.userId,
       resourceId: id,
     });
 

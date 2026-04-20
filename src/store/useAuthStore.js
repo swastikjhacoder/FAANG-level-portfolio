@@ -1,18 +1,20 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { setAccessToken, clearAccessToken } from "@/shared/lib/secureFetch";
 
 export const useAuthStore = create(
   persist(
     (set) => ({
       user: null,
-      accessToken: null,
       isAuthenticated: false,
       hydrated: false,
 
       setHydrated: () => set({ hydrated: true }),
 
       login: async (email, password) => {
-        const csrfRes = await fetch("/api/csrf");
+        const csrfRes = await fetch("/api/csrf", {
+          credentials: "include",
+        });
         const { csrfToken } = await csrfRes.json();
 
         const res = await fetch("/api/auth/login", {
@@ -22,17 +24,19 @@ export const useAuthStore = create(
             "x-csrf-token": csrfToken,
           },
           body: JSON.stringify({ email, password }),
+          credentials: "include",
         });
 
         const data = await res.json();
 
-        if (!res.ok) {
+        if (!res.ok || !data.success) {
           throw new Error(data.message || "Login failed");
         }
 
+        setAccessToken(data.accessToken);
+
         set({
           user: data.user,
-          accessToken: data.accessToken,
           isAuthenticated: true,
         });
 
@@ -40,7 +44,9 @@ export const useAuthStore = create(
       },
 
       register: async (formDataInput) => {
-        const csrfRes = await fetch("/api/csrf");
+        const csrfRes = await fetch("/api/csrf", {
+          credentials: "include",
+        });
         const { csrfToken } = await csrfRes.json();
 
         const formData = new FormData();
@@ -60,11 +66,12 @@ export const useAuthStore = create(
             "x-csrf-token": csrfToken,
           },
           body: formData,
+          credentials: "include",
         });
 
         const data = await res.json();
 
-        if (!res.ok) {
+        if (!res.ok || !data.success) {
           throw new Error(data.message || "Registration failed");
         }
 
@@ -72,7 +79,9 @@ export const useAuthStore = create(
       },
 
       updateProfile: async (formDataInput) => {
-        const csrfRes = await fetch("/api/csrf");
+        const csrfRes = await fetch("/api/csrf", {
+          credentials: "include",
+        });
         const { csrfToken } = await csrfRes.json();
 
         const formData = new FormData();
@@ -94,11 +103,12 @@ export const useAuthStore = create(
             "x-csrf-token": csrfToken,
           },
           body: formData,
+          credentials: "include",
         });
 
         const data = await res.json();
 
-        if (!res.ok) {
+        if (!res.ok || !data.success) {
           throw new Error(data.message || "Update failed");
         }
 
@@ -112,16 +122,32 @@ export const useAuthStore = create(
         return data;
       },
 
-      logout: () => {
+      logout: async () => {
+        try {
+          await fetch("/api/auth/logout", {
+            method: "POST",
+            credentials: "include",
+          });
+        } catch {}
+
+        clearAccessToken();
+
         set({
           user: null,
-          accessToken: null,
           isAuthenticated: false,
         });
+
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
       },
     }),
     {
       name: "auth-storage",
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
       onRehydrateStorage: () => (state) => {
         state.setHydrated();
       },

@@ -62,11 +62,16 @@ const createHandler = async (req) => {
     const raw = await safeJson(req);
     const sanitized = sanitizeInput(raw);
 
-    const result = await createUC.execute(sanitized, req.user);
+    const payload = {
+      ...sanitized,
+      profileId: req.user.userId,
+    };
+
+    const result = await createUC.execute(payload, req.user);
 
     auditLogger.log({
       action: "SUMMARY_CREATE",
-      userId: req.user.id,
+      userId: req.user.userId,
       resourceId: result._id,
     });
 
@@ -109,7 +114,7 @@ const updateHandler = async (req) => {
 
     auditLogger.log({
       action: "SUMMARY_UPDATE",
-      userId: req.user.id,
+      userId: req.user.userId,
       resourceId: id,
     });
 
@@ -132,7 +137,7 @@ const deleteHandler = async (req) => {
 
     auditLogger.log({
       action: "SUMMARY_DELETE",
-      userId: req.user.id,
+      userId: req.user.userId,
       resourceId: id,
     });
 

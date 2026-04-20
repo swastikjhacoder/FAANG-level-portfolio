@@ -120,7 +120,7 @@ const createHandler = async (req) => {
 
     auditLogger.log({
       action: "CONTACT_CREATE",
-      userId: req.user.id,
+      userId: req.user.userId,
       resourceId: result._id,
     });
 
@@ -239,7 +239,7 @@ const updateHandler = async (req) => {
 
     auditLogger.log({
       action: "CONTACT_UPDATE",
-      userId: req.user.id,
+      userId: req.user.userId,
       resourceId: id,
     });
 
@@ -273,7 +273,7 @@ const deleteHandler = async (req) => {
 
     auditLogger.log({
       action: "CONTACT_DELETE",
-      userId: req.user.id,
+      userId: req.user.userId,
       resourceId: id,
     });
 

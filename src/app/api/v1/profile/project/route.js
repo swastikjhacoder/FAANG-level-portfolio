@@ -132,7 +132,7 @@ const createHandler = async (req) => {
 
     auditLogger.log({
       action: "PROJECT_CREATE",
-      userId: req.user.id,
+      userId: req.user.userId,
       resourceId: result._id,
     });
 
@@ -223,7 +223,7 @@ const updateHandler = async (req) => {
 
     auditLogger.log({
       action: "PROJECT_UPDATE",
-      userId: req.user.id,
+      userId: req.user.userId,
       resourceId: projectId,
     });
 
@@ -261,7 +261,7 @@ const deleteHandler = async (req) => {
 
     auditLogger.log({
       action: "PROJECT_DELETE",
-      userId: req.user.id,
+      userId: req.user.userId,
       resourceId: projectId,
     });
 

@@ -1,16 +1,13 @@
 import mongoose from "mongoose";
+import { cookies } from "next/headers";
+import { verifyAccessToken } from "@/shared/utils/jwt";
 
-export const isObject = (value) => {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-};
+export const isObject = (value) =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
 
-export const isString = (value) => {
-  return typeof value === "string";
-};
+export const isString = (value) => typeof value === "string";
 
-export const isNumber = (value) => {
-  return typeof value === "number" && !isNaN(value);
-};
+export const isNumber = (value) => typeof value === "number" && !isNaN(value);
 
 export const safeJsonParse = (value, fallback = null) => {
   try {
@@ -28,59 +25,43 @@ export const safeJsonStringify = (value, fallback = "") => {
   }
 };
 
-export const isValidObjectId = (id) => {
-  return mongoose.Types.ObjectId.isValid(id);
-};
+export const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 export const toObjectId = (id) => {
   if (!isValidObjectId(id)) {
     throw new Error("Invalid ObjectId");
   }
-
   return new mongoose.Types.ObjectId(id);
 };
 
 export const pick = (obj, fields = []) => {
   const result = {};
-
   for (const key of fields) {
-    if (key in obj) {
-      result[key] = obj[key];
-    }
+    if (key in obj) result[key] = obj[key];
   }
-
   return result;
 };
 
 export const omit = (obj, fields = []) => {
   const result = { ...obj };
-
   for (const key of fields) {
     delete result[key];
   }
-
   return result;
 };
 
-export const deepClone = (obj) => {
-  return structuredClone(obj);
-};
+export const deepClone = (obj) => structuredClone(obj);
 
-export const sleep = (ms) => {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-};
+export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export const generateRequestId = () => {
-  return Date.now().toString(36) + Math.random().toString(36).substring(2, 10);
-};
+export const generateRequestId = () =>
+  Date.now().toString(36) + Math.random().toString(36).substring(2, 10);
 
 export const toBoolean = (value) => {
   if (typeof value === "boolean") return value;
-
   if (typeof value === "string") {
     return ["true", "1", "yes"].includes(value.toLowerCase());
   }
-
   return false;
 };
 
@@ -90,6 +71,35 @@ export const toArray = (value) => {
   return [value];
 };
 
-export const clamp = (value, min, max) => {
-  return Math.min(Math.max(value, min), max);
-};
+export const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+export async function getUserFromRequest(req) {
+  try {
+    const authHeader =
+      req.headers.get("authorization") || req.headers.get("Authorization");
+
+    let token = null;
+
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
+    }
+
+    if (!token) {
+      const cookieStore = await cookies();
+      token = cookieStore.get("accessToken")?.value;
+    }
+
+    if (!token) return null;
+
+    const payload = verifyAccessToken(token);
+
+    return {
+      userId: payload.userId,
+      roles: payload.roles || [],
+      sessionVersion: payload.sessionVersion,
+    };
+  } catch (error) {
+    console.error("AUTH ERROR:", error.message);
+    return null;
+  }
+}

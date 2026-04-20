@@ -104,7 +104,7 @@ const deleteHandler = async (req) => {
     await deleteUC.execute(profileId);
 
     auditLogger.info("COMPETENCY_SECTION_DELETED", {
-      actor: { userId: req.user.id, roles: req.user.roles },
+      actor: { userId: req.user.userId, roles: req.user.roles },
       resource: { type: "CoreCompetency", profileId },
       meta: { requestId: req.user.requestId },
     });

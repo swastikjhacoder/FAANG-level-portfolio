@@ -71,7 +71,7 @@ const createHandler = async (req) => {
 
     auditLogger.log({
       action: "EXPERIENCE_CREATE",
-      userId: req.user.id,
+      userId: req.user.userId,
       resourceId: result._id,
     });
 
@@ -114,7 +114,7 @@ const updateHandler = async (req) => {
 
     auditLogger.log({
       action: "EXPERIENCE_UPDATE",
-      userId: req.user.id,
+      userId: req.user.userId,
       resourceId: experienceId,
     });
 
@@ -137,7 +137,7 @@ const deleteHandler = async (req) => {
 
     auditLogger.log({
       action: "EXPERIENCE_DELETE",
-      userId: req.user.id,
+      userId: req.user.userId,
       resourceId: experienceId,
     });
 

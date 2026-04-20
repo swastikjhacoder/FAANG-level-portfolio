@@ -3,24 +3,28 @@ import {
   extractJTI,
 } from "../../infrastructure/security/token.service";
 import { RedisService } from "../../infrastructure/cache/redis.service";
+import { cookies } from "next/headers";
 
 const redis = new RedisService();
 
-const extractToken = (req) => {
+const extractToken = async (req) => {
   const authHeader =
     req.headers.get("authorization") || req.headers.get("Authorization");
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return null;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    return authHeader.split(" ")[1];
   }
 
-  return authHeader.split(" ")[1];
+  const cookieStore = cookies();
+  const token = cookieStore.get("accessToken")?.value;
+
+  return token || null;
 };
 
 export const authGuard = (handler) => {
   return async (req) => {
     try {
-      const token = extractToken(req);
+      const token = await extractToken(req);
 
       if (!token) {
         return new Response("Unauthorized: Missing token", { status: 401 });
@@ -33,7 +37,9 @@ export const authGuard = (handler) => {
         const isBlacklisted = await redis.isBlacklisted(jti);
 
         if (isBlacklisted) {
-          return new Response("Unauthorized: Token revoked", { status: 401 });
+          return new Response("Unauthorized: Token revoked", {
+            status: 401,
+          });
         }
       }
 
