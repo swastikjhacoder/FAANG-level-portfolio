@@ -17,12 +17,14 @@ import {
   TableEmpty,
 } from "@/components/dashboard/ui/Table";
 import Image from "next/image";
+import { requestWithCsrf } from "@/shared/lib/apiClient";
 
 export default function SkillsPage() {
   const route = dashboardRoutes.find((r) => r.href === "/dashboard/skills");
 
-  const { user, hydrated } = useAuthStore();
-  const profileId = user?.profileId;
+  const { profile, hydrated } = useAuthStore();
+  const profileId = profile?._id;
+  console.log("Profile:", profileId);
 
   const [skills, setSkills] = useState([]);
 
@@ -72,7 +74,9 @@ export default function SkillsPage() {
   };
 
   useEffect(() => {
-    if (!hydrated || !profileId) return;
+    if (!hydrated || !profile?._id) return;
+
+    const profileId = profile._id;
 
     let isMounted = true;
 
@@ -106,7 +110,7 @@ export default function SkillsPage() {
     return () => {
       isMounted = false;
     };
-  }, [hydrated, profileId]);
+  }, [hydrated, profile]);
 
   const refetchSkills = async () => {
     const res = await fetch(`/api/v1/profile/skill?profileId=${profileId}`);
@@ -176,6 +180,11 @@ export default function SkillsPage() {
     if (validators.name(form.name) || validators.proficiency(form.proficiency))
       return;
 
+    if (!profile?._id) {
+      alert("Profile not loaded yet");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("profileId", profileId);
     formData.append("name", form.name);
@@ -189,20 +198,18 @@ export default function SkillsPage() {
 
     const method = editingSkill ? "PATCH" : "POST";
 
-    await fetch(url, { method, body: formData });
+    await requestWithCsrf(url, method, formData);
 
     setIsModalOpen(false);
     await refetchSkills();
   };
 
   const handleDelete = async (id) => {
-    await fetch(`/api/v1/profile/skill?skillId=${id}`, {
-      method: "DELETE",
-    });
+    await requestWithCsrf(`/api/v1/profile/skill?skillId=${id}`, "DELETE");
     await refetchSkills();
   };
 
-  if (!hydrated) return null;
+  if (!hydrated) return;
 
   return (
     <div className="p-4 sm:p-6 space-y-6">

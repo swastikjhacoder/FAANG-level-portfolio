@@ -1,121 +1,74 @@
-import { hashToken, generateTokenWithMeta } from "@/shared/utils/hash";
-import { signAccessToken as generateAccessToken } from "@/shared/utils/jwt";
-
-import { SessionRepository } from "../../infrastructure/persistence/session.repository";
-import { UserRepository } from "@/modules/auth/infrastructure/persistence/user.repository";
-
-import auditLogger from "@/shared/security/audit/audit.logger";
 import crypto from "crypto";
+import { UnauthorizedError } from "@/shared/errors";
 
-const generateFingerprint = (userAgent, ip) => {
-  return crypto
-    .createHash("sha256")
-    .update(
-      `${userAgent}-${ip}-${process.env.FINGERPRINT_SECRET || "dev-secret"}`,
-    )
-    .digest("hex");
-};
+import SessionModel from "@/modules/auth/infrastructure/persistence/session.schema";
+import UserModel from "@/modules/auth/infrastructure/persistence/user.schema";
+
+import { signAccessToken, signRefreshToken } from "@/shared/utils/jwt";
+
+const hashToken = (token) =>
+  crypto.createHash("sha256").update(token).digest("hex");
 
 export class RefreshTokenUseCase {
-  constructor() {
-    this.sessionRepository = new SessionRepository();
-    this.userRepository = new UserRepository();
-  }
+  async execute(refreshToken, { ip, userAgent }) {
+    const tokenHash = hashToken(refreshToken);
 
-  async execute(refreshToken, context = {}) {
-    const { ip, userAgent, deviceFingerprint } = context;
-
-    const incomingHash = hashToken(refreshToken);
-
-    const session = await this.sessionRepository.findByTokenHash(incomingHash);
+    const session = await SessionModel.findOne({
+      $or: [{ currentTokenHash: tokenHash }, { previousTokenHash: tokenHash }],
+    }).select("+currentTokenHash +previousTokenHash");
 
     if (!session) {
-      throw new Error("Invalid refresh token");
-    }
-
-    const user = await this.userRepository.findById(session.userId);
-
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    if (incomingHash === session.previousTokenHash) {
-      await this.sessionRepository.revokeAllUserSessions(user._id);
-
-      await auditLogger.tokenReuseDetected({
-        userId: user._id.toString(),
-        ip,
-        userAgent,
-      });
-
-      throw new Error("Session compromised (token reuse detected)");
-    }
-
-    if (incomingHash !== session.currentTokenHash) {
-      throw new Error("Invalid refresh token");
+      throw new UnauthorizedError("Invalid session");
     }
 
     if (session.isRevoked) {
-      await this.sessionRepository.revokeAllUserSessions(user._id);
-      throw new Error("Session revoked");
+      throw new UnauthorizedError("Session revoked");
     }
 
-    if (new Date() > new Date(session.expiresAt)) {
-      await this.sessionRepository.revokeSession(session._id);
-      throw new Error("Refresh token expired");
+    if (session.expiresAt < new Date()) {
+      throw new UnauthorizedError("Session expired");
     }
 
-    if (
-      user.sessionVersion !== undefined &&
-      session.sessionVersion !== user.sessionVersion
-    ) {
-      await this.sessionRepository.revokeAllUserSessions(user._id);
-      throw new Error("Session invalidated");
+    const isValid =
+      tokenHash === session.currentTokenHash ||
+      tokenHash === session.previousTokenHash;
+
+    if (!isValid) {
+      throw new UnauthorizedError("Invalid token");
     }
 
-    const currentFingerprint =
-      deviceFingerprint || generateFingerprint(userAgent, ip);
-
-    if (session.fingerprint && session.fingerprint !== currentFingerprint) {
-      await this.sessionRepository.revokeSession(session._id);
-
-      await auditLogger.log({
-        action: "SESSION_HIJACK_DETECTED",
-        userId: user._id.toString(),
-        ip,
-        userAgent,
-      });
-
-      throw new Error("Session hijacking detected");
+    if (session.fingerprint !== `${userAgent}-${ip}`) {
+      console.warn("⚠️ Fingerprint mismatch");
     }
 
-    const { raw: newRefreshToken, hash: newHash } = generateTokenWithMeta();
+    const user = await UserModel.findById(session.userId);
 
-    await this.sessionRepository.updateTokenRotation(session._id, {
-      previousTokenHash: session.currentTokenHash,
-      currentTokenHash: newHash,
-      lastUsedAt: new Date(),
+    if (!user) {
+      throw new UnauthorizedError("User not found");
+    }
+
+    const newRefreshToken = signRefreshToken({
+      userId: user._id,
+      sessionVersion: session.sessionVersion,
     });
 
-    const accessToken = generateAccessToken({
-      userId: user._id.toString(),
-      roles: user.roles || [],
-      sessionVersion: user.sessionVersion || 1,
-      sessionId: session._id.toString(),
-    });
+    const newTokenHash = hashToken(newRefreshToken);
 
-    await auditLogger.log({
-      action: "TOKEN_ROTATED",
-      userId: user._id.toString(),
-      sessionId: session._id.toString(),
-      ip,
-      userAgent,
+    session.previousTokenHash = session.currentTokenHash;
+    session.currentTokenHash = newTokenHash;
+    session.lastUsedAt = new Date();
+
+    await session.save();
+
+    const accessToken = signAccessToken({
+      userId: user._id,
+      roles: user.roles,
+      sessionVersion: session.sessionVersion,
     });
 
     return {
       accessToken,
       refreshToken: newRefreshToken,
-      sessionId: session._id.toString(),
     };
   }
 }

@@ -1,11 +1,13 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { setAccessToken, clearAccessToken } from "@/shared/lib/secureFetch";
+import { secureFetch } from "@/shared/lib/secureFetch";
 
 export const useAuthStore = create(
   persist(
     (set) => ({
       user: null,
+      profile: null,
       isAuthenticated: false,
       hydrated: false,
 
@@ -15,6 +17,7 @@ export const useAuthStore = create(
         const csrfRes = await fetch("/api/csrf", {
           credentials: "include",
         });
+
         const { csrfToken } = await csrfRes.json();
 
         const res = await fetch("/api/auth/login", {
@@ -35,8 +38,19 @@ export const useAuthStore = create(
 
         setAccessToken(data.accessToken);
 
+        let profileData = null;
+
+        try {
+          const profileJson = await secureFetch("/api/v1/profile/me");
+
+          profileData = profileJson.data || null;
+        } catch (err) {
+          console.error("Profile fetch failed:", err);
+        }
+
         set({
           user: data.user,
+          profile: profileData,
           isAuthenticated: true,
         });
 
@@ -141,16 +155,20 @@ export const useAuthStore = create(
 
         set({
           user: null,
+          profile: null,
           isAuthenticated: false,
         });
       },
     }),
     {
       name: "auth-storage",
+
       partialize: (state) => ({
         user: state.user,
+        profile: state.profile,
         isAuthenticated: state.isAuthenticated,
       }),
+
       onRehydrateStorage: () => (state) => {
         state.setHydrated();
       },

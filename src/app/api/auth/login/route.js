@@ -66,20 +66,16 @@ export async function POST(req) {
     return new Response("CORS blocked", { status: 403 });
   }
 
-  const controllerResponse = await handler(req);
+  const response = await handler(req);
 
-  const body = await controllerResponse.text();
+  response.headers.set("Access-Control-Allow-Origin", allowOrigin);
+  response.headers.set("Access-Control-Allow-Credentials", "true");
+  response.headers.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  response.headers.set(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization",
+  );
+  response.headers.set("Vary", "Origin");
 
-  const headers = new Headers(controllerResponse.headers);
-
-  Object.entries(buildCorsHeaders(allowOrigin)).forEach(([key, value]) => {
-    headers.set(key, value);
-  });
-
-  headers.set("Content-Type", "application/json");
-
-  return new Response(body, {
-    status: controllerResponse.status,
-    headers,
-  });
+  return response;
 }

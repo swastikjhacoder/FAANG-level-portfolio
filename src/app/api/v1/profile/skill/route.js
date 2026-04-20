@@ -20,6 +20,7 @@ import { ValidationError, NotFoundError } from "@/shared/errors";
 import auditLogger from "@/shared/security/audit/audit.logger";
 
 import { cloudinaryService } from "@/modules/profile/infrastructure/services/cloudinary.service";
+import { ProfileModel } from "@/modules/profile/infrastructure/persistence/profile.schema";
 
 const useCase = new AddSkillUseCase();
 
@@ -101,10 +102,18 @@ const createHandler = async (req) => {
       data.proficiency = Number(data.proficiency);
     }
 
+    const userId = req.user.userId;
+
+    const profile = await ProfileModel.findOne({ userId });
+
+    if (!profile) {
+      throw new NotFoundError("Profile not found");
+    }
+
+    data.profileId = profile._id.toString();
+
     const sanitized = sanitizeInput(data);
     const validated = addSkillDTO.parse(sanitized);
-
-    validateObjectId(validated.profileId, "profileId");
 
     const result = await useCase.execute(validated, req.user);
 

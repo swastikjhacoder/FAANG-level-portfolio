@@ -4,15 +4,15 @@ import { cookies } from "next/headers";
 import { RefreshTokenUseCase } from "@/modules/auth/application/useCases/refreshToken.usecase";
 import { extractRequestMeta } from "@/shared/utils/requestMeta";
 
-const isProd = process.env.NODE_ENV === "production";
-
 export async function POST(req) {
   try {
     await connectDB();
 
-    const cookieStore = cookies();
-    const refreshToken = cookieStore.get("refreshToken")?.value;
+    const cookieStore = await cookies();
 
+    const refreshToken = cookieStore.get("refreshToken")?.value;
+    console.log("REFRESH TOKEN:", refreshToken);
+    
     if (!refreshToken) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
@@ -36,14 +36,6 @@ export async function POST(req) {
       sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
-    });
-
-    res.cookies.set("accessToken", result.accessToken, {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 15,
     });
 
     return res;

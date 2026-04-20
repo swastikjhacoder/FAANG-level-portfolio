@@ -1,24 +1,45 @@
-export const postWithCsrf = async (url, body) => {
-  const csrfRes = await fetch("/api/csrf", {
-    credentials: "include",
-  });
+export const requestWithCsrf = async (url, method = "GET", body = null) => {
+  const isWriteOperation = ["POST", "PATCH", "PUT", "DELETE"].includes(method);
 
-  const { csrfToken } = await csrfRes.json();
+  let csrfToken = null;
+
+  if (isWriteOperation) {
+    const csrfRes = await fetch("/api/csrf", {
+      credentials: "include",
+    });
+
+    const csrfJson = await csrfRes.json();
+    csrfToken = csrfJson.csrfToken;
+  }
+
+  const isFormData = body instanceof FormData;
 
   const res = await fetch(url, {
-    method: "POST",
+    method,
     credentials: "include",
     headers: {
-      "Content-Type": "application/json",
-      "x-csrf-token": csrfToken,
+      ...(isWriteOperation ? { "x-csrf-token": csrfToken } : {}),
+      ...(body && !isFormData ? { "Content-Type": "application/json" } : {}),
     },
-    body: JSON.stringify(body),
+    body:
+      method === "GET" || method === "DELETE"
+        ? null
+        : isFormData
+          ? body
+          : JSON.stringify(body),
   });
 
-  const data = await res.json();
+  const text = await res.text();
 
-  if (!res.ok || !data.success) {
-    throw new Error(data.message || "Request failed");
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error("Invalid server response (not JSON)");
+  }
+
+  if (!res.ok || data?.success === false) {
+    throw new Error(data?.message || "Request failed");
   }
 
   return data;

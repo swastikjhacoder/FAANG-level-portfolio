@@ -48,6 +48,15 @@ export class ProfileRepository {
     }).lean();
   }
 
+  async findByUserId(userId) {
+    if (!userId) return null;
+
+    return await ProfileModel.findOne({
+      userId,
+      ...this.baseQuery(),
+    }).lean();
+  }
+
   async exists(profileId) {
     validateObjectId(profileId, "profileId");
 

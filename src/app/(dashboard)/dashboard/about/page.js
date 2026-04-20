@@ -24,9 +24,6 @@ export default function AboutPage() {
 
   const { user, hydrated } = useAuthStore();
   const profileId = user?.id;
-  console.log("USER:", user);
-
-  console.log("PROFILE ID:", profileId);
 
   const [about, setAbout] = useState(null);
   const [aboutForm, setAboutForm] = useState({
