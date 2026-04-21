@@ -26,11 +26,11 @@ export default function CertificationPage() {
 
   const { user, hydrated } = useAuthStore();
   const { profile } = useProfile();
-
+  const [image, setImage] = useState(null);
   const profileId = profile?._id;
-
+  const [loaded, setLoaded] = useState(false);
   const [certifications, setCertifications] = useState([]);
-
+  const [loading, setLoading] = useState(false);
   const [section, setSection] = useState(null);
   const [sectionForm, setSectionForm] = useState({
     heading: "",
@@ -46,10 +46,8 @@ export default function CertificationPage() {
   const [form, setForm] = useState({
     title: "",
     issuer: "",
-    credentialId: "",
-    credentialUrl: "",
+    certificateFileUrl: "",
     issueDate: "",
-    expiryDate: "",
   });
 
   const validators = {
@@ -63,19 +61,28 @@ export default function CertificationPage() {
     description: (v) => (!v || v.length < 10 ? "Min 10 chars" : null),
   };
 
+  const isValidUrl = (url) => {
+    try {
+      const parsed = new URL(url);
+      return ["http:", "https:"].includes(parsed.protocol);
+    } catch {
+      return false;
+    }
+  };
+
   useEffect(() => {
-    if (!hydrated || !profileId) return;
+    if (!hydrated || !profileId || loaded) return;
+
+    setLoaded(true);
 
     (async () => {
       try {
         const [json1, json2] = await Promise.all([
           secureFetch(`/api/v1/profile/certification?profileId=${profileId}`),
-          secureFetch(
-            `/api/v1/profile/certificationSection?profileId=${profileId}`,
-          ),
+          secureFetch(`/api/v1/profile/certificationSection`),
         ]);
 
-        setCertifications(json1.data || []);
+        setCertifications(json1.data?.certifications || []);
 
         if (json2.data) {
           setSection(json2.data);
@@ -89,13 +96,13 @@ export default function CertificationPage() {
         console.error(err);
       }
     })();
-  }, [hydrated, profileId]);
+  }, [hydrated, profileId, loaded]);
 
   const refetch = async () => {
     const json = await secureFetch(
       `/api/v1/profile/certification?profileId=${profileId}`,
     );
-    setCertifications(json.data || []);
+    setCertifications(json.data?.certifications || []);
   };
 
   const handleSectionSubmit = async () => {
@@ -106,7 +113,7 @@ export default function CertificationPage() {
     )
       return;
 
-    const method = section ? "PATCH" : "POST";
+    const method = "PUT";
 
     await secureFetch(`/api/v1/profile/certificationSection`, {
       method,
@@ -124,54 +131,80 @@ export default function CertificationPage() {
 
   const openAdd = () => {
     setEditingCert(null);
+    setImage(null);
+
     setForm({
       title: "",
       issuer: "",
-      credentialId: "",
-      credentialUrl: "",
+      certificateFileUrl: "",
       issueDate: "",
-      expiryDate: "",
     });
+
     setIsModalOpen(true);
   };
 
   const openEdit = (cert) => {
     setEditingCert(cert);
+
     setForm({
-      title: cert.title,
-      issuer: cert.issuer,
-      credentialId: cert.credentialId || "",
-      credentialUrl: cert.credentialUrl || "",
-      issueDate: cert.issueDate?.substring(0, 10) || "",
-      expiryDate: cert.expiryDate?.substring(0, 10) || "",
+      title: cert.content?.certificationName || "",
+      issuer: cert.content?.organization || "",
+      certificateFileUrl: cert.content?.certificateFileUrl || "",
+      issueDate: cert.content?.issueDate?.substring(0, 10) || "",
     });
+
+    setImage(null);
+
     setIsModalOpen(true);
   };
 
   const handleSubmit = async () => {
     if (validators.title(form.title) || validators.issuer(form.issuer)) return;
 
-    const payload = {
-      profileId,
-      ...form,
-      issueDate: form.issueDate || null,
-      expiryDate: form.expiryDate || null,
-    };
+    if (form.certificateFileUrl && !isValidUrl(form.certificateFileUrl)) {
+      return;
+    }
 
-    const url = editingCert
-      ? `/api/v1/profile/certification?certificationId=${editingCert._id}`
-      : `/api/v1/profile/certification`;
+    setLoading(true);
 
-    const method = editingCert ? "PATCH" : "POST";
+    try {
+      const formData = new FormData();
 
-    await secureFetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+      formData.append(
+        "data",
+        JSON.stringify({
+          profileId,
+          content: {
+            certificationName: form.title,
+            organization: form.issuer,
+            issueDate: form.issueDate,
+            certificateFileUrl: form.certificateFileUrl,
+          },
+        }),
+      );
 
-    setIsModalOpen(false);
-    await refetch();
+      if (image) formData.append("image", image);
+
+      const url = editingCert
+        ? `/api/v1/profile/certification?certificationId=${editingCert._id}`
+        : `/api/v1/profile/certification`;
+
+      const method = editingCert ? "PATCH" : "POST";
+
+      await secureFetch(url, {
+        method,
+        body: formData,
+      });
+
+      setIsModalOpen(false);
+      setImage(null);
+
+      await refetch();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -189,7 +222,6 @@ export default function CertificationPage() {
 
       <div className="border-t border-[var(--glass-border)]" />
 
-      {/* Section */}
       <div className="rounded-xl p-4 bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-[var(--glass-shadow)]">
         <div className="flex justify-between">
           <h2 className="text-lg font-semibold">Certification Section</h2>
@@ -226,7 +258,6 @@ export default function CertificationPage() {
         )}
       </div>
 
-      {/* Table */}
       <div className="rounded-xl bg-[var(--glass-bg)] border shadow-[var(--glass-shadow)]">
         <div className="p-4 flex justify-between">
           <h2 className="text-lg font-semibold">Certifications</h2>
@@ -257,29 +288,62 @@ export default function CertificationPage() {
 
               {certifications.map((cert) => (
                 <TableRow key={cert._id}>
-                  <TableCell>{cert.title}</TableCell>
-                  <TableCell className="text-center">{cert.issuer}</TableCell>
+                  <TableCell>{cert.content?.certificationName}</TableCell>
+
                   <TableCell className="text-center">
-                    {cert.issueDate
-                      ? new Date(cert.issueDate).getFullYear()
+                    {cert.content?.organization}
+                  </TableCell>
+
+                  <TableCell className="text-center">
+                    {cert.content?.issueDate
+                      ? new Date(cert.content.issueDate).getFullYear()
                       : "-"}
                   </TableCell>
+
                   <TableCell>
-                    <div className="flex justify-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => openEdit(cert)}
-                      >
-                        ✏️
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="danger"
-                        onClick={() => handleDelete(cert._id)}
-                      >
-                        🗑️
-                      </Button>
+                    <div className="flex items-center gap-3">
+                      {cert.content?.certificateImageUrl && (
+                        <img
+                          src={cert.content.certificateImageUrl}
+                          alt="certificate"
+                          onClick={() =>
+                            window.open(
+                              cert.content.certificateImageUrl,
+                              "_blank",
+                            )
+                          }
+                          className="w-12 h-12 object-cover rounded cursor-pointer hover:scale-105 transition"
+                        />
+                      )}
+
+                      <div className="flex flex-col text-sm">
+                        <span className="font-medium">
+                          {cert.content?.certificationName}
+                        </span>
+
+                        <span className="text-[var(--text-muted)]">
+                          {cert.content?.organization}
+                        </span>
+
+                        <span className="text-xs text-[var(--text-muted)]">
+                          {cert.content?.issueDate
+                            ? new Date(
+                                cert.content.issueDate,
+                              ).toLocaleDateString()
+                            : "-"}
+                        </span>
+
+                        {cert.content?.certificateFileUrl && (
+                          <a
+                            href={cert.content.certificateFileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 text-xs underline mt-1"
+                          >
+                            View Certificate
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -289,7 +353,6 @@ export default function CertificationPage() {
         </div>
       </div>
 
-      {/* Section Modal */}
       <Modal
         isOpen={isSectionModalOpen}
         onClose={() => setIsSectionModalOpen(false)}
@@ -342,7 +405,6 @@ export default function CertificationPage() {
         </div>
       </Modal>
 
-      {/* Certification Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -352,8 +414,8 @@ export default function CertificationPage() {
             <Button variant="outline" onClick={() => setIsModalOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit}>
-              {editingCert ? "Update" : "Add"}
+            <Button onClick={handleSubmit} disabled={loading}>
+              {loading ? "Saving..." : editingCert ? "Update" : "Add"}
             </Button>
           </>
         }
@@ -370,28 +432,23 @@ export default function CertificationPage() {
             onChange={(e) => setForm({ ...form, issuer: e.target.value })}
           />
           <Input
-            label="Credential ID"
-            value={form.credentialId}
-            onChange={(e) => setForm({ ...form, credentialId: e.target.value })}
-          />
-          <Input
-            label="Credential URL"
-            value={form.credentialUrl}
-            onChange={(e) =>
-              setForm({ ...form, credentialUrl: e.target.value })
-            }
-          />
-          <Input
             type="date"
             label="Issue Date"
             value={form.issueDate}
             onChange={(e) => setForm({ ...form, issueDate: e.target.value })}
           />
           <Input
-            type="date"
-            label="Expiry Date"
-            value={form.expiryDate}
-            onChange={(e) => setForm({ ...form, expiryDate: e.target.value })}
+            label="Certificate File URL"
+            value={form.certificateFileUrl}
+            onChange={(e) =>
+              setForm({ ...form, certificateFileUrl: e.target.value })
+            }
+          />
+
+          <Input
+            type="file"
+            label="Certificate Image"
+            onChange={(e) => setImage(e.target.files?.[0] || null)}
           />
         </div>
       </Modal>

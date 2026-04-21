@@ -23,16 +23,11 @@ export class AddCertificationUseCase {
           ? toDate(payload.content.issueDate)
           : undefined,
 
-        expiryDate: payload.content.expiryDate
-          ? toDate(payload.content.expiryDate)
-          : undefined,
+        certificateFileUrl: payload.content.certificateFileUrl,
 
-        credentialId: payload.content.credentialId,
-        credentialUrl: payload.content.credentialUrl,
-
-        certificateDownloadUrl:
-          payload.content.certificateDownloadUrl || undefined,
-        certificatePublicId: payload.content.certificatePublicId || undefined,
+        certificateImageUrl: payload.content.certificateImageUrl || undefined,
+        certificateImagePublicId:
+          payload.content.certificateImagePublicId || undefined,
 
         description: payload.content.description,
       },

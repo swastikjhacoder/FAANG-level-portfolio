@@ -6,9 +6,7 @@ export const updateCertificationDTO = z.object({
       certificationName: z.string().min(2).optional(),
       organization: z.string().min(2).optional(),
       issueDate: z.string().optional(),
-      expiryDate: z.string().optional(),
-      credentialId: z.string().optional(),
-      credentialUrl: z.string().url().optional(),
+      certificateFileUrl: z.string().url().optional(),
       description: z.string().optional(),
     })
     .strict(),

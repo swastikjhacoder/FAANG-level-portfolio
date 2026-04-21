@@ -34,11 +34,11 @@ export class CertificationRepository {
     const updateFields = {};
 
     if (data.content) {
-      for (const key in data.content) {
-        if (data.content[key] !== undefined) {
-          updateFields[`content.${key}`] = data.content[key];
+      Object.entries(data.content || {}).forEach(([key, value]) => {
+        if (value !== undefined) {
+          updateFields[`content.${key}`] = value;
         }
-      }
+      });
     }
 
     return CertificationModel.findOneAndUpdate(

@@ -9,6 +9,8 @@ import {
   FolderKanban,
   Wrench,
   Mail,
+  Award,
+  Speech,
 } from "lucide-react";
 
 const iconMap = {
@@ -17,8 +19,10 @@ const iconMap = {
   code: Code,
   briefcase: Briefcase,
   academic: GraduationCap,
+  certification: Award,
   projects: FolderKanban,
   services: Wrench,
+  testimonial: Speech,
   contact: Mail,
 };
 

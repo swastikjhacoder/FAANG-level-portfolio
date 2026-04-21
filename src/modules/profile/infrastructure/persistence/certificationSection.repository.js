@@ -19,6 +19,16 @@ export class CertificationSectionRepository {
   }
 
   async get() {
-    return CertificationSectionModel.findOne({ key: "certification" }).lean();
+    const section = await CertificationSectionModel.findOne({
+      key: "certification",
+    }).lean();
+
+    return (
+      section || {
+        heading: "Certifications",
+        subHeading: "My certifications",
+        description: "List of certifications I have achieved.",
+      }
+    );
   }
 }

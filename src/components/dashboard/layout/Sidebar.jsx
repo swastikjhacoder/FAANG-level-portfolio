@@ -16,6 +16,7 @@ import {
   FolderKanban,
   Wrench,
   Mail,
+  Speech,
 } from "lucide-react";
 
 const iconMap = {
@@ -27,6 +28,7 @@ const iconMap = {
   certification: Award,
   projects: FolderKanban,
   services: Wrench,
+  testimonial: Speech,
   contact: Mail,
 };
 

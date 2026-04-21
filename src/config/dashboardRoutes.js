@@ -7,5 +7,6 @@ export const dashboardRoutes = [
   { name: "Certification", href: "/dashboard/certification", icon: "certification" },
   { name: "Projects", href: "/dashboard/projects", icon: "projects" },
   { name: "Services", href: "/dashboard/services", icon: "services" },
+  { name: "Testimonial", href: "/dashboard/testimonial", icon: "testimonial" },
   { name: "Contact", href: "/dashboard/contact", icon: "contact" },
 ];

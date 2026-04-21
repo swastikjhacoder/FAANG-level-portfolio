@@ -106,7 +106,7 @@ const createHandler = async (req) => {
 
     const formData = await req.formData();
 
-    const file = formData.get("file");
+    const image = formData.get("image");
     const rawData = formData.get("data");
 
     if (!rawData) {
@@ -131,21 +131,19 @@ const createHandler = async (req) => {
 
     let certificateData = {};
 
-    if (file && typeof file === "object") {
+    if (image && typeof image === "object") {
       const uploaded = await cloudinaryService.upload(
         {
-          buffer: Buffer.from(await file.arrayBuffer()),
-          size: file.size,
-          mimetype: file.type,
-          originalname: file.name,
+          buffer: Buffer.from(await image.arrayBuffer()),
+          size: image.size,
+          mimetype: image.type,
+          originalname: image.name,
         },
-        "certifications",
+        "certifications/images",
       );
 
-      certificateData = {
-        certificateDownloadUrl: uploaded.url,
-        certificatePublicId: uploaded.publicId,
-      };
+      certificateData.certificateImageUrl = uploaded.url;
+      certificateData.certificateImagePublicId = uploaded.publicId;
     }
 
     const result = await createUC.execute(
@@ -180,14 +178,22 @@ const getHandler = async (req) => {
 
     validateObjectId(profileId, "profileId");
 
-    const [section, items] = await Promise.all([
+    const [sectionData, items] = await Promise.all([
       sectionRepo.get(),
       repo.findByProfile(profileId),
     ]);
 
+    const section = sectionData || {
+      heading: "Certifications",
+      subHeading: "My professional certifications",
+      description: "A list of certifications I have earned over time.",
+    };
+
+    const certifications = Array.isArray(items) ? items : [];
+
     return ok({
       section,
-      certifications: items,
+      certifications,
     });
   } catch (err) {
     return fail(err);
@@ -209,7 +215,7 @@ const updateHandler = async (req) => {
 
     const formData = await req.formData();
 
-    const file = formData.get("file");
+    const image = formData.get("image");
     const rawData = formData.get("data");
 
     if (!rawData) {
@@ -231,32 +237,29 @@ const updateHandler = async (req) => {
     const validated = updateCertificationDTO.parse(sanitized);
 
     if (
-      !file &&
+      !image &&
       (!validated.content || !Object.keys(validated.content).length)
     ) {
       throw new ValidationError("No valid fields to update");
     }
 
     let certificateData = {};
+    const existing = await repo.findById(id);
 
-    if (file && typeof file === "object") {
-      const existing = await repo.findById(id);
-
+    if (image && typeof image === "object") {
       const uploaded = await cloudinaryService.replace(
-        existing?.content?.certificatePublicId,
+        existing?.content?.certificateImagePublicId,
         {
-          buffer: Buffer.from(await file.arrayBuffer()),
-          size: file.size,
-          mimetype: file.type,
-          originalname: file.name,
+          buffer: Buffer.from(await image.arrayBuffer()),
+          size: image.size,
+          mimetype: image.type,
+          originalname: image.name,
         },
-        "certifications",
+        "certifications/images",
       );
 
-      certificateData = {
-        certificateDownloadUrl: uploaded.url,
-        certificatePublicId: uploaded.publicId,
-      };
+      certificateData.certificateImageUrl = uploaded.url;
+      certificateData.certificateImagePublicId = uploaded.publicId;
     }
 
     const result = await updateUC.execute(
@@ -293,16 +296,10 @@ const deleteHandler = async (req) => {
 
     const existing = await repo.findById(id);
 
-    if (existing?.content?.certificatePublicId) {
-      const resourceType = existing.content.certificateDownloadUrl?.includes(
-        "/image/",
-      )
-        ? "image"
-        : "raw";
-
+    if (existing?.content?.certificateImagePublicId) {
       await cloudinaryService.delete(
-        existing.content.certificatePublicId,
-        resourceType,
+        existing.content.certificateImagePublicId,
+        "image",
       );
     }
 
@@ -335,10 +332,10 @@ const remove = withRateLimit(
   DEV ? { limit: 1000, window: 60 } : { limit: 10, window: 60 },
 );
 
-const get = withRateLimit(getHandler, {
-  limit: 100,
-  window: 60,
-});
+const get = withRateLimit(
+  getHandler,
+  DEV ? { limit: 1000, window: 60 } : { limit: 100, window: 60 },
+);
 
 export async function POST(req) {
   return create(req);
