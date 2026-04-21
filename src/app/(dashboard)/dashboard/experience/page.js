@@ -7,7 +7,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import Button from "@/components/dashboard/ui/Button";
 import Input from "@/components/dashboard/ui/Input";
 import Modal from "@/components/dashboard/ui/Modal";
-
+import { useProfile } from "@/modules/profile/hooks/useProfile";
 import {
   Table,
   TableHead,
@@ -17,12 +17,15 @@ import {
   TableHeaderCell,
   TableEmpty,
 } from "@/components/dashboard/ui/Table";
+import { secureFetch } from "@/shared/lib/secureFetch";
 
 export default function ExperiencePage() {
   const route = dashboardRoutes.find((r) => r.href === "/dashboard/experience");
 
   const { user, hydrated } = useAuthStore();
-  const profileId = user?.profileId;
+  const { profile, loading: profileLoading } = useProfile();
+
+  const profileId = profile?._id;
 
   const [experiences, setExperiences] = useState([]);
 
@@ -67,15 +70,12 @@ export default function ExperiencePage() {
 
     (async () => {
       try {
-        const [res1, res2] = await Promise.all([
-          fetch(`/api/v1/profile/experience?profileId=${profileId}`),
-          fetch(`/api/v1/profile/experienceSection?profileId=${profileId}`),
+        const [json1, json2] = await Promise.all([
+          secureFetch(`/api/v1/profile/experience?profileId=${profileId}`),
+          secureFetch(
+            `/api/v1/profile/experienceSection?profileId=${profileId}`,
+          ),
         ]);
-
-        const json1 = await res1.json();
-        const json2 = await res2.json();
-
-        if (!isMounted) return;
 
         setExperiences(json1.data || []);
 
@@ -98,11 +98,10 @@ export default function ExperiencePage() {
   }, [hydrated, profileId]);
 
   const refetch = async () => {
-    const res = await fetch(
+    const res = await secureFetch(
       `/api/v1/profile/experience?profileId=${profileId}`,
     );
-    const json = await res.json();
-    setExperiences(json.data || []);
+    setExperiences(res.data || []);
   };
 
   const handleSectionSubmit = async () => {
@@ -115,18 +114,16 @@ export default function ExperiencePage() {
 
     const method = section ? "PATCH" : "POST";
 
-    await fetch(`/api/v1/profile/experienceSection`, {
+    await secureFetch(`/api/v1/profile/experienceSection`, {
       method,
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ profileId, ...sectionForm }),
     });
 
-    const res = await fetch(
+    const res = await secureFetch(
       `/api/v1/profile/experienceSection?profileId=${profileId}`,
     );
-    const json = await res.json();
 
-    setSection(json.data);
+    setSection(res.data);
     setIsSectionModalOpen(false);
   };
 
@@ -183,9 +180,8 @@ export default function ExperiencePage() {
 
     const method = editingExp ? "PATCH" : "POST";
 
-    await fetch(url, {
+    await secureFetch(url, {
       method,
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
@@ -194,7 +190,7 @@ export default function ExperiencePage() {
   };
 
   const handleDelete = async (id) => {
-    await fetch(`/api/v1/profile/experience?experienceId=${id}`, {
+    await secureFetch(`/api/v1/profile/experience?experienceId=${id}`, {
       method: "DELETE",
     });
     await refetch();
@@ -219,12 +215,33 @@ export default function ExperiencePage() {
         </div>
 
         {section && (
-          <div className="mt-3">
-            <h3 className="font-semibold">{section.heading}</h3>
-            <p className="text-sm text-[var(--text-muted)]">
-              {section.subHeading}
-            </p>
-            <p className="mt-2">{section.description}</p>
+          <div className="mt-4 space-y-3">
+            <div>
+              <span className="text-xs text-[var(--text-muted)] uppercase tracking-wide">
+                Heading
+              </span>
+              <h3 className="font-semibold text-[var(--text-color)]">
+                {section.heading}
+              </h3>
+            </div>
+
+            <div>
+              <span className="text-xs text-[var(--text-muted)] uppercase tracking-wide">
+                Sub Heading
+              </span>
+              <p className="text-sm text-[var(--text-muted)]">
+                {section.subHeading}
+              </p>
+            </div>
+
+            <div>
+              <span className="text-xs text-[var(--text-muted)] uppercase tracking-wide">
+                Description
+              </span>
+              <p className="mt-1 text-[var(--text-color)] leading-relaxed">
+                {section.description}
+              </p>
+            </div>
           </div>
         )}
       </div>
@@ -372,13 +389,13 @@ export default function ExperiencePage() {
             onChange={(e) => setForm({ ...form, role: e.target.value })}
           />
           <Input
-            type="date"
+            type="text"
             label="Start Date"
             value={form.startDate}
             onChange={(e) => setForm({ ...form, startDate: e.target.value })}
           />
           <Input
-            type="date"
+            type="text"
             label="End Date"
             value={form.endDate}
             onChange={(e) => setForm({ ...form, endDate: e.target.value })}
