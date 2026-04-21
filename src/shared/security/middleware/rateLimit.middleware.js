@@ -6,14 +6,18 @@ const DEFAULT_LIMIT = 100;
 const DEFAULT_WINDOW = 60;
 
 const getKey = (req, prefix = "rate") => {
-  const userId = req.user?.userId || "guest";
+  try {
+    const userId = req?.user?.userId || "guest";
 
-  const rawIp =
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-    req.headers.get("x-real-ip") ||
-    "unknown";
+    const rawIp =
+      req?.headers?.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      req?.headers?.get("x-real-ip") ||
+      "unknown";
 
-  return `${prefix}:${userId}:${rawIp}`;
+    return `${prefix}:${userId}:${rawIp}`;
+  } catch {
+    return `${prefix}:fallback`;
+  }
 };
 
 const checkRateLimit = async ({ key, limit, window }) => {

@@ -24,7 +24,6 @@ export default function SkillsPage() {
 
   const { profile, hydrated } = useAuthStore();
   const profileId = profile?._id;
-  console.log("Profile:", profileId);
 
   const [skills, setSkills] = useState([]);
 

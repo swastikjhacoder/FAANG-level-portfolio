@@ -9,20 +9,71 @@ const educationSchema = new mongoose.Schema(
       index: true,
     },
 
-    institution: { type: String, required: true, trim: true },
-    boardOrUniversity: { type: String, trim: true },
+    institution: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-    degree: String,
-    specializations: [{ type: String }],
+    boardOrUniversity: {
+      type: String,
+      trim: true,
+    },
 
-    startDate: Date,
-    endDate: Date,
+    degree: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-    isDeleted: { type: Boolean, default: false, index: true },
+    fieldOfStudy: {
+      type: String,
+      trim: true,
+    },
+
+    specializations: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+
+    startDate: {
+      type: Date,
+      required: true,
+    },
+
+    endDate: {
+      type: Date,
+    },
+
+    grade: {
+      type: String,
+      trim: true,
+    },
+
+    description: {
+      type: String,
+      trim: true,
+    },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+
     deletedAt: Date,
 
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+
+    updatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
   },
   { timestamps: true },
 );

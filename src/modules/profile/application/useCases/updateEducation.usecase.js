@@ -1,5 +1,5 @@
 import { validateObjectId } from "@/shared/utils/validateObjectId";
-import { ValidationError, NotFoundError } from "@/shared/errors";
+import { UnauthorizedError } from "@/shared/errors";
 
 export class UpdateEducationUseCase {
   constructor(repo) {
@@ -7,18 +7,22 @@ export class UpdateEducationUseCase {
   }
 
   async execute(id, payload, user) {
+    if (!user?.userId) {
+      throw new UnauthorizedError("Unauthorized");
+    }
+
     validateObjectId(id, "educationId");
 
-    if (!Object.keys(payload).length) {
-      throw new ValidationError("No valid fields to update");
-    }
+    const data = {
+      ...payload,
+      ...(payload.startDate && {
+        startDate: new Date(payload.startDate),
+      }),
+      ...(payload.endDate && {
+        endDate: new Date(payload.endDate),
+      }),
+    };
 
-    const updated = await this.repo.update(id, payload, user.id);
-
-    if (!updated) {
-      throw new NotFoundError("Education not found");
-    }
-
-    return updated;
+    return this.repo.update(id, data, user.userId);
   }
 }

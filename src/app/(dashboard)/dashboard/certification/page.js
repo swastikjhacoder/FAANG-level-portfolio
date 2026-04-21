@@ -19,15 +19,17 @@ import {
 } from "@/components/dashboard/ui/Table";
 import { secureFetch } from "@/shared/lib/secureFetch";
 
-export default function AcademicPage() {
-  const route = dashboardRoutes.find((r) => r.href === "/dashboard/academic");
+export default function CertificationPage() {
+  const route = dashboardRoutes.find(
+    (r) => r.href === "/dashboard/certification",
+  );
 
   const { user, hydrated } = useAuthStore();
-  const { profile, loading: profileLoading } = useProfile();
+  const { profile } = useProfile();
 
   const profileId = profile?._id;
 
-  const [educations, setEducations] = useState([]);
+  const [certifications, setCertifications] = useState([]);
 
   const [section, setSection] = useState(null);
   const [sectionForm, setSectionForm] = useState({
@@ -39,21 +41,20 @@ export default function AcademicPage() {
   const [isSectionModalOpen, setIsSectionModalOpen] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingEdu, setEditingEdu] = useState(null);
+  const [editingCert, setEditingCert] = useState(null);
 
   const [form, setForm] = useState({
-    institution: "",
-    boardOrUniversity: "",
-    degree: "",
-    fieldOfStudy: "",
-    specializations: "",
-    startDate: "",
-    endDate: "",
+    title: "",
+    issuer: "",
+    credentialId: "",
+    credentialUrl: "",
+    issueDate: "",
+    expiryDate: "",
   });
 
   const validators = {
-    institution: (v) => (!v ? "Required" : null),
-    degree: (v) => (!v ? "Required" : null),
+    title: (v) => (!v ? "Required" : null),
+    issuer: (v) => (!v ? "Required" : null),
   };
 
   const sectionValidators = {
@@ -65,16 +66,16 @@ export default function AcademicPage() {
   useEffect(() => {
     if (!hydrated || !profileId) return;
 
-    let isMounted = true;
-
     (async () => {
       try {
         const [json1, json2] = await Promise.all([
-          secureFetch(`/api/v1/profile/education?profileId=${profileId}`),
-          secureFetch(`/api/v1/profile/academicSection?profileId=${profileId}`),
+          secureFetch(`/api/v1/profile/certification?profileId=${profileId}`),
+          secureFetch(
+            `/api/v1/profile/certificationSection?profileId=${profileId}`,
+          ),
         ]);
 
-        setEducations(json1.data || []);
+        setCertifications(json1.data || []);
 
         if (json2.data) {
           setSection(json2.data);
@@ -88,17 +89,13 @@ export default function AcademicPage() {
         console.error(err);
       }
     })();
-
-    return () => {
-      isMounted = false;
-    };
   }, [hydrated, profileId]);
 
   const refetch = async () => {
     const json = await secureFetch(
-      `/api/v1/profile/education?profileId=${profileId}`,
+      `/api/v1/profile/certification?profileId=${profileId}`,
     );
-    setEducations(json.data || []);
+    setCertifications(json.data || []);
   };
 
   const handleSectionSubmit = async () => {
@@ -111,14 +108,14 @@ export default function AcademicPage() {
 
     const method = section ? "PATCH" : "POST";
 
-    await secureFetch(`/api/v1/profile/academicSection`, {
+    await secureFetch(`/api/v1/profile/certificationSection`, {
       method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ profileId, ...sectionForm }),
     });
 
     const json = await secureFetch(
-      `/api/v1/profile/academicSection?profileId=${profileId}`,
+      `/api/v1/profile/certificationSection?profileId=${profileId}`,
     );
 
     setSection(json.data);
@@ -126,61 +123,46 @@ export default function AcademicPage() {
   };
 
   const openAdd = () => {
-    setEditingEdu(null);
+    setEditingCert(null);
     setForm({
-      institution: "",
-      boardOrUniversity: "",
-      degree: "",
-      fieldOfStudy: "",
-      specializations: "",
-      startDate: "",
-      endDate: "",
+      title: "",
+      issuer: "",
+      credentialId: "",
+      credentialUrl: "",
+      issueDate: "",
+      expiryDate: "",
     });
     setIsModalOpen(true);
   };
 
-  const openEdit = (edu) => {
-    setEditingEdu(edu);
+  const openEdit = (cert) => {
+    setEditingCert(cert);
     setForm({
-      institution: edu.institution,
-      boardOrUniversity: edu.boardOrUniversity || "",
-      degree: edu.degree || "",
-      fieldOfStudy: edu.fieldOfStudy || "",
-      specializations: edu.specializations?.join(", "),
-      startDate: edu.startDate?.substring(0, 10) || "",
-      endDate: edu.endDate?.substring(0, 10) || "",
+      title: cert.title,
+      issuer: cert.issuer,
+      credentialId: cert.credentialId || "",
+      credentialUrl: cert.credentialUrl || "",
+      issueDate: cert.issueDate?.substring(0, 10) || "",
+      expiryDate: cert.expiryDate?.substring(0, 10) || "",
     });
     setIsModalOpen(true);
   };
 
   const handleSubmit = async () => {
-    if (
-      validators.institution(form.institution) ||
-      validators.degree(form.degree)
-    )
-      return;
+    if (validators.title(form.title) || validators.issuer(form.issuer)) return;
 
     const payload = {
       profileId,
-      institution: form.institution,
-      boardOrUniversity: form.boardOrUniversity || null,
-      degree: form.degree,
-      fieldOfStudy: form.fieldOfStudy,
-      specializations: form.specializations
-        ? form.specializations
-            .split(",")
-            .map((i) => i.trim())
-            .filter(Boolean)
-        : [],
-      startDate: form.startDate || null,
-      endDate: form.endDate || null,
+      ...form,
+      issueDate: form.issueDate || null,
+      expiryDate: form.expiryDate || null,
     };
 
-    const url = editingEdu
-      ? `/api/v1/profile/education?educationId=${editingEdu._id}`
-      : `/api/v1/profile/education`;
+    const url = editingCert
+      ? `/api/v1/profile/certification?certificationId=${editingCert._id}`
+      : `/api/v1/profile/certification`;
 
-    const method = editingEdu ? "PATCH" : "POST";
+    const method = editingCert ? "PATCH" : "POST";
 
     await secureFetch(url, {
       method,
@@ -193,7 +175,7 @@ export default function AcademicPage() {
   };
 
   const handleDelete = async (id) => {
-    await secureFetch(`/api/v1/profile/education?educationId=${id}`, {
+    await secureFetch(`/api/v1/profile/certification?certificationId=${id}`, {
       method: "DELETE",
     });
     await refetch();
@@ -207,11 +189,10 @@ export default function AcademicPage() {
 
       <div className="border-t border-[var(--glass-border)]" />
 
+      {/* Section */}
       <div className="rounded-xl p-4 bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-[var(--glass-shadow)]">
         <div className="flex justify-between">
-          <h2 className="text-lg font-semibold text-[var(--text-color)]">
-            Academic Section
-          </h2>
+          <h2 className="text-lg font-semibold">Certification Section</h2>
           <Button onClick={() => setIsSectionModalOpen(true)}>
             {section ? "Edit" : "Add"}
           </Button>
@@ -220,16 +201,14 @@ export default function AcademicPage() {
         {section && (
           <div className="mt-4 space-y-3">
             <div>
-              <span className="text-xs text-[var(--text-muted)] uppercase tracking-wide">
+              <span className="text-xs text-[var(--text-muted)] uppercase">
                 Heading
               </span>
-              <h3 className="font-semibold text-[var(--text-color)]">
-                {section.heading}
-              </h3>
+              <h3 className="font-semibold">{section.heading}</h3>
             </div>
 
             <div>
-              <span className="text-xs text-[var(--text-muted)] uppercase tracking-wide">
+              <span className="text-xs text-[var(--text-muted)] uppercase">
                 Sub Heading
               </span>
               <p className="text-sm text-[var(--text-muted)]">
@@ -238,73 +217,66 @@ export default function AcademicPage() {
             </div>
 
             <div>
-              <span className="text-xs text-[var(--text-muted)] uppercase tracking-wide">
+              <span className="text-xs text-[var(--text-muted)] uppercase">
                 Description
               </span>
-              <p className="mt-1 text-[var(--text-color)] leading-relaxed">
-                {section.description || "-"}
-              </p>
+              <p className="mt-1">{section.description || "-"}</p>
             </div>
           </div>
         )}
       </div>
 
-      <div className="rounded-xl bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-[var(--glass-shadow)]">
+      {/* Table */}
+      <div className="rounded-xl bg-[var(--glass-bg)] border shadow-[var(--glass-shadow)]">
         <div className="p-4 flex justify-between">
-          <h2 className="text-lg font-semibold">Education</h2>
+          <h2 className="text-lg font-semibold">Certifications</h2>
           <Button size="sm" onClick={openAdd}>
-            ➕ Add Education
+            ➕ Add Certification
           </Button>
         </div>
 
-        <div className="p-4 border-t border-[var(--glass-border)]">
+        <div className="p-4 border-t">
           <Table>
             <TableHead>
               <TableRow>
-                <TableHeaderCell className="w-[33%]">
-                  Institution
+                <TableHeaderCell>Title</TableHeaderCell>
+                <TableHeaderCell className="text-center">
+                  Issuer
                 </TableHeaderCell>
-                <TableHeaderCell className="w-[33%] text-center">
-                  Degree
+                <TableHeaderCell className="text-center">
+                  Issue Year
                 </TableHeaderCell>
-                <TableHeaderCell className="w-[33%] text-center">
-                  Duration
-                </TableHeaderCell>
-                <TableHeaderCell className="w-30 text-center">
+                <TableHeaderCell className="text-center">
                   Action
                 </TableHeaderCell>
               </TableRow>
             </TableHead>
 
             <TableBody>
-              {educations.length === 0 && <TableEmpty colSpan={4} />}
+              {certifications.length === 0 && <TableEmpty colSpan={4} />}
 
-              {educations.map((edu) => (
-                <TableRow key={edu._id}>
-                  <TableCell>{edu.institution}</TableCell>
-                  <TableCell className="text-center">{edu.degree}</TableCell>
+              {certifications.map((cert) => (
+                <TableRow key={cert._id}>
+                  <TableCell>{cert.title}</TableCell>
+                  <TableCell className="text-center">{cert.issuer}</TableCell>
                   <TableCell className="text-center">
-                    {edu.startDate
-                      ? new Date(edu.startDate).getFullYear()
-                      : "-"}{" "}
-                    -{" "}
-                    {edu.endDate
-                      ? new Date(edu.endDate).getFullYear()
-                      : "Present"}
+                    {cert.issueDate
+                      ? new Date(cert.issueDate).getFullYear()
+                      : "-"}
                   </TableCell>
                   <TableCell>
                     <div className="flex justify-center gap-2">
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => openEdit(edu)}
+                        onClick={() => openEdit(cert)}
                       >
                         ✏️
                       </Button>
                       <Button
                         size="sm"
                         variant="danger"
-                        onClick={() => handleDelete(edu._id)}
+                        onClick={() => handleDelete(cert._id)}
                       >
                         🗑️
                       </Button>
@@ -317,10 +289,13 @@ export default function AcademicPage() {
         </div>
       </div>
 
+      {/* Section Modal */}
       <Modal
         isOpen={isSectionModalOpen}
         onClose={() => setIsSectionModalOpen(false)}
-        title={section ? "Edit Academic Section" : "Add Academic Section"}
+        title={
+          section ? "Edit Certification Section" : "Add Certification Section"
+        }
         footer={
           <>
             <Button
@@ -342,7 +317,6 @@ export default function AcademicPage() {
             onChange={(e) =>
               setSectionForm({ ...sectionForm, heading: e.target.value })
             }
-            validate={sectionValidators.heading}
           />
           <Input
             label="Sub Heading"
@@ -353,7 +327,6 @@ export default function AcademicPage() {
                 subHeading: e.target.value,
               })
             }
-            validate={sectionValidators.subHeading}
           />
           <Input
             label="Description"
@@ -365,72 +338,60 @@ export default function AcademicPage() {
                 description: e.target.value,
               })
             }
-            validate={sectionValidators.description}
           />
         </div>
       </Modal>
 
+      {/* Certification Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingEdu ? "Edit Education" : "Add Education"}
+        title={editingCert ? "Edit Certification" : "Add Certification"}
         footer={
           <>
             <Button variant="outline" onClick={() => setIsModalOpen(false)}>
               Cancel
             </Button>
             <Button onClick={handleSubmit}>
-              {editingEdu ? "Update" : "Add"}
+              {editingCert ? "Update" : "Add"}
             </Button>
           </>
         }
       >
         <div className="space-y-3">
           <Input
-            type="text"
-            label="Institution"
-            value={form.institution}
-            onChange={(e) => setForm({ ...form, institution: e.target.value })}
+            label="Title"
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
           />
           <Input
-            type="text"
-            label="Board / University"
-            value={form.boardOrUniversity}
+            label="Issuer"
+            value={form.issuer}
+            onChange={(e) => setForm({ ...form, issuer: e.target.value })}
+          />
+          <Input
+            label="Credential ID"
+            value={form.credentialId}
+            onChange={(e) => setForm({ ...form, credentialId: e.target.value })}
+          />
+          <Input
+            label="Credential URL"
+            value={form.credentialUrl}
             onChange={(e) =>
-              setForm({ ...form, boardOrUniversity: e.target.value })
-            }
-          />
-          <Input
-            type="text"
-            label="Degree"
-            value={form.degree}
-            onChange={(e) => setForm({ ...form, degree: e.target.value })}
-          />
-          <Input
-            type="text"
-            label="Field of Study"
-            value={form.fieldOfStudy}
-            onChange={(e) => setForm({ ...form, fieldOfStudy: e.target.value })}
-          />
-          <Input
-            type="text"
-            label="Specializations (comma separated)"
-            value={form.specializations}
-            onChange={(e) =>
-              setForm({ ...form, specializations: e.target.value })
+              setForm({ ...form, credentialUrl: e.target.value })
             }
           />
           <Input
             type="date"
-            label="Start Date"
-            value={form.startDate}
-            onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+            label="Issue Date"
+            value={form.issueDate}
+            onChange={(e) => setForm({ ...form, issueDate: e.target.value })}
           />
           <Input
             type="date"
-            label="End Date"
-            value={form.endDate}
-            onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+            label="Expiry Date"
+            value={form.expiryDate}
+            onChange={(e) => setForm({ ...form, expiryDate: e.target.value })}
           />
         </div>
       </Modal>

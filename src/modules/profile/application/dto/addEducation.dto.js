@@ -5,17 +5,17 @@ export const addEducationDTO = z.object({
 
   institution: z.string().min(2, "Institution must be at least 2 characters"),
 
+  boardOrUniversity: z.string().optional(),
+
   degree: z.string().min(2, "Degree must be at least 2 characters"),
 
-  fieldOfStudy: z
-    .string()
-    .min(2, "Field of study must be at least 2 characters"),
+  fieldOfStudy: z.string().optional(),
 
-  startDate: z
-    .string()
-    .refine((val) => !isNaN(Date.parse(val)), {
-      message: "Invalid start date",
-    }),
+  specializations: z.array(z.string()).optional(),
+
+  startDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
+    message: "Invalid start date",
+  }),
 
   endDate: z
     .string()

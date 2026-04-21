@@ -157,10 +157,10 @@ const remove = withRateLimit(
   DEV ? { limit: 1000, window: 60 } : { limit: 10, window: 60 },
 );
 
-const get = withRateLimit(getHandler, {
-  limit: 100,
-  window: 60,
-});
+const get = withRateLimit(
+  getHandler,
+  DEV ? { limit: 1000, window: 60 } : { limit: 100, window: 60 },
+);
 
 export async function POST(req) {
   return create(req);
