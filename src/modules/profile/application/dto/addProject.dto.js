@@ -11,11 +11,15 @@ export const addProjectDTO = z
 
     techStack: z.array(
       z.object({
-        name: z.string(),
-        icon: z.object({
-          url: z.string().url(),
-          publicId: z.string(),
-        }),
+        name: z.string().min(1),
+
+        icon: z
+          .object({
+            url: z.string().url(),
+            publicId: z.string(),
+          })
+          .optional()
+          .nullable(),
       }),
     ),
 
@@ -26,6 +30,7 @@ export const addProjectDTO = z
         url: z.string().url(),
         publicId: z.string(),
       })
-      .optional(),
+      .optional()
+      .nullable(),
   })
   .strict();

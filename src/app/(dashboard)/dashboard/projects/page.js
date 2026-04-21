@@ -17,12 +17,16 @@ import {
   TableEmpty,
 } from "@/components/dashboard/ui/Table";
 import Image from "next/image";
+import { useProfile } from "@/modules/profile/hooks/useProfile";
+import { secureFetch } from "@/shared/lib/secureFetch";
 
 export default function ProjectsPage() {
   const route = dashboardRoutes.find((r) => r.href === "/dashboard/projects");
 
   const { user, hydrated } = useAuthStore();
-  const profileId = user?.profileId;
+  const { profile, loading: profileLoading } = useProfile();
+
+  const profileId = profile?._id;
 
   const [projects, setProjects] = useState([]);
 
@@ -64,13 +68,10 @@ export default function ProjectsPage() {
 
     (async () => {
       try {
-        const [res1, res2] = await Promise.all([
-          fetch(`/api/v1/profile/project?profileId=${profileId}`),
-          fetch(`/api/v1/profile/projectSection?profileId=${profileId}`),
+        const [json1, json2] = await Promise.all([
+          secureFetch(`/api/v1/profile/project?profileId=${profileId}`),
+          secureFetch(`/api/v1/profile/projectSection?profileId=${profileId}`),
         ]);
-
-        const json1 = await res1.json();
-        const json2 = await res2.json();
 
         if (!isMounted) return;
 
@@ -95,8 +96,9 @@ export default function ProjectsPage() {
   }, [hydrated, profileId]);
 
   const refetch = async () => {
-    const res = await fetch(`/api/v1/profile/project?profileId=${profileId}`);
-    const json = await res.json();
+    const json = await secureFetch(
+      `/api/v1/profile/project?profileId=${profileId}`,
+    );
     setProjects(json.data || []);
   };
 
@@ -108,18 +110,17 @@ export default function ProjectsPage() {
     )
       return;
 
-    const method = section ? "PATCH" : "POST";
+    const method = section?._id ? "PATCH" : "POST";
 
-    await fetch(`/api/v1/profile/projectSection`, {
+    await secureFetch(`/api/v1/profile/projectSection`, {
       method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ profileId, ...sectionForm }),
     });
 
-    const res = await fetch(
+    const json = await secureFetch(
       `/api/v1/profile/projectSection?profileId=${profileId}`,
     );
-    const json = await res.json();
 
     setSection(json.data);
     setIsSectionModalOpen(false);
@@ -183,14 +184,14 @@ export default function ProjectsPage() {
 
     const method = editingProject ? "PATCH" : "POST";
 
-    await fetch(url, { method, body: formData });
+    await secureFetch(url, { method, body: formData });
 
     setIsModalOpen(false);
     await refetch();
   };
 
   const handleDelete = async (id) => {
-    await fetch(`/api/v1/profile/project?projectId=${id}`, {
+    await secureFetch(`/api/v1/profile/project?projectId=${id}`, {
       method: "DELETE",
     });
     await refetch();
@@ -214,13 +215,34 @@ export default function ProjectsPage() {
           </Button>
         </div>
 
-        {section && (
-          <div className="mt-3">
-            <h3 className="font-semibold">{section.heading}</h3>
-            <p className="text-sm text-[var(--text-muted)]">
-              {section.subHeading}
-            </p>
-            <p className="mt-2">{section.description}</p>
+        {(section || sectionForm) && (
+          <div className="mt-4 space-y-3">
+            <div>
+              <span className="text-xs text-[var(--text-muted)] uppercase">
+                Heading
+              </span>
+              <h3 className="font-semibold">
+                {section?.heading || sectionForm.heading || "-"}
+              </h3>
+            </div>
+
+            <div>
+              <span className="text-xs text-[var(--text-muted)] uppercase">
+                Sub Heading
+              </span>
+              <p className="text-sm text-[var(--text-muted)]">
+                {section?.subHeading || sectionForm.subHeading || "-"}
+              </p>
+            </div>
+
+            <div>
+              <span className="text-xs text-[var(--text-muted)] uppercase">
+                Description
+              </span>
+              <p className="mt-1">
+                {section?.description || sectionForm.description || "-"}
+              </p>
+            </div>
           </div>
         )}
       </div>
