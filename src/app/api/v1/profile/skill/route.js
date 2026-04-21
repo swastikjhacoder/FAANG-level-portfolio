@@ -21,6 +21,7 @@ import auditLogger from "@/shared/security/audit/audit.logger";
 
 import { cloudinaryService } from "@/modules/profile/infrastructure/services/cloudinary.service";
 import { ProfileModel } from "@/modules/profile/infrastructure/persistence/profile.schema";
+import mongoose from "mongoose";
 
 const useCase = new AddSkillUseCase();
 
@@ -67,10 +68,7 @@ const fail = (error) =>
   Response.json(
     {
       success: false,
-      message:
-        error?.code === "BAD_USER_INPUT"
-          ? error.message
-          : "Internal Server Error",
+      message: error.message || "Internal Server Error",
       code: error.code || "INTERNAL_ERROR",
     },
     { status: error.status || 500 },
@@ -102,7 +100,7 @@ const createHandler = async (req) => {
       data.proficiency = Number(data.proficiency);
     }
 
-    const userId = req.user.userId;
+    const userId = req.user.id;
 
     const profile = await ProfileModel.findOne({ userId });
 
@@ -119,7 +117,7 @@ const createHandler = async (req) => {
 
     auditLogger.log({
       action: "SKILL_CREATE",
-      userId: req.user.userId,
+      userId: req.user.id,
       resourceId: result._id,
     });
 
@@ -135,12 +133,29 @@ const getHandler = async (req) => {
     await connectDB();
 
     const { searchParams } = new URL(req.url);
-    const profileId = searchParams.get("profileId");
+
+    let profileId = searchParams.get("profileId");
+    const userId = searchParams.get("userId");
+
+    if (!profileId && userId) {
+      const profile = await ProfileModel.findOne({ userId });
+
+      if (!profile) {
+        throw new NotFoundError("Profile not found");
+      }
+
+      profileId = profile._id.toString();
+    }
 
     validateObjectId(profileId, "profileId");
 
+    const profile = await ProfileModel.findById(profileId);
+    if (!profile) {
+      return fail({ message: "Profile not found", code: "NOT_FOUND" });
+    }
+
     const skills = await SkillModel.find({
-      profileId,
+      profileId: new mongoose.Types.ObjectId(profileId),
       isDeleted: false,
     }).lean();
 
@@ -213,7 +228,7 @@ const updateHandler = async (req) => {
 
     auditLogger.log({
       action: "SKILL_UPDATE",
-      userId: req.user.userId,
+      userId: req.user.id,
       resourceId: skillId,
     });
 
@@ -254,7 +269,7 @@ const deleteHandler = async (req) => {
 
     auditLogger.log({
       action: "SKILL_DELETE",
-      userId: req.user.userId,
+      userId: req.user.id,
       resourceId: skillId,
     });
 
@@ -265,7 +280,7 @@ const deleteHandler = async (req) => {
 };
 
 const create = withRateLimit(
-  withCsrf(authGuard(roleGuard(createHandler, ADMIN))),
+  withCsrf(authGuard(createHandler)),
   DEV
     ? { limit: 1000, window: 60, prefix: "skill-create" }
     : { limit: 30, window: 60, prefix: "skill-create" },

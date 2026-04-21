@@ -188,7 +188,7 @@ export class ProfileRepository {
 
     const exists = await ProfileModel.exists({
       _id: profileId,
-      createdBy: userId,
+      userId: userId,
       ...this.baseQuery(),
     });
 

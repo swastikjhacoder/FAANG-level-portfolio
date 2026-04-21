@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import PageHeader from "@/components/dashboard/ui/PageHeader";
 import { dashboardRoutes } from "@/config/dashboardRoutes";
 import { useAuthStore } from "@/store/useAuthStore";
-import StatCard from "@/components/dashboard/ui/StatCard";
+import { useProfile } from "@/modules/profile/hooks/useProfile";
 
+import StatCard from "@/components/dashboard/ui/StatCard";
 import SkillsBarChart from "@/components/dashboard/ui/chart/SkillsBarChart";
 import TechStackPieChart from "@/components/dashboard/ui/chart/TechStackPieChart";
 import ExperienceTimeline from "@/components/dashboard/ui/chart/ExperienceTimeline";
@@ -13,8 +14,10 @@ import ExperienceTimeline from "@/components/dashboard/ui/chart/ExperienceTimeli
 export default function DashboardPage() {
   const route = dashboardRoutes.find((r) => r.href === "/dashboard");
 
-  const { user, hydrated } = useAuthStore();
-  const profileId = user?.profileId;
+  const { hydrated } = useAuthStore();
+  const { profile, loading: profileLoading } = useProfile();
+
+  const profileId = profile?._id;
 
   const [stats, setStats] = useState({
     projects: 0,
@@ -68,7 +71,7 @@ export default function DashboardPage() {
 
         setLoading(false);
       } catch (err) {
-        console.error(err);
+        console.error("Dashboard fetch error:", err);
       }
     })();
 
@@ -77,7 +80,7 @@ export default function DashboardPage() {
     };
   }, [hydrated, profileId]);
 
-  if (!route || !hydrated) return null;
+  if (!route || !hydrated || profileLoading) return null;
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
