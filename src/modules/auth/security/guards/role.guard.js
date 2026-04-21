@@ -1,10 +1,11 @@
-import { hasRole } from "@/shared/constants/roles";
-import { NextResponse } from "next/server";
-
 export const roleGuard = (handler, allowedRoles = []) => {
   return async (req) => {
     try {
       const userRoles = req.user?.roles || [];
+
+      if (!allowedRoles || allowedRoles.length === 0) {
+        return await handler(req);
+      }
 
       const hasAccess = allowedRoles.some((role) => userRoles.includes(role));
 

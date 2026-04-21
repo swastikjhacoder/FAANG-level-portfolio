@@ -129,13 +129,9 @@ export default function SkillsPage() {
 
     const method = section ? "PATCH" : "POST";
 
-    await fetch(`/api/v1/profile/skillSection`, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        profileId,
-        ...sectionForm,
-      }),
+    await requestWithCsrf(`/api/v1/profile/skillSection`, method, {
+      profileId,
+      ...sectionForm,
     });
 
     const res = await fetch(
@@ -228,12 +224,27 @@ export default function SkillsPage() {
         </div>
 
         {section && (
-          <div className="mt-3">
-            <h3 className="font-semibold">{section.heading}</h3>
-            <p className="text-sm text-[var(--text-muted)]">
-              {section.subHeading}
-            </p>
-            <p className="mt-2">{section.description}</p>
+          <div className="mt-4 space-y-2">
+            <div>
+              <span className="text-xs text-[var(--text-muted)]">Heading</span>
+              <h3 className="font-semibold">{section.heading}</h3>
+            </div>
+
+            <div>
+              <span className="text-xs text-[var(--text-muted)]">
+                Sub Heading
+              </span>
+              <p className="text-sm text-[var(--text-muted)]">
+                {section.subHeading}
+              </p>
+            </div>
+
+            <div>
+              <span className="text-xs text-[var(--text-muted)]">
+                Description
+              </span>
+              <p className="mt-1">{section.description}</p>
+            </div>
           </div>
         )}
       </div>

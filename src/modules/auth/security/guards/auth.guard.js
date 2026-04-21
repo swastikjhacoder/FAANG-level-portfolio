@@ -38,8 +38,6 @@ export const authGuard = (handler) => {
     try {
       const token = extractToken(req);
 
-      console.log("TOKEN:", token);
-
       if (!token) {
         return new Response("Unauthorized: Missing token", { status: 401 });
       }
@@ -47,7 +45,6 @@ export const authGuard = (handler) => {
       let payload;
       try {
         payload = verifyAccessToken(token);
-        console.log("PAYLOAD:", payload);
       } catch (err) {
         console.error("VERIFY FAILED:", err.message);
         return new Response("Invalid token", { status: 401 });
@@ -68,6 +65,7 @@ export const authGuard = (handler) => {
       }
 
       req.user = {
+        id: payload.userId,
         userId: payload.userId,
         roles: payload.roles || [],
         sessionVersion: payload.sessionVersion,
