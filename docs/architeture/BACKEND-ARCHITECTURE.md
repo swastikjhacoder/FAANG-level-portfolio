@@ -10,27 +10,39 @@ This document provides a detailed view of the backend architecture, including sy
 
 ### Visual Architecture Diagram
 
+<p align="center">
+  <img src="../assets/backend-architecture.png" alt="Backend Architecture" width="800"/>
+</p>
+
+<p align="center">
+  <em>Layered backend architecture with secure request flow</em>
+</p>
+
+---
+
+### Mermaid Representation (Logical View)
+
 ```mermaid
 graph TD
-    subgraph Client Layer
+    subgraph "Client Layer"
         A[Browser / Frontend]
     end
 
-    subgraph API Layer (Next.js)
+    subgraph "API Layer (Next.js)"
         B[API Route]
-        C[Middleware Stack\n(CSRF, Rate Limit, Sanitization, CORS)]
+        C["Middleware Stack<br/>CSRF | Rate Limit | Sanitization | CORS"]
         D[Controller]
     end
 
-    subgraph Application Layer
+    subgraph "Application Layer"
         E[Use Case]
     end
 
-    subgraph Domain Layer
-        F[Domain Policies\n(Authorization, Rules)]
+    subgraph "Domain Layer"
+        F["Domain Policies<br/>Authorization & Rules"]
     end
 
-    subgraph Infrastructure Layer
+    subgraph "Infrastructure Layer"
         G[Repository]
         H[(MongoDB)]
     end
@@ -173,4 +185,3 @@ graph TD
 ## 10. Conclusion
 
 The backend architecture ensures a secure, scalable, and maintainable system by enforcing strict layering, clear responsibilities, and controlled database access.
-
