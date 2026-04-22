@@ -8,12 +8,15 @@ import Button from "@/components/dashboard/ui/Button";
 import Input from "@/components/dashboard/ui/Input";
 import Modal from "@/components/dashboard/ui/Modal";
 import Image from "next/image";
+import { useProfile } from "@/modules/profile/hooks/useProfile";
+import { secureFetch } from "@/shared/lib/secureFetch";
 
 export default function ContactPage() {
   const route = dashboardRoutes.find((r) => r.href === "/dashboard/contact");
 
   const { user, hydrated } = useAuthStore();
-  const profileId = user?.profileId;
+  const { profile } = useProfile();
+  const profileId = profile?._id;
 
   const [contact, setContact] = useState(null);
 
@@ -48,13 +51,10 @@ export default function ContactPage() {
 
     (async () => {
       try {
-        const [res1, res2] = await Promise.all([
-          fetch(`/api/v1/profile/contact?profileId=${profileId}`),
-          fetch(`/api/v1/profile/contactSection?profileId=${profileId}`),
+        const [json1, json2] = await Promise.all([
+          secureFetch(`/api/v1/profile/contact?profileId=${profileId}`),
+          secureFetch(`/api/v1/profile/contactSection?profileId=${profileId}`),
         ]);
-
-        const json1 = await res1.json();
-        const json2 = await res2.json();
 
         if (!isMounted) return;
 
@@ -109,7 +109,7 @@ export default function ContactPage() {
 
     const method = contact ? "PATCH" : "POST";
 
-    await fetch(url, { method, body: formData });
+    await secureFetch(url, { method, body: formData });
 
     setIsModalOpen(false);
     location.reload();
@@ -118,7 +118,7 @@ export default function ContactPage() {
   const handleSectionSubmit = async () => {
     const method = section ? "PATCH" : "POST";
 
-    await fetch(`/api/v1/profile/contactSection`, {
+    await secureFetch(`/api/v1/profile/contactSection`, {
       method,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ profileId, ...sectionForm }),
@@ -165,12 +165,29 @@ export default function ContactPage() {
         </div>
 
         {section && (
-          <div className="mt-3">
-            <h3>{section.heading}</h3>
-            <p className="text-sm text-[var(--text-muted)]">
-              {section.subHeading}
-            </p>
-            <p className="mt-2">{section.description}</p>
+          <div className="mt-4 space-y-3">
+            <div>
+              <span className="text-xs text-[var(--text-muted)] uppercase">
+                Heading
+              </span>
+              <h3 className="font-semibold">{section.heading}</h3>
+            </div>
+
+            <div>
+              <span className="text-xs text-[var(--text-muted)] uppercase">
+                Sub Heading
+              </span>
+              <p className="text-sm text-[var(--text-muted)]">
+                {section.subHeading || "-"}
+              </p>
+            </div>
+
+            <div>
+              <span className="text-xs text-[var(--text-muted)] uppercase">
+                Description
+              </span>
+              <p className="mt-1">{section.description || "-"}</p>
+            </div>
           </div>
         )}
       </div>
