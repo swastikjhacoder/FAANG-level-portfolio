@@ -23,7 +23,7 @@ const Footer = () => {
               <a
                 key={item}
                 href={`#${item.toLowerCase()}`}
-                className="text-(--text-muted) hover:text-foreground transition"
+                className="text-(--text-muted) hover:text-(--text-color) transition"
               >
                 {item}
               </a>
@@ -32,37 +32,44 @@ const Footer = () => {
         </div>
 
         <div className="flex items-center gap-4">
-          <a
-            href="#"
-            className="p-2 rounded-lg border border-(--glass-border) hover:bg-white/10 transition hover:scale-110"
-          >
-            <FaGithub size={18} />
-          </a>
-
-          <a
-            href="#"
-            className="p-2 rounded-lg border border-(--glass-border) hover:bg-white/10 transition hover:scale-110"
-          >
-            <FaLinkedin size={18} />
-          </a>
-
-          <a
-            href="#"
-            className="p-2 rounded-lg border border-(--glass-border) hover:bg-white/10 transition hover:scale-110"
-          >
-            <MdEmail size={18} />
-          </a>
+          {[FaGithub, FaLinkedin, MdEmail].map((Icon, i) => (
+            <a
+              key={i}
+              href="#"
+              className="p-2 rounded-lg border border-(--glass-border) hover:bg-(--surface) transition hover:scale-110"
+            >
+              <Icon size={18} />
+            </a>
+          ))}
         </div>
       </div>
 
       <div className="px-4 md:px-10 pb-6 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-(--text-muted)">
+        {/* Copyright */}
         <span>
           © {new Date().getFullYear()} Swastik Jha. All rights reserved.
         </span>
 
+        <div className="flex items-center gap-4">
+          <a
+            href="/sitemap.xml"
+            target="_blank"
+            className="hover:text-(--text-color) transition"
+          >
+            Sitemap
+          </a>
+
+          <a
+            href="/privacy-policy"
+            className="hover:text-(--text-color) transition"
+          >
+            Privacy Policy
+          </a>
+        </div>
+
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="flex items-center gap-2 hover:text-foreground transition"
+          className="flex items-center gap-2 hover:text-(--text-color) transition"
         >
           Back to top <FaArrowUp size={14} />
         </button>

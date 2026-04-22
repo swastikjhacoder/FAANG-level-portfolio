@@ -1,8 +1,12 @@
 export default function robots() {
   return {
-    rules: {
-      userAgent: "*",
-      allow: "/",
-    },
+    rules: [
+      {
+        userAgent: "*",
+        allow: "/",
+        disallow: ["/dashboard"],
+      },
+    ],
+    sitemap: "https://swastikjha.com/sitemap.xml",
   };
 }

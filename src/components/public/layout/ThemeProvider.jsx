@@ -12,13 +12,33 @@ function useIsMounted() {
   );
 }
 
+function isColorDark(hex) {
+  const c = hex.substring(1);
+  const rgb = parseInt(c, 16);
+
+  const r = (rgb >> 16) & 255;
+  const g = (rgb >> 8) & 255;
+  const b = rgb & 255;
+
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  return brightness < 128;
+}
+
 export default function ThemeProvider({ children }) {
   const { background, foreground } = useThemeStore();
   const isMounted = useIsMounted();
 
   useEffect(() => {
-    document.documentElement.style.setProperty("--bg-color", background);
-    document.documentElement.style.setProperty("--text-color", foreground);
+    const root = document.documentElement;
+
+    root.style.setProperty("--bg-color", background);
+    root.style.setProperty("--text-color", foreground);
+
+    if (isColorDark(background)) {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
   }, [background, foreground]);
 
   if (!isMounted) return null;

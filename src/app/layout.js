@@ -13,9 +13,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Swastik Jha - The MERN Architect",
+  metadataBase: new URL("https://swastikjha.com"),
+
+  title: {
+    default: "Swastik Jha - The MERN Architect",
+    template: "%s | Swastik Jha",
+  },
+
   description:
-    "Swastik Jha is a MERN Architect specializing in designing and building scalable, high-performance web applications using MongoDB, Express.js, React, and Node.js. Experienced in cloud-native architectures, microservices, and modern DevOps practices, delivering robust SaaS and AI-driven systems with a focus on performance, security, and maintainability.",
+    "Swastik Jha is a MERN Architect specializing in scalable, high-performance web applications using MERN, microservices, and cloud-native architectures.",
 
   keywords: [
     "MERN Architect",
@@ -62,8 +68,52 @@ export const metadata = {
     "Technical Leadership",
   ],
 
+  authors: [{ name: "Swastik Jha", url: "https://swastikjha.com" }],
+  creator: "Swastik Jha",
+  publisher: "Swastik Jha",
+
   alternates: {
     canonical: "https://swastikjha.com",
+  },
+
+  openGraph: {
+    title: "Swastik Jha - MERN Architect",
+    description:
+      "Building scalable SaaS platforms, microservices, and cloud-native applications.",
+    url: "https://swastikjha.com",
+    siteName: "Swastik Jha Portfolio",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Swastik Jha - MERN Architect",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "Swastik Jha - MERN Architect",
+    description:
+      "Full Stack Engineer specializing in scalable architectures and SaaS systems.",
+    images: ["/og-image.png"],
+    creator: "@your_twitter_handle",
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
+
+  icons: {
+    icon: "/favicon.ico",
   },
 };
 
@@ -74,6 +124,39 @@ export default function RootLayout({ children }) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Person",
+              name: "Swastik Jha",
+              url: "https://swastikjha.com",
+              image: "https://swastikjha.com/og-image.png",
+              jobTitle: "MERN Architect",
+              description:
+                "Full Stack Engineer specializing in scalable architectures, microservices, and cloud-native systems.",
+              sameAs: [
+                "https://github.com/yourusername",
+                "https://linkedin.com/in/yourprofile",
+              ],
+              knowsAbout: [
+                "MongoDB",
+                "Express.js",
+                "React",
+                "Node.js",
+                "System Design",
+                "Microservices",
+                "AWS",
+                "Docker",
+                "Kubernetes",
+              ],
+            }),
+          }}
+        />
+      </head>
+
       <body suppressHydrationWarning className="min-h-full flex flex-col">
         <AuthProvider>{children}</AuthProvider>
       </body>
