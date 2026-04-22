@@ -17,12 +17,14 @@ import {
   Wrench,
   Mail,
   Speech,
+  Sparkles,
 } from "lucide-react";
 
 const iconMap = {
   dashboard: LayoutDashboard,
   user: User,
   code: Code,
+  competencies: Sparkles,
   briefcase: Briefcase,
   academic: GraduationCap,
   certification: Award,

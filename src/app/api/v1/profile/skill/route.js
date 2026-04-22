@@ -300,11 +300,10 @@ const remove = withRateLimit(
     : { limit: 20, window: 60, prefix: "skill-delete" },
 );
 
-const get = withRateLimit(getHandler, {
-  limit: 100,
-  window: 60,
-  prefix: "skill-get",
-});
+const get = withRateLimit(
+  getHandler,
+  DEV ? { limit: 1000, window: 60 } : { limit: 100, window: 60 },
+);
 
 export async function POST(req) {
   return create(req);

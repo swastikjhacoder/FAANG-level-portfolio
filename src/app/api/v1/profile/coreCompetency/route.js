@@ -3,10 +3,6 @@ import connectDB from "@/shared/lib/db";
 import withRateLimit from "@/shared/security/middleware/rateLimit.middleware";
 import { withCsrf } from "@/shared/security/middleware/csrf.middleware";
 
-import { UpsertCoreCompetencySectionUseCase } from "@/modules/profile/application/useCases/upsertCoreCompetencySection.usecase";
-import { AddCoreCompetencyItemUseCase } from "@/modules/profile/application/useCases/addCoreCompetency.usecase";
-import { DeleteCoreCompetencyUseCase } from "@/modules/profile/application/useCases/deleteCoreCompetency.usecase";
-
 import { CoreCompetencyRepository } from "@/modules/profile/infrastructure/persistence/coreCompetency.repository";
 import { ProfileRepository } from "@/modules/profile/infrastructure/persistence/profile.repository";
 
@@ -17,18 +13,18 @@ import { ROLES } from "@/shared/constants/roles";
 
 import { ValidationError } from "@/shared/errors";
 import auditLogger from "@/shared/security/audit/audit.logger";
+import { validateObjectId } from "@/shared/utils/validateObjectId";
+import { UpsertCoreCompetencyUseCase } from "@/modules/profile/application/useCases/upsertCoreCompetency.usecase";
 
 const repo = new CoreCompetencyRepository();
 const profileRepo = new ProfileRepository();
 
-const sectionUC = new UpsertCoreCompetencySectionUseCase(repo, profileRepo);
-const itemUC = new AddCoreCompetencyItemUseCase(repo, profileRepo, null);
-const deleteUC = new DeleteCoreCompetencyUseCase(repo);
+const upsertUC = new UpsertCoreCompetencyUseCase(repo, profileRepo, null);
 
 const DEV = process.env.NODE_ENV === "development";
 const ADMIN = [ROLES.ADMIN, ROLES.SUPER_ADMIN];
 
-const safeJson = async (req) => {
+const parseBody = async (req) => {
   try {
     return await req.json();
   } catch {
@@ -45,33 +41,30 @@ const fail = (error) => {
     {
       success: false,
       message: error.message,
+      code: error.code || "INTERNAL_ERROR",
       stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     },
     { status: error.status || 500 },
   );
 };
 
-const createHandler = async (req) => {
+const upsertHandler = async (req) => {
   try {
     await connectDB();
 
-    const raw = await safeJson(req);
+    const raw = await parseBody(req);
 
-    const result = await sectionUC.execute(raw, req.user);
+    if (!raw.profileId) {
+      throw new ValidationError("profileId is required");
+    }
 
-    return ok(result);
-  } catch (err) {
-    return fail(err);
-  }
-};
+    validateObjectId(raw.profileId, "profileId");
 
-const updateHandler = async (req) => {
-  try {
-    await connectDB();
+    if (!Array.isArray(raw.items) || raw.items.length === 0) {
+      throw new ValidationError("items must be a non-empty array");
+    }
 
-    const raw = await safeJson(req);
-
-    const result = await itemUC.execute(raw, req.user);
+    const result = await upsertUC.execute(raw, req.user);
 
     return ok(result);
   } catch (err) {
@@ -86,9 +79,15 @@ const getHandler = async (req) => {
     const { searchParams } = new URL(req.url);
     const profileId = searchParams.get("profileId");
 
+    if (!profileId) {
+      throw new ValidationError("profileId is required");
+    }
+
+    validateObjectId(profileId, "profileId");
+
     const data = await repo.findByProfile(profileId);
 
-    return ok(data);
+    return ok(data || { items: [] });
   } catch (err) {
     return fail(err);
   }
@@ -101,12 +100,18 @@ const deleteHandler = async (req) => {
     const { searchParams } = new URL(req.url);
     const profileId = searchParams.get("profileId");
 
-    await deleteUC.execute(profileId);
+    if (!profileId) {
+      throw new ValidationError("profileId is required");
+    }
 
-    auditLogger.info("COMPETENCY_SECTION_DELETED", {
-      actor: { userId: req.user.userId, roles: req.user.roles },
-      resource: { type: "CoreCompetency", profileId },
-      meta: { requestId: req.user.requestId },
+    validateObjectId(profileId, "profileId");
+
+    await repo.softDelete(profileId);
+
+    auditLogger.log({
+      action: "COMPETENCY_DELETED",
+      userId: req.user.userId,
+      resourceId: profileId,
     });
 
     return ok({ success: true });
@@ -115,13 +120,8 @@ const deleteHandler = async (req) => {
   }
 };
 
-const create = withRateLimit(
-  withCsrf(authGuard(roleGuard(createHandler, ADMIN))),
-  DEV ? { limit: 1000, window: 60 } : { limit: 20, window: 60 },
-);
-
-const update = withRateLimit(
-  withCsrf(authGuard(roleGuard(updateHandler, ADMIN))),
+const upsert = withRateLimit(
+  withCsrf(authGuard(roleGuard(upsertHandler, ADMIN))),
   DEV ? { limit: 1000, window: 60 } : { limit: 20, window: 60 },
 );
 
@@ -130,17 +130,17 @@ const remove = withRateLimit(
   DEV ? { limit: 1000, window: 60 } : { limit: 10, window: 60 },
 );
 
-const get = withRateLimit(getHandler, {
-  limit: 100,
-  window: 60,
-});
+const get = withRateLimit(
+  getHandler,
+  DEV ? { limit: 1000, window: 60 } : { limit: 100, window: 60 },
+);
 
 export async function POST(req) {
-  return create(req);
+  return upsert(req);
 }
 
 export async function PATCH(req) {
-  return update(req);
+  return upsert(req);
 }
 
 export async function GET(req) {

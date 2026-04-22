@@ -30,9 +30,14 @@ export class UpsertCoreCompetencyUseCase {
 
     const version = existing?.version;
 
-    const normalizedItems = parsed.items.trim().replace(/\s+/g, " ");
+    const normalizedItems = parsed.items.map((item) =>
+      item.trim().replace(/\s+/g, " "),
+    );
 
-    if (existing && existing.items === normalizedItems) {
+    if (
+      existing &&
+      JSON.stringify(existing.items) === JSON.stringify(normalizedItems)
+    ) {
       return existing;
     }
 

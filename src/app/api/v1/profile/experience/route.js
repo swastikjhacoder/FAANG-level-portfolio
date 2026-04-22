@@ -168,11 +168,10 @@ const remove = withRateLimit(
     : { limit: 10, window: 60, prefix: "experience-delete" },
 );
 
-const get = withRateLimit(getHandler, {
-  limit: 100,
-  window: 60,
-  prefix: "experience-get",
-});
+const get = withRateLimit(
+  getHandler,
+  DEV ? { limit: 1000, window: 60 } : { limit: 100, window: 60 },
+);
 
 export async function POST(req) {
   return create(req);

@@ -1,27 +1,34 @@
-import { validateObjectId } from "@/shared/utils/validateObjectId";
-import { coreCompetencySectionDTO } from "../dto/addCoreCompetency.dto";
-import { sanitizeInput } from "@/shared/security/sanitizers/input.sanitizer";
-import { ProfilePolicy } from "../../domain/policies/profile.policy";
-import { NotFoundError } from "@/shared/errors";
+import { ValidationError } from "@/shared/errors";
+import { coreCompetencySectionDTO } from "../dto/coreCompetencySection.dto";
 
 export class UpsertCoreCompetencySectionUseCase {
-  constructor(repo, profileRepo) {
+  constructor(repo, cache) {
     this.repo = repo;
-    this.profileRepo = profileRepo;
+    this.cache = cache;
   }
 
-  async execute(payload, user) {
-    const cleanPayload = sanitizeInput(payload);
+  async execute(payload, userId, version) {
+    const parsed = coreCompetencySectionDTO.parse(payload);
 
-    const data = coreCompetencySectionDTO.parse(cleanPayload);
+    const result = await this.repo.upsert(
+      {
+        ...parsed,
+        createdBy: userId,
+        updatedBy: userId,
+      },
+      version,
+    );
 
-    validateObjectId(data.profileId, "profileId");
+    if (!result) {
+      throw new ValidationError(
+        "Concurrent update detected. Please refresh and retry.",
+      );
+    }
 
-    const profile = await this.profileRepo.findById(data.profileId);
-    if (!profile) throw new NotFoundError("Profile not found");
+    if (this.cache) {
+      await this.cache.invalidate("coreCompetencySection");
+    }
 
-    ProfilePolicy.assertCanModifyProfile(user, profile);
-
-    return await this.repo.upsert(data.profileId, data, user.id);
+    return result;
   }
 }
