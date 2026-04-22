@@ -1,39 +1,210 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 🚀 Portfolio Project
 
-## Getting Started
+A modern full-stack portfolio application built with a scalable, secure, and modular architecture. This project demonstrates production-grade backend design, clean architecture principles, and a polished frontend experience.
 
-First, run the development server:
+---
+
+## 📌 Overview
+
+This portfolio system is designed to:
+- Showcase professional experience, skills, and projects
+- Provide dynamic content management via admin/dashboard
+- Demonstrate enterprise-level backend architecture
+
+---
+
+## 🏗️ Architecture
+
+The backend follows a **layered architecture**:
+
+```
+Route → Middleware → Controller → Use Case → Domain → Repository → Database
+```
+
+### Key Principles
+- Separation of concerns
+- Clean architecture
+- Scalable and maintainable codebase
+- Security-first design
+
+📄 Detailed architecture: [`docs/backend/BACKEND.md`](./docs/backend/BACKEND.md)
+
+---
+
+## ⚙️ Tech Stack
+
+### Frontend
+- Next.js
+- React
+- Tailwind CSS
+
+### Backend
+- Node.js (App Router / API Routes)
+- MongoDB
+- Mongoose (ODM)
+
+### Security
+- CSRF Protection
+- Rate Limiting
+- Input Sanitization
+- Secure Cookies
+
+---
+
+## 🔐 Security Features
+
+- **CSRF Protection** for all state-changing requests
+- **Rate Limiting** to prevent abuse
+- **Input Sanitization** against NoSQL & XSS attacks
+- **DTO Validation** for strict schema enforcement
+- **Domain-level Authorization**
+
+---
+
+## 📁 Project Structure
+
+```
+root/
+├── src/
+│   ├── app/                # Next.js routes
+│   ├── modules/            # Feature-based modules
+│   │   ├── auth/
+│   │   ├── profile/
+│   │   └── ...
+│   ├── shared/             # Shared utilities & configs
+│   │   ├── lib/
+│   │   ├── security/
+│   │   └── utils/
+│
+├── docs/                   # Documentation
+│   └── backend/
+│       └── BACKEND.md
+│
+├── README.md
+└── package.json
+```
+
+---
+
+## 🔄 Request Flow (Backend)
+
+```
+Client Request
+   ↓
+API Route
+   ↓
+Middleware (CSRF, Rate Limit, Sanitization)
+   ↓
+Controller
+   ↓
+Use Case
+   ↓
+Domain (Authorization)
+   ↓
+Repository
+   ↓
+MongoDB (DB Hit)
+```
+
+---
+
+## ✨ Features
+
+- Dynamic portfolio sections (skills, services, testimonials, etc.)
+- Admin dashboard for content management
+- Modular backend architecture
+- Secure API design
+- Clean UI with responsive design
+
+---
+
+## 🚀 Getting Started
+
+### 1. Clone the repository
+
+```bash
+git clone <your-repo-url>
+cd <project-folder>
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Setup environment variables
+
+Create a `.env.local` file:
+
+```env
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_secret
+```
+
+### 4. Run the development server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+App will be available at:
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+```
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 📬 API Example
 
-To learn more about Next.js, take a look at the following resources:
+```
+PUT /api/v1/profile/coreCompetencySection
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Payload:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```json
+{
+  "profileId": "...",
+  "heading": "Core Competencies",
+  "subHeading": "Technical strengths",
+  "items": []
+}
+```
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📊 Future Improvements
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Add caching (Redis)
+- Implement GraphQL layer
+- Add CI/CD pipeline
+- Improve observability (logging + tracing)
 
-### Generated strong secrets using this command
-node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+---
+
+## 🤝 Contributing
+
+Contributions are welcome. Please open an issue or submit a pull request.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+## 👨‍💻 Author
+
+**Swastik Jha**
+
+Software Engineer | Full Stack Developer
+
+---
+
+## ⭐ If you found this useful
+
+Give this repo a star ⭐ to support the project.
+
