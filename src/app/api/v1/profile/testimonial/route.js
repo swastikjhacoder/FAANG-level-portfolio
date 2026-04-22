@@ -19,6 +19,7 @@ import { ROLES } from "@/shared/constants/roles";
 import { validateObjectId } from "@/shared/utils/validateObjectId";
 import { ValidationError } from "@/shared/errors";
 import auditLogger from "@/shared/security/audit/audit.logger";
+import { cloudinaryService } from "@/modules/profile/infrastructure/services/cloudinary.service";
 
 const repo = new TestimonialRepository();
 
@@ -56,8 +57,35 @@ const createHandler = async (req) => {
   try {
     await connectDB();
 
-    const raw = await safeJson(req);
-    const sanitized = sanitizeInput(raw);
+    const formData = await req.formData();
+
+    const payload = {
+      profileId: formData.get("profileId"),
+      quote: formData.get("quote"),
+      senderName: formData.get("senderName"),
+      senderRole: formData.get("senderRole"),
+      company: formData.get("company"),
+    };
+
+    const file = formData.get("senderImage");
+
+    if (file && file.size > 0) {
+      const buffer = Buffer.from(await file.arrayBuffer());
+
+      const uploaded = await cloudinaryService.upload(
+        {
+          buffer,
+          size: file.size,
+          mimetype: file.type,
+          originalname: file.name,
+        },
+        "testimonials",
+      );
+
+      payload.senderImage = uploaded;
+    }
+
+    const sanitized = sanitizeInput(payload);
 
     const result = await createUC.execute(sanitized, req.user);
 
@@ -79,10 +107,17 @@ const getHandler = async (req) => {
 
     const { searchParams } = new URL(req.url);
     const profileId = searchParams.get("profileId");
+    const isAdmin = searchParams.get("admin") === "true";
 
     validateObjectId(profileId, "profileId");
 
-    const data = await repo.findApprovedByProfile(profileId);
+    let data;
+
+    if (isAdmin) {
+      data = await repo.findAllByProfile(profileId);
+    } else {
+      data = await repo.findApprovedByProfile(profileId);
+    }
 
     return ok(data);
   } catch (err) {
@@ -151,10 +186,19 @@ const remove = withRateLimit(
   DEV ? { limit: 1000, window: 60 } : { limit: 10, window: 60 },
 );
 
-const get = withRateLimit(getHandler, {
-  limit: 100,
-  window: 60,
-});
+const get = withRateLimit(
+  async (req) => {
+    const url = new URL(req.url);
+    const isAdmin = url.searchParams.get("admin") === "true";
+
+    if (isAdmin) {
+      return authGuard(roleGuard(getHandler, ADMIN))(req);
+    }
+
+    return getHandler(req);
+  },
+  DEV ? { limit: 1000, window: 60 } : { limit: 100, window: 60 },
+);
 
 export async function POST(req) {
   return create(req);

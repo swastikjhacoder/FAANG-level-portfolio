@@ -23,6 +23,15 @@ export class TestimonialRepository {
       .lean();
   }
 
+  async findAllByProfile(profileId) {
+    return TestimonialModel.find({
+      profileId,
+      isDeleted: false,
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+  }
+
   async approve(id, userId) {
     return TestimonialModel.findOneAndUpdate(
       { _id: id, isDeleted: false },

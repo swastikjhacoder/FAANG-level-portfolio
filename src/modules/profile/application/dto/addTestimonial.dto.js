@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 export const addTestimonialDTO = z
   .object({
     profileId: z.string(),
@@ -9,5 +7,12 @@ export const addTestimonialDTO = z
     senderName: z.string().min(2),
     senderRole: z.string().optional(),
     company: z.string().optional(),
+
+    senderImage: z
+      .object({
+        url: z.string().url(),
+        publicId: z.string(),
+      })
+      .optional(),
   })
   .strict();

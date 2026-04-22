@@ -15,6 +15,11 @@ const testimonialSchema = new mongoose.Schema(
     senderRole: String,
     company: String,
 
+    senderImage: {
+      url: String,
+      publicId: String,
+    },
+
     approved: {
       type: Boolean,
       default: false,
