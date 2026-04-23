@@ -1,20 +1,25 @@
 import { ProjectSectionModel } from "./projectSection.schema.js";
 
+const SINGLETON_KEY = "PROJECT_SECTION";
+
 export class ProjectSectionRepository {
-  async findByProfileId(profileId) {
-    return ProjectSectionModel.findOne({ profileId });
+  async get() {
+    return ProjectSectionModel.findOne({
+      singleton: SINGLETON_KEY,
+    }).lean();
   }
 
-  async upsert(profileId, payload, userId) {
-    return ProjectSectionModel.findOneAndUpdate(
-      { profileId },
+  async upsert(payload, userId) {
+    const doc = await ProjectSectionModel.findOneAndUpdate(
+      { singleton: SINGLETON_KEY },
       {
         $set: {
           ...payload,
-          profileId,
+          updatedBy: userId,
         },
         $setOnInsert: {
           createdBy: userId,
+          singleton: SINGLETON_KEY,
         },
       },
       {
@@ -23,5 +28,13 @@ export class ProjectSectionRepository {
         runValidators: true,
       },
     );
+
+    return doc?.toObject();
+  }
+
+  async delete() {
+    return ProjectSectionModel.deleteOne({
+      singleton: SINGLETON_KEY,
+    });
   }
 }

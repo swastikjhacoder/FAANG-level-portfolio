@@ -1,21 +1,14 @@
 import { ValidationError } from "@/shared/errors";
-import { validateObjectId } from "@/shared/utils/validateObjectId";
 
 export class AddProjectSectionDTO {
-  constructor({ profileId, heading, subHeading, description }) {
-    this.profileId = profileId;
+  constructor({ heading, subHeading, description }) {
     this.heading = heading;
     this.subHeading = subHeading;
     this.description = description;
   }
 
   static validate(payload) {
-    const { profileId, heading, subHeading, description } = payload;
-
-    if (!profileId) {
-      throw new ValidationError("profileId is required");
-    }
-    validateObjectId(profileId, "profileId");
+    const { heading, subHeading, description } = payload;
 
     if (!heading || heading.trim().length === 0) {
       throw new ValidationError("heading is required");
@@ -34,7 +27,6 @@ export class AddProjectSectionDTO {
     }
 
     return new AddProjectSectionDTO({
-      profileId,
       heading: heading.trim(),
       subHeading: subHeading?.trim() || null,
       description: description?.trim() || null,

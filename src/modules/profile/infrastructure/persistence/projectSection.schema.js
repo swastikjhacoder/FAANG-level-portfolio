@@ -2,13 +2,6 @@ import mongoose from "mongoose";
 
 const projectSectionSchema = new mongoose.Schema(
   {
-    profileId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Profile",
-      required: true,
-      unique: true,
-    },
-
     heading: {
       type: String,
       required: true,
@@ -30,14 +23,26 @@ const projectSectionSchema = new mongoose.Schema(
       default: null,
     },
 
+    singleton: {
+      type: String,
+      default: "PROJECT_SECTION",
+    },
+
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
+
+    updatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
   },
   { timestamps: true },
 );
+
+projectSectionSchema.index({ singleton: 1 }, { unique: true });
 
 export const ProjectSectionModel =
   mongoose.models.ProjectSection ||

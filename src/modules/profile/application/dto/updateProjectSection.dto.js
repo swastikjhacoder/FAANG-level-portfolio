@@ -1,30 +1,15 @@
 import { ValidationError } from "@/shared/errors";
-import { validateObjectId } from "@/shared/utils/validateObjectId";
 
 export class UpdateProjectSectionDTO {
-  constructor({ profileId, heading, subHeading, description }) {
-    this.profileId = profileId;
-    this.heading = heading;
-    this.subHeading = subHeading;
-    this.description = description;
-  }
-
   static validate(payload) {
-    const { profileId, heading, subHeading, description } = payload;
-
-    if (!profileId) {
-      throw new ValidationError("profileId is required");
-    }
-    validateObjectId(profileId, "profileId");
+    const { heading, subHeading, description } = payload;
 
     if (
       heading === undefined &&
       subHeading === undefined &&
       description === undefined
     ) {
-      throw new ValidationError(
-        "At least one field (heading, subHeading, description) must be provided",
-      );
+      throw new ValidationError("At least one field must be provided");
     }
 
     const updates = {};
@@ -53,9 +38,6 @@ export class UpdateProjectSectionDTO {
       updates.description = description?.trim() || null;
     }
 
-    return new UpdateProjectSectionDTO({
-      profileId,
-      ...updates,
-    });
+    return updates;
   }
 }

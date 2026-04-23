@@ -14,7 +14,6 @@
   --glass-bg: var(--surface);
   --glass-border: var(--border);
   --glass-shadow: var(--shadow);
-  --gradient-primary: linear-gradient(135deg, #a855f7, #ec4899);
   --gradient-logo: linear-gradient(270deg, #a855f7, #ec4899, #facc15);
   --chart-primary: #a855f7;
   --chart-secondary: #ec4899;
@@ -177,4 +176,96 @@ body {
 }
 .blur-sm {
   filter: blur(6px);
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.gradient-scrollbar::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.gradient-scrollbar::-webkit-scrollbar-track {
+  background: var(--surface);
+  border-radius: 999px;
+}
+
+.gradient-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--gradient-primary);
+  border-radius: 999px;
+  border: 2px solid var(--bg-color);
+}
+
+.gradient-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    135deg,
+    var(--accent-hover),
+    var(--accent-2)
+  );
+}
+
+.gradient-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) var(--surface);
+}
+
+@media (max-width: 640px) {
+  .gradient-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .gradient-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 10px;
+}
+
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track {
+  background: var(--surface);
+}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  border-radius: 999px;
+  border: 2px solid var(--bg-color);
+}
+
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(
+    135deg,
+    var(--accent-hover),
+    var(--accent-2)
+  );
+}
+
+html,
+body {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) var(--surface);
 }

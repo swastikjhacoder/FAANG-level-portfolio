@@ -12,6 +12,8 @@ import FadeInSection from "@/components/public/ui/FadeInSection";
 import ExperienceList from "@/components/public/sections/ExperienceList";
 import AcademicSection from "@/components/public/sections/AcademicSection";
 import AcademicList from "@/components/public/sections/AcademicList";
+import ProjectSection from "@/components/public/sections/ProjectSection";
+import Projects from "@/components/public/sections/Projects";
 
 function getBaseUrl() {
   if (process.env.APP_URL) {
@@ -116,6 +118,16 @@ const getEducation = createFetcher({
   errorMessage: "Failed to fetch education",
 });
 
+const getProjectSection = createFetcher({
+  path: "/api/v1/profile/projectSection",
+  errorMessage: "Failed to fetch Project Section",
+});
+
+const getProjects = createFetcher({
+  path: "/api/v1/profile/project",
+  errorMessage: "Failed to fetch projects",
+});
+
 const Section = ({ id, title, children, className = "" }) => {
   return (
     <section
@@ -137,15 +149,23 @@ const Section = ({ id, title, children, className = "" }) => {
 const Home = async () => {
   const baseUrl = getBaseUrl();
 
-  const [aboutRes, profileRes, coreRes, skillRes, experienceRes, academicRes] =
-    await Promise.all([
-      getAboutData({ baseUrl }),
-      getProfile({ baseUrl }),
-      getCoreCompetency({ baseUrl }),
-      getSkillSection({ baseUrl }),
-      getExperienceSection({ baseUrl }),
-      getAcademicSection({ baseUrl }),
-    ]);
+  const [
+    aboutRes,
+    profileRes,
+    coreRes,
+    skillRes,
+    experienceRes,
+    academicRes,
+    projectSectionRes,
+  ] = await Promise.all([
+    getAboutData({ baseUrl }),
+    getProfile({ baseUrl }),
+    getCoreCompetency({ baseUrl }),
+    getSkillSection({ baseUrl }),
+    getExperienceSection({ baseUrl }),
+    getAcademicSection({ baseUrl }),
+    getProjectSection({ baseUrl }),
+  ]);
 
   const profile = profileRes.data;
 
@@ -159,6 +179,7 @@ const Home = async () => {
     skillsRes,
     experiencesRes,
     educationRes,
+    projectsRes,
   ] = await Promise.all([
     getProfileSummary({
       baseUrl,
@@ -177,6 +198,10 @@ const Home = async () => {
       query: { profileId: profile._id },
     }),
     getEducation({
+      baseUrl,
+      query: { profileId: profile._id },
+    }),
+    getProjects({
       baseUrl,
       query: { profileId: profile._id },
     }),
@@ -236,8 +261,16 @@ const Home = async () => {
         </div>
       </Section>
 
-      <Section id="projects" title="Projects">
-        <p className="text-gray-600 dark:text-gray-400">Your projects...</p>
+      <Section id="projects">
+        <div className="space-y-12">
+          <FadeInSection>
+            <ProjectSection data={projectSectionRes.data} />
+          </FadeInSection>
+
+          <FadeInSection>
+            <Projects data={projectsRes.data} />
+          </FadeInSection>
+        </div>
       </Section>
 
       <Section id="services" title="Services">

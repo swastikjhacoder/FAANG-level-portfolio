@@ -8,6 +8,13 @@ export class AddProjectSectionUseCase {
   async execute(payload, user) {
     const dto = AddProjectSectionDTO.validate(payload);
 
-    return this.repo.upsert(dto.profileId, dto, user.id);
+    return this.repo.upsert(
+      {
+        heading: dto.heading,
+        subHeading: dto.subHeading,
+        description: dto.description,
+      },
+      user.id,
+    );
   }
 }
