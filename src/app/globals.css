@@ -1,85 +1,86 @@
 @import "tailwindcss";
-@custom-variant dark (&:where(.dark, .dark *));
 
-:root {
-  --bg-color: #ffffff;
-  --text-color: #0f172a;
-  --text-primary: #0f172a;
-  --text-secondary: rgba(15, 23, 42, 0.75);
-  --text-muted: rgba(0, 0, 0, 0.6);
-  --surface: rgba(0, 0, 0, 0.04);
-  --surface-strong: rgba(0, 0, 0, 0.08);
-  --border: rgba(0, 0, 0, 0.08);
-  --shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  --glass-bg: var(--surface);
-  --glass-border: var(--border);
-  --glass-shadow: var(--shadow);
-  --gradient-logo: linear-gradient(270deg, #a855f7, #ec4899, #facc15);
-  --chart-primary: #a855f7;
-  --chart-secondary: #ec4899;
-  --chart-tertiary: #facc15;
-  --chart-grid: rgba(0, 0, 0, 0.08);
-  --accent: #a855f7;
-  --accent-hover: #9333ea;
-  --accent-soft: rgba(168, 85, 247, 0.12);
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --surface-hover: rgba(0, 0, 0, 0.06);
-  --surface-active: rgba(0, 0, 0, 0.1);
-  --ribbon-bg: var(--accent);
-  --ribbon-text: #ffffff;
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12);
-  --glass-highlight: rgba(255, 255, 255, 0.4);
-  --glass-noise: rgba(255, 255, 255, 0.02);
-  --overlay-light: rgba(255, 255, 255, 0.6);
-  --overlay-dark: rgba(0, 0, 0, 0.4);
-  --hover-opacity: 0.85;
-  --active-opacity: 0.7;
-  --focus-ring: 0 0 0 3px rgba(168, 85, 247, 0.35);
-  --divider: rgba(0, 0, 0, 0.06);
-  --ribbon-back: rgba(0, 0, 0, 0.25);
-  --ribbon-highlight: rgba(255, 255, 255, 0.25);
-  --accent-2: #ec4899;
-  --gradient-primary: linear-gradient(135deg, var(--accent), var(--accent-2));
-}
+@layer base {
+  :root {
+    --bg-color: #ffffff;
+    --text-color: #0f172a;
+    --text-primary: #0f172a;
+    --text-secondary: rgba(15, 23, 42, 0.75);
+    --text-muted: rgba(0, 0, 0, 0.6);
+    --surface: rgba(0, 0, 0, 0.04);
+    --surface-strong: rgba(0, 0, 0, 0.08);
+    --border: rgba(0, 0, 0, 0.08);
+    --shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    --glass-bg: var(--surface);
+    --glass-border: var(--border);
+    --glass-shadow: var(--shadow);
+    --gradient-logo: linear-gradient(270deg, #a855f7, #ec4899, #facc15);
+    --chart-primary: #a855f7;
+    --chart-secondary: #ec4899;
+    --chart-tertiary: #facc15;
+    --chart-grid: rgba(0, 0, 0, 0.08);
+    --accent: #a855f7;
+    --accent-hover: #9333ea;
+    --accent-soft: rgba(168, 85, 247, 0.12);
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --surface-hover: rgba(0, 0, 0, 0.06);
+    --surface-active: rgba(0, 0, 0, 0.1);
+    --ribbon-bg: var(--accent);
+    --ribbon-text: #ffffff;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12);
+    --glass-highlight: rgba(255, 255, 255, 0.4);
+    --glass-noise: rgba(255, 255, 255, 0.02);
+    --overlay-light: rgba(255, 255, 255, 0.6);
+    --overlay-dark: rgba(0, 0, 0, 0.4);
+    --hover-opacity: 0.85;
+    --active-opacity: 0.7;
+    --focus-ring: 0 0 0 3px rgba(168, 85, 247, 0.35);
+    --divider: rgba(0, 0, 0, 0.06);
+    --ribbon-back: rgba(0, 0, 0, 0.25);
+    --ribbon-highlight: rgba(255, 255, 255, 0.25);
+    --accent-2: #ec4899;
+    --gradient-primary: linear-gradient(135deg, var(--accent), var(--accent-2));
+  }
 
-.dark {
-  --bg-color: #0f172a;
-  --text-color: #ffffff;
-  --text-primary: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.75);
-  --text-muted: rgba(255, 255, 255, 0.65);
-  --surface: rgba(255, 255, 255, 0.06);
-  --surface-strong: rgba(255, 255, 255, 0.12);
-  --border: rgba(255, 255, 255, 0.12);
-  --shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-  --chart-grid: rgba(255, 255, 255, 0.12);
-  --accent: #c084fc;
-  --accent-hover: #a855f7;
-  --accent-soft: rgba(192, 132, 252, 0.18);
-  --success: #4ade80;
-  --warning: #fbbf24;
-  --danger: #f87171;
-  --surface-hover: rgba(255, 255, 255, 0.08);
-  --surface-active: rgba(255, 255, 255, 0.14);
-  --ribbon-bg: var(--accent);
-  --ribbon-text: #ffffff;
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6);
-  --glass-highlight: rgba(255, 255, 255, 0.15);
-  --glass-noise: rgba(255, 255, 255, 0.03);
-  --overlay-light: rgba(255, 255, 255, 0.2);
-  --overlay-dark: rgba(0, 0, 0, 0.6);
-  --hover-opacity: 0.9;
-  --active-opacity: 0.75;
-  --focus-ring: 0 0 0 3px rgba(192, 132, 252, 0.45);
-  --divider: rgba(255, 255, 255, 0.08);
-  --ribbon-back: rgba(0, 0, 0, 0.4);
-  --ribbon-highlight: rgba(255, 255, 255, 0.2);
+  .dark {
+    --bg-color: #0f172a;
+    --text-color: #ffffff;
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.75);
+    --text-muted: rgba(255, 255, 255, 0.65);
+    --surface: rgba(255, 255, 255, 0.06);
+    --surface-strong: rgba(255, 255, 255, 0.12);
+    --border: rgba(255, 255, 255, 0.12);
+    --shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+    --chart-grid: rgba(255, 255, 255, 0.12);
+    --accent: #c084fc;
+    --accent-hover: #a855f7;
+    --accent-soft: rgba(192, 132, 252, 0.18);
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --surface-hover: rgba(255, 255, 255, 0.08);
+    --surface-active: rgba(255, 255, 255, 0.14);
+    --ribbon-bg: var(--accent);
+    --ribbon-text: #ffffff;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6);
+    --glass-highlight: rgba(255, 255, 255, 0.15);
+    --glass-noise: rgba(255, 255, 255, 0.03);
+    --overlay-light: rgba(255, 255, 255, 0.2);
+    --overlay-dark: rgba(0, 0, 0, 0.6);
+    --hover-opacity: 0.9;
+    --active-opacity: 0.75;
+    --focus-ring: 0 0 0 3px rgba(192, 132, 252, 0.45);
+    --divider: rgba(255, 255, 255, 0.08);
+    --ribbon-back: rgba(0, 0, 0, 0.4);
+    --ribbon-highlight: rgba(255, 255, 255, 0.2);
+  }
 }
 
 html,
@@ -268,4 +269,41 @@ html,
 body {
   scrollbar-width: thin;
   scrollbar-color: var(--accent) var(--surface);
+}
+
+@keyframes testimonial-scroll {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.testimonial-track {
+  display: flex;
+  width: max-content;
+  animation: testimonial-scroll 30s linear infinite;
+  will-change: transform;
+}
+
+.testimonial-track:hover {
+  animation-play-state: paused;
+}
+
+.testimonial-track {
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+@media (max-width: 768px) {
+  .testimonial-track {
+    animation-duration: 50s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .testimonial-track {
+    animation: none;
+  }
 }

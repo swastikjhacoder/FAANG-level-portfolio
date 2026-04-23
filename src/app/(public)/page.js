@@ -14,6 +14,12 @@ import AcademicSection from "@/components/public/sections/AcademicSection";
 import AcademicList from "@/components/public/sections/AcademicList";
 import ProjectSection from "@/components/public/sections/ProjectSection";
 import Projects from "@/components/public/sections/Projects";
+import ServiceSection from "@/components/public/sections/ServiceSection";
+import Services from "@/components/public/sections/Services";
+import Testimonial from "@/components/public/sections/Testimonial";
+import TestimonialSection from "@/components/public/sections/TestimonialSection";
+import ContactSection from "@/components/public/sections/ContactSection";
+import Contact from "@/components/public/sections/Contact";
 
 function getBaseUrl() {
   if (process.env.APP_URL) {
@@ -128,6 +134,31 @@ const getProjects = createFetcher({
   errorMessage: "Failed to fetch projects",
 });
 
+const getServiceSection = createFetcher({
+  path: "/api/v1/profile/serviceSection",
+  errorMessage: "Failed to fetch Service Section",
+});
+
+const getServices = createFetcher({
+  path: "/api/v1/profile/service",
+  errorMessage: "Failed to fetch services",
+});
+
+const getTestimonials = createFetcher({
+  path: "/api/v1/profile/testimonial",
+  errorMessage: "Failed to fetch testimonials",
+});
+
+const getContactSection = createFetcher({
+  path: "/api/v1/profile/contactSection",
+  errorMessage: "Failed to fetch Contact Section",
+});
+
+const getContact = createFetcher({
+  path: "/api/v1/profile/contact",
+  errorMessage: "Failed to fetch contact data",
+});
+
 const Section = ({ id, title, children, className = "" }) => {
   return (
     <section
@@ -157,6 +188,8 @@ const Home = async () => {
     experienceRes,
     academicRes,
     projectSectionRes,
+    serviceSectionRes,
+    contactSectionRes,
   ] = await Promise.all([
     getAboutData({ baseUrl }),
     getProfile({ baseUrl }),
@@ -165,6 +198,8 @@ const Home = async () => {
     getExperienceSection({ baseUrl }),
     getAcademicSection({ baseUrl }),
     getProjectSection({ baseUrl }),
+    getServiceSection({ baseUrl }),
+    getContactSection({ baseUrl }),
   ]);
 
   const profile = profileRes.data;
@@ -180,6 +215,9 @@ const Home = async () => {
     experiencesRes,
     educationRes,
     projectsRes,
+    servicesRes,
+    testimonialsRes,
+    contactRes,
   ] = await Promise.all([
     getProfileSummary({
       baseUrl,
@@ -205,7 +243,20 @@ const Home = async () => {
       baseUrl,
       query: { profileId: profile._id },
     }),
+    getServices({
+      baseUrl,
+      query: { profileId: profile._id },
+    }),
+    getTestimonials({
+      baseUrl,
+      query: { profileId: profile._id },
+    }),
+    getContact({ baseUrl, query: { profileId: profile._id } }),
   ]);
+
+  const approvedTestimonials =
+    testimonialsRes?.data?.filter((item) => item.approved && !item.isDeleted) ||
+    [];
 
   return (
     <main className="pt-16 sm:pt-20">
@@ -273,12 +324,42 @@ const Home = async () => {
         </div>
       </Section>
 
-      <Section id="services" title="Services">
-        <p className="text-gray-600 dark:text-gray-400">What you offer...</p>
+      <Section id="services">
+        <div className="space-y-12">
+          <FadeInSection>
+            <ServiceSection data={serviceSectionRes.data} />
+          </FadeInSection>
+
+          <FadeInSection>
+            <Services data={servicesRes.data} />
+          </FadeInSection>
+        </div>
       </Section>
 
-      <Section id="contact" title="Contact">
-        <p className="text-gray-600 dark:text-gray-400">Contact details...</p>
+      {approvedTestimonials.length > 0 && (
+        <Section id="testimonial">
+          <div className="space-y-12">
+            <FadeInSection>
+              <TestimonialSection />
+            </FadeInSection>
+
+            <FadeInSection>
+              <Testimonial data={approvedTestimonials} />
+            </FadeInSection>
+          </div>
+        </Section>
+      )}
+
+      <Section id="contact">
+        <div className="space-y-12">
+          <FadeInSection>
+            <ContactSection data={contactSectionRes.data} />
+          </FadeInSection>
+
+          <FadeInSection>
+            <Contact data={contactRes.data} /> {/* 👈 NEW */}
+          </FadeInSection>
+        </div>
       </Section>
     </main>
   );

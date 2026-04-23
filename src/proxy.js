@@ -36,7 +36,11 @@ export function proxy(req) {
       return res;
     }
 
-    if (pathname.startsWith("/api/auth") || pathname === "/api/csrf") {
+    if (
+      pathname.startsWith("/api/auth") ||
+      pathname === "/api/csrf" ||
+      pathname === "/api/v1/contact/send"
+    ) {
       return res;
     }
 
@@ -60,8 +64,5 @@ export function proxy(req) {
 }
 
 export const config = {
-  matcher: [
-    "/dashboard/:path*",
-    "/api/:path*",
-  ],
+  matcher: ["/dashboard/:path*", "/api/:path*"],
 };

@@ -95,6 +95,7 @@ const Projects = ({ data = [] }) => {
                     src={project.screenshot.url}
                     alt={project.name}
                     fill
+                    sizes="(max-width: 640px) 85vw, (max-width: 768px) 60vw, (max-width: 1024px) 45vw, 32vw"
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 )}
