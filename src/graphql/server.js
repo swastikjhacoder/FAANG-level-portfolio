@@ -1,7 +1,6 @@
 import { createYoga } from "graphql-yoga";
 
 export async function getYoga() {
-  // 🔥 lazy imports (critical fix)
   const { schema } = await import("./schema");
   const { createContext } = await import("./context");
   const { depthLimitRule } = await import("./plugins/depthLimit.plugin");

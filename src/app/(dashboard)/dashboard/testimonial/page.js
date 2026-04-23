@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/useAuthStore";
 import { secureFetch } from "@/shared/lib/secureFetch";
+import Image from "next/image";
 
 export default function TestimonialPage() {
   const { profile, hydrated } = useAuthStore();
@@ -99,11 +100,12 @@ export default function TestimonialPage() {
               key={t._id}
               className="border rounded-xl p-4 shadow-sm flex gap-4"
             >
-              {/* Image */}
               {t.senderImage?.url ? (
-                <img
+                <Image
                   src={t.senderImage.url}
-                  alt={t.senderName}
+                  alt={t.senderName || "User"}
+                  width={48}
+                  height={48}
                   className="w-12 h-12 rounded-full object-cover"
                 />
               ) : (

@@ -21,7 +21,7 @@ export class AddEducationUseCase {
       fieldOfStudy: payload.fieldOfStudy?.trim() || null,
       specializations: payload.specializations || [],
 
-      startDate: new Date(payload.startDate), // ✅ convert here
+      startDate: new Date(payload.startDate),
       endDate: payload.endDate ? new Date(payload.endDate) : null,
 
       grade: payload.grade?.trim() || null,

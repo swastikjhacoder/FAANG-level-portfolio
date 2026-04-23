@@ -16,7 +16,7 @@ export class AboutRepository {
     await connectDB();
 
     return AboutModel.findOneAndUpdate(
-      { singleton: true, isDeleted: false }, // ✅ strict filter
+      { singleton: true, isDeleted: false },
       data,
       {
         new: true,

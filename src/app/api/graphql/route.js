@@ -2,8 +2,6 @@ export const runtime = "nodejs";
 
 import { corsOptions } from "@/shared/config/cors";
 import { getYoga } from "@/graphql/server";
-// ⚠️ keep middleware out for now; re-add later after build is stable
-// import withRateLimit from "@/shared/security/middleware/rateLimit.middleware";
 
 const resolveOrigin = (req) => {
   const origin = req.headers.get("origin");

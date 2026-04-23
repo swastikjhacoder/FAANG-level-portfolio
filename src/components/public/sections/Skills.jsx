@@ -37,7 +37,6 @@ const Skills = ({ data = [] }) => {
                 hover:-translate-y-1 hover:shadow-lg
               "
             >
-              {/* Top Section */}
               <div className="flex items-center gap-3 mb-4">
                 <div className="relative w-8 h-8 sm:w-10 sm:h-10">
                   <Image
@@ -59,7 +58,6 @@ const Skills = ({ data = [] }) => {
                 </div>
               </div>
 
-              {/* Progress Bar */}
               <div className="w-full">
                 <div className="w-full h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
                   <div

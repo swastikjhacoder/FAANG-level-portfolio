@@ -45,7 +45,6 @@ const Footer = () => {
       </div>
 
       <div className="px-4 md:px-10 pb-6 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-(--text-muted)">
-        {/* Copyright */}
         <span>
           © {new Date().getFullYear()} Swastik Jha. All rights reserved.
         </span>

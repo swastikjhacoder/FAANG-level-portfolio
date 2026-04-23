@@ -11,7 +11,6 @@ const formatDate = (date) => {
 const AcademicList = ({ data = [] }) => {
   if (!data.length) return null;
 
-  // Sort latest first (important for UX)
   const sortedData = [...data].sort(
     (a, b) => new Date(b.startDate) - new Date(a.startDate),
   );
@@ -21,28 +20,23 @@ const AcademicList = ({ data = [] }) => {
       {sortedData.map((item) => (
         <RibbonCard key={item._id}>
           <div className="space-y-3">
-            {/* Degree */}
             <h3 className="text-lg font-semibold text-[var(--text-primary)] leading-snug">
               {item.degree} • {item.fieldOfStudy}
             </h3>
 
-            {/* Institution */}
             <p className="text-sm text-[var(--text-secondary)]">
               {item.institution}
             </p>
 
-            {/* Board / University */}
             <p className="text-xs text-[var(--text-secondary)]">
               {item.boardOrUniversity}
             </p>
 
-            {/* Duration */}
             <p className="text-xs text-[var(--text-secondary)]">
               {formatDate(item.startDate)} -{" "}
               {item.endDate ? formatDate(item.endDate) : "Present"}
             </p>
 
-            {/* Specializations */}
             {item.specializations?.length > 0 && (
               <div className="flex flex-wrap gap-2 pt-2">
                 {item.specializations.map((spec, index) => (
@@ -56,7 +50,6 @@ const AcademicList = ({ data = [] }) => {
               </div>
             )}
 
-            {/* Optional Description */}
             {item.description && (
               <p className="text-sm text-[var(--text-secondary)] pt-1">
                 {item.description}
