@@ -96,10 +96,15 @@ const logoutHandler = async (req) => {
   }
 };
 
-const logout = withRateLimit(
-  withCsrf(authGuard(logoutHandler)),
-  DEV ? { limit: 1000, window: 60 } : { limit: 10, window: 60 },
-);
+const rateKey = (req) => `rate:${req.ip}:${req.method}:${req.nextUrl.pathname}`;
+
+const logout = DEV
+  ? withCsrf(authGuard(logoutHandler))
+  : withRateLimit(withCsrf(authGuard(logoutHandler)), {
+      limit: 10,
+      window: 60,
+      key: rateKey,
+    });
 
 export async function POST(req) {
   return logout(req);

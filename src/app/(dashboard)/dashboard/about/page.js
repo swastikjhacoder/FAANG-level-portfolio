@@ -18,12 +18,14 @@ import {
   TableEmpty,
 } from "@/components/dashboard/ui/Table";
 import { secureFetch } from "@/shared/lib/secureFetch";
+import { useProfile } from "@/modules/profile/hooks/useProfile";
 
 export default function AboutPage() {
   const route = dashboardRoutes.find((r) => r.href === "/dashboard/about");
 
   const { user, hydrated } = useAuthStore();
-  const profileId = user?.id;
+  const { profile } = useProfile();
+  const profileId = profile?._id;
 
   const [about, setAbout] = useState(null);
   const [aboutForm, setAboutForm] = useState({

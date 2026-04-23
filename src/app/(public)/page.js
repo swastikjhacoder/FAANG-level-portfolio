@@ -1,5 +1,6 @@
 import { cache } from "react";
 import React from "react";
+
 import AboutSection from "@/components/public/sections/AboutSection";
 import ProfileSection from "@/components/public/sections/ProfileSection";
 import ProfileSummarySection from "@/components/public/sections/ProfileSummarySection";
@@ -22,27 +23,23 @@ import ContactSection from "@/components/public/sections/ContactSection";
 import Contact from "@/components/public/sections/Contact";
 import ScrollHandler from "@/components/public/utils/ScrollHandler";
 
-function getBaseUrl() {
-  if (process.env.APP_URL) {
-    return process.env.APP_URL;
+export const dynamic = "force-dynamic";
+export const revalidate = 60;
+
+async function baseFetch({ path, query = {}, errorMessage = "Fetch failed" }) {
+  let url;
+
+  if (typeof window === "undefined") {
+    const base =
+      process.env.APP_URL ||
+      (process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://127.0.0.1:3000");
+
+    url = new URL(path, base);
+  } else {
+    url = new URL(path, window.location.origin);
   }
-
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-
-  return "http://localhost:3000";
-}
-
-const REVALIDATE = 60;
-
-async function baseFetch({
-  baseUrl,
-  path,
-  query = {},
-  errorMessage = "Fetch failed",
-}) {
-  const url = new URL(path, baseUrl);
 
   Object.entries(query).forEach(([key, value]) => {
     if (value !== undefined && value !== null) {
@@ -51,7 +48,7 @@ async function baseFetch({
   });
 
   const res = await fetch(url.toString(), {
-    next: { revalidate: REVALIDATE },
+    next: { revalidate: 60 },
   });
 
   if (!res.ok) {
@@ -77,110 +74,89 @@ const getProfile = createFetcher({
 
 const getAboutData = createFetcher({
   path: "/api/v1/profile/aboutSection",
-  errorMessage: "Failed to fetch About Section",
 });
 
 const getCoreCompetency = createFetcher({
   path: "/api/v1/profile/coreCompetencySection",
-  errorMessage: "Failed to fetch Core Competency",
 });
 
 const getSkillSection = createFetcher({
   path: "/api/v1/profile/skillSection",
-  errorMessage: "Failed to fetch Skill Section",
 });
 
 const getProfileSummary = createFetcher({
   path: "/api/v1/profile/profileSummary",
-  errorMessage: "Failed to fetch Profile Summary",
 });
 
 const getCoreCompetencyItems = createFetcher({
   path: "/api/v1/profile/coreCompetency",
-  errorMessage: "Failed to fetch Core Competency Items",
 });
 
 const getSkills = createFetcher({
   path: "/api/v1/profile/skill",
-  errorMessage: "Failed to fetch skills",
 });
 
 const getExperienceSection = createFetcher({
   path: "/api/v1/profile/experienceSection",
-  errorMessage: "Failed to fetch Experience Section",
 });
 
 const getExperiences = createFetcher({
   path: "/api/v1/profile/experience",
-  errorMessage: "Failed to fetch experiences",
 });
 
 const getAcademicSection = createFetcher({
   path: "/api/v1/profile/academicSection",
-  errorMessage: "Failed to fetch Academic Section",
 });
 
 const getEducation = createFetcher({
   path: "/api/v1/profile/education",
-  errorMessage: "Failed to fetch education",
 });
 
 const getProjectSection = createFetcher({
   path: "/api/v1/profile/projectSection",
-  errorMessage: "Failed to fetch Project Section",
 });
 
 const getProjects = createFetcher({
   path: "/api/v1/profile/project",
-  errorMessage: "Failed to fetch projects",
 });
 
 const getServiceSection = createFetcher({
   path: "/api/v1/profile/serviceSection",
-  errorMessage: "Failed to fetch Service Section",
 });
 
 const getServices = createFetcher({
   path: "/api/v1/profile/service",
-  errorMessage: "Failed to fetch services",
 });
 
 const getTestimonials = createFetcher({
   path: "/api/v1/profile/testimonial",
-  errorMessage: "Failed to fetch testimonials",
 });
 
 const getContactSection = createFetcher({
   path: "/api/v1/profile/contactSection",
-  errorMessage: "Failed to fetch Contact Section",
 });
 
 const getContact = createFetcher({
   path: "/api/v1/profile/contact",
-  errorMessage: "Failed to fetch contact data",
 });
 
-const Section = ({ id, title, children, className = "" }) => {
-  return (
-    <section
-      id={id}
-      className={`w-full min-h-screen flex items-center py-16 sm:py-20 border-b border-[var(--glass-border)] ${className}`}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-        {title && (
-          <h2 className="text-2xl sm:text-3xl font-bold mb-8 gradient-text">
-            {title}
-          </h2>
-        )}
-        {children}
-      </div>
-    </section>
-  );
-};
+const Section = ({ id, title, children, className = "" }) => (
+  <section
+    id={id}
+    className={`w-full min-h-screen flex items-center py-16 sm:py-20 border-b border-[var(--glass-border)] ${className}`}
+  >
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+      {title && (
+        <h2 className="text-2xl sm:text-3xl font-bold mb-8 gradient-text">
+          {title}
+        </h2>
+      )}
+      {children}
+    </div>
+  </section>
+);
 
 const Home = async () => {
-  const baseUrl = getBaseUrl();
-
   const [
     aboutRes,
     profileRes,
@@ -192,15 +168,15 @@ const Home = async () => {
     serviceSectionRes,
     contactSectionRes,
   ] = await Promise.all([
-    getAboutData({ baseUrl }),
-    getProfile({ baseUrl }),
-    getCoreCompetency({ baseUrl }),
-    getSkillSection({ baseUrl }),
-    getExperienceSection({ baseUrl }),
-    getAcademicSection({ baseUrl }),
-    getProjectSection({ baseUrl }),
-    getServiceSection({ baseUrl }),
-    getContactSection({ baseUrl }),
+    getAboutData({}),
+    getProfile({}),
+    getCoreCompetency({}),
+    getSkillSection({}),
+    getExperienceSection({}),
+    getAcademicSection({}),
+    getProjectSection({}),
+    getServiceSection({}),
+    getContactSection({}),
   ]);
 
   const profile = profileRes.data;
@@ -220,48 +196,24 @@ const Home = async () => {
     testimonialsRes,
     contactRes,
   ] = await Promise.all([
-    getProfileSummary({
-      baseUrl,
-      query: { profileId: profile._id },
-    }),
-    getCoreCompetencyItems({
-      baseUrl,
-      query: { profileId: profile._id },
-    }),
-    getSkills({
-      baseUrl,
-      query: { profileId: profile._id },
-    }),
-    getExperiences({
-      baseUrl,
-      query: { profileId: profile._id },
-    }),
-    getEducation({
-      baseUrl,
-      query: { profileId: profile._id },
-    }),
-    getProjects({
-      baseUrl,
-      query: { profileId: profile._id },
-    }),
-    getServices({
-      baseUrl,
-      query: { profileId: profile._id },
-    }),
-    getTestimonials({
-      baseUrl,
-      query: { profileId: profile._id },
-    }),
-    getContact({ baseUrl, query: { profileId: profile._id } }),
+    getProfileSummary({ query: { profileId: profile._id } }),
+    getCoreCompetencyItems({ query: { profileId: profile._id } }),
+    getSkills({ query: { profileId: profile._id } }),
+    getExperiences({ query: { profileId: profile._id } }),
+    getEducation({ query: { profileId: profile._id } }),
+    getProjects({ query: { profileId: profile._id } }),
+    getServices({ query: { profileId: profile._id } }),
+    getTestimonials({ query: { profileId: profile._id } }),
+    getContact({ query: { profileId: profile._id } }),
   ]);
 
   const approvedTestimonials =
-    testimonialsRes?.data?.filter((item) => item.approved && !item.isDeleted) ||
-    [];
+    testimonialsRes?.data?.filter((t) => t.approved && !t.isDeleted) || [];
 
   return (
     <main className="pt-16 sm:pt-20">
       <ScrollHandler />
+
       <Section id="home" className="border-none">
         <FadeInSection>
           <ProfileSection data={profile} />
@@ -280,88 +232,57 @@ const Home = async () => {
       <Section id="skills">
         <div className="space-y-10">
           <FadeInSection>
-            <div className="space-y-10">
-              <CoreCompetencySection data={coreRes.data} />
-              <CoreCompetencyList data={competencyItemsRes.data} />
-            </div>
+            <CoreCompetencySection data={coreRes.data} />
+            <CoreCompetencyList data={competencyItemsRes.data} />
           </FadeInSection>
 
-          <div className="space-y-10">
-            <SkillSection data={skillRes.data} />
-            <Skills data={skillsRes.data} />
-          </div>
+          <SkillSection data={skillRes.data} />
+          <Skills data={skillsRes.data} />
         </div>
       </Section>
 
       <Section id="experience">
-        <div className="space-y-12">
-          <FadeInSection>
-            <ExperienceSection data={experienceRes.data} />
-          </FadeInSection>
-          <ExperienceList data={experiencesRes.data} />
-        </div>
+        <FadeInSection>
+          <ExperienceSection data={experienceRes.data} />
+        </FadeInSection>
+        <ExperienceList data={experiencesRes.data} />
       </Section>
 
       <Section id="academic">
-        <div className="space-y-12">
-          <FadeInSection>
-            <AcademicSection data={academicRes.data} />
-          </FadeInSection>
-
-          <FadeInSection>
-            <AcademicList data={educationRes.data} />
-          </FadeInSection>
-        </div>
+        <FadeInSection>
+          <AcademicSection data={academicRes.data} />
+          <AcademicList data={educationRes.data} />
+        </FadeInSection>
       </Section>
 
       <Section id="projects">
-        <div className="space-y-12">
-          <FadeInSection>
-            <ProjectSection data={projectSectionRes.data} />
-          </FadeInSection>
-
-          <FadeInSection>
-            <Projects data={projectsRes.data} />
-          </FadeInSection>
-        </div>
+        <FadeInSection>
+          <ProjectSection data={projectSectionRes.data} />
+          <Projects data={projectsRes.data} />
+        </FadeInSection>
       </Section>
 
       <Section id="services">
-        <div className="space-y-12">
-          <FadeInSection>
-            <ServiceSection data={serviceSectionRes.data} />
-          </FadeInSection>
-
-          <FadeInSection>
-            <Services data={servicesRes.data} />
-          </FadeInSection>
-        </div>
+        <FadeInSection>
+          <ServiceSection data={serviceSectionRes.data} />
+          <Services data={servicesRes.data} />
+        </FadeInSection>
       </Section>
 
       {approvedTestimonials.length > 0 && (
         <Section id="testimonial">
-          <div className="space-y-12">
-            <FadeInSection>
-              <TestimonialSection />
-            </FadeInSection>
-
-            <FadeInSection>
-              <Testimonial data={approvedTestimonials} />
-            </FadeInSection>
-          </div>
+          <FadeInSection>
+            <TestimonialSection />
+            <Testimonial data={approvedTestimonials} />
+          </FadeInSection>
         </Section>
       )}
 
       <Section id="contact">
-        <div className="space-y-12">
-          <FadeInSection>
-            <ContactSection data={contactSectionRes.data} />
-          </FadeInSection>
-
-          <FadeInSection>
-            <Contact data={contactRes.data} /> {/* 👈 NEW */}
-          </FadeInSection>
-        </div>
+        <FadeInSection>
+          <ContactSection data={contactSectionRes.data} />
+          <Contact data={contactRes.data} />
+        </FadeInSection>
       </Section>
     </main>
   );

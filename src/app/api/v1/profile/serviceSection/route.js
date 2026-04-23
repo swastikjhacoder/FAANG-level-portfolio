@@ -143,27 +143,44 @@ const deleteHandler = async () => {
   }
 };
 
-export const GET = withRateLimit(
-  getHandler,
-  DEV ? { limit: 1000, window: 60 } : { limit: 100, window: 60 },
-);
+const rateKey = (req) => `rate:${req.ip}:${req.method}:${req.nextUrl.pathname}`;
 
-export const POST = withRateLimit(
-  withCsrf(authGuard(roleGuard(postHandler, ADMIN))),
-  DEV ? { limit: 1000, window: 60 } : { limit: 20, window: 60 },
-);
+export const GET = DEV
+  ? getHandler
+  : withRateLimit(getHandler, {
+      limit: 100,
+      window: 60,
+      key: rateKey,
+    });
 
-export const PUT = withRateLimit(
-  withCsrf(authGuard(roleGuard(putHandler, ADMIN))),
-  DEV ? { limit: 1000, window: 60 } : { limit: 20, window: 60 },
-);
+export const POST = DEV
+  ? withCsrf(authGuard(roleGuard(postHandler, ADMIN)))
+  : withRateLimit(withCsrf(authGuard(roleGuard(postHandler, ADMIN))), {
+      limit: 20,
+      window: 60,
+      key: rateKey,
+    });
 
-export const PATCH = withRateLimit(
-  withCsrf(authGuard(roleGuard(patchHandler, ADMIN))),
-  DEV ? { limit: 1000, window: 60 } : { limit: 20, window: 60 },
-);
+export const PUT = DEV
+  ? withCsrf(authGuard(roleGuard(putHandler, ADMIN)))
+  : withRateLimit(withCsrf(authGuard(roleGuard(putHandler, ADMIN))), {
+      limit: 20,
+      window: 60,
+      key: rateKey,
+    });
 
-export const DELETE = withRateLimit(
-  withCsrf(authGuard(roleGuard(deleteHandler, ADMIN))),
-  DEV ? { limit: 1000, window: 60 } : { limit: 10, window: 60 },
-);
+export const PATCH = DEV
+  ? withCsrf(authGuard(roleGuard(patchHandler, ADMIN)))
+  : withRateLimit(withCsrf(authGuard(roleGuard(patchHandler, ADMIN))), {
+      limit: 20,
+      window: 60,
+      key: rateKey,
+    });
+
+export const DELETE = DEV
+  ? withCsrf(authGuard(roleGuard(deleteHandler, ADMIN)))
+  : withRateLimit(withCsrf(authGuard(roleGuard(deleteHandler, ADMIN))), {
+      limit: 10,
+      window: 60,
+      key: rateKey,
+    });
