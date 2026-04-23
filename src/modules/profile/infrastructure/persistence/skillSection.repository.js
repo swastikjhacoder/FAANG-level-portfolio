@@ -1,12 +1,18 @@
 import { SkillSectionModel } from "./skillSection.schema";
 
 export class SkillSectionRepository {
-  async upsert(profileId, data, userId) {
+  async upsert(data, userId) {
     return SkillSectionModel.findOneAndUpdate(
-      { profileId },
+      { key: "global" },
       {
-        ...data,
-        createdBy: userId,
+        $set: {
+          ...data,
+          updatedBy: userId,
+          key: "global",
+        },
+        $setOnInsert: {
+          createdBy: userId,
+        },
       },
       {
         new: true,
@@ -16,7 +22,11 @@ export class SkillSectionRepository {
     );
   }
 
-  async findByProfileId(profileId) {
-    return SkillSectionModel.findOne({ profileId });
+  async get() {
+    return SkillSectionModel.findOne({ key: "global" }).lean();
+  }
+
+  async delete() {
+    return SkillSectionModel.findOneAndDelete({ key: "global" });
   }
 }

@@ -279,31 +279,37 @@ const deleteHandler = async (req) => {
   }
 };
 
-const create = withRateLimit(
-  withCsrf(authGuard(createHandler)),
-  DEV
-    ? { limit: 1000, window: 60, prefix: "skill-create" }
-    : { limit: 30, window: 60, prefix: "skill-create" },
-);
+const get = DEV
+  ? getHandler
+  : withRateLimit(getHandler, {
+      limit: 100,
+      window: 60,
+      key: (req) => `rate:${req.ip}:${req.method}:${req.nextUrl.pathname}`,
+    });
 
-const update = withRateLimit(
-  withCsrf(authGuard(roleGuard(updateHandler, ADMIN))),
-  DEV
-    ? { limit: 1000, window: 60, prefix: "skill-update" }
-    : { limit: 30, window: 60, prefix: "skill-update" },
-);
+const create = DEV
+  ? withCsrf(authGuard(createHandler))
+  : withRateLimit(withCsrf(authGuard(createHandler)), {
+      limit: 30,
+      window: 60,
+      key: (req) => `rate:${req.ip}:${req.method}:${req.nextUrl.pathname}`,
+    });
 
-const remove = withRateLimit(
-  withCsrf(authGuard(roleGuard(deleteHandler, ADMIN))),
-  DEV
-    ? { limit: 1000, window: 60, prefix: "skill-delete" }
-    : { limit: 20, window: 60, prefix: "skill-delete" },
-);
+const update = DEV
+  ? withCsrf(authGuard(roleGuard(updateHandler, ADMIN)))
+  : withRateLimit(withCsrf(authGuard(roleGuard(updateHandler, ADMIN))), {
+      limit: 30,
+      window: 60,
+      key: (req) => `rate:${req.ip}:${req.method}:${req.nextUrl.pathname}`,
+    });
 
-const get = withRateLimit(
-  getHandler,
-  DEV ? { limit: 1000, window: 60 } : { limit: 100, window: 60 },
-);
+const remove = DEV
+  ? withCsrf(authGuard(roleGuard(deleteHandler, ADMIN)))
+  : withRateLimit(withCsrf(authGuard(roleGuard(deleteHandler, ADMIN))), {
+      limit: 20,
+      window: 60,
+      key: (req) => `rate:${req.ip}:${req.method}:${req.nextUrl.pathname}`,
+    });
 
 export async function POST(req) {
   return create(req);

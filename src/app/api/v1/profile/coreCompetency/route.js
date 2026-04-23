@@ -120,20 +120,29 @@ const deleteHandler = async (req) => {
   }
 };
 
-const upsert = withRateLimit(
-  withCsrf(authGuard(roleGuard(upsertHandler, ADMIN))),
-  DEV ? { limit: 1000, window: 60 } : { limit: 20, window: 60 },
-);
+const get = DEV
+  ? getHandler
+  : withRateLimit(getHandler, {
+      limit: 100,
+      window: 60,
+      key: (req) => `rate:${req.ip}:${req.method}:${req.nextUrl.pathname}`,
+    });
 
-const remove = withRateLimit(
-  withCsrf(authGuard(roleGuard(deleteHandler, ADMIN))),
-  DEV ? { limit: 1000, window: 60 } : { limit: 10, window: 60 },
-);
+const upsert = DEV
+  ? withCsrf(authGuard(roleGuard(upsertHandler, ADMIN)))
+  : withRateLimit(withCsrf(authGuard(roleGuard(upsertHandler, ADMIN))), {
+      limit: 20,
+      window: 60,
+      key: (req) => `rate:${req.ip}:${req.method}:${req.nextUrl.pathname}`,
+    });
 
-const get = withRateLimit(
-  getHandler,
-  DEV ? { limit: 1000, window: 60 } : { limit: 100, window: 60 },
-);
+const remove = DEV
+  ? withCsrf(authGuard(roleGuard(deleteHandler, ADMIN)))
+  : withRateLimit(withCsrf(authGuard(roleGuard(deleteHandler, ADMIN))), {
+      limit: 10,
+      window: 60,
+      key: (req) => `rate:${req.ip}:${req.method}:${req.nextUrl.pathname}`,
+    });
 
 export async function POST(req) {
   return upsert(req);

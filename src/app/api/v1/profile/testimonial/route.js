@@ -171,34 +171,54 @@ const deleteHandler = async (req) => {
   }
 };
 
-const create = withRateLimit(
-  withCsrf(authGuard(createHandler)),
-  DEV ? { limit: 1000, window: 60 } : { limit: 10, window: 60 },
-);
+const rateKey = (req) => `rate:${req.ip}:${req.method}:${req.nextUrl.pathname}`;
 
-const approve = withRateLimit(
-  withCsrf(authGuard(roleGuard(approveHandler, ADMIN))),
-  DEV ? { limit: 1000, window: 60 } : { limit: 20, window: 60 },
-);
+const get = DEV
+  ? async (req) => {
+      const url = new URL(req.url);
+      const isAdmin = url.searchParams.get("admin") === "true";
 
-const remove = withRateLimit(
-  withCsrf(authGuard(roleGuard(deleteHandler, ADMIN))),
-  DEV ? { limit: 1000, window: 60 } : { limit: 10, window: 60 },
-);
-
-const get = withRateLimit(
-  async (req) => {
-    const url = new URL(req.url);
-    const isAdmin = url.searchParams.get("admin") === "true";
-
-    if (isAdmin) {
-      return authGuard(roleGuard(getHandler, ADMIN))(req);
+      if (isAdmin) {
+        return authGuard(roleGuard(getHandler, ADMIN))(req);
+      }
+      return getHandler(req);
     }
+  : withRateLimit(
+      async (req) => {
+        const url = new URL(req.url);
+        const isAdmin = url.searchParams.get("admin") === "true";
 
-    return getHandler(req);
-  },
-  DEV ? { limit: 1000, window: 60 } : { limit: 100, window: 60 },
-);
+        if (isAdmin) {
+          return authGuard(roleGuard(getHandler, ADMIN))(req);
+        }
+        return getHandler(req);
+      },
+      { limit: 100, window: 60, key: rateKey },
+    );
+
+const create = DEV
+  ? withCsrf(authGuard(createHandler))
+  : withRateLimit(withCsrf(authGuard(createHandler)), {
+      limit: 10,
+      window: 60,
+      key: rateKey,
+    });
+
+const approve = DEV
+  ? withCsrf(authGuard(roleGuard(approveHandler, ADMIN)))
+  : withRateLimit(withCsrf(authGuard(roleGuard(approveHandler, ADMIN))), {
+      limit: 20,
+      window: 60,
+      key: rateKey,
+    });
+
+const remove = DEV
+  ? withCsrf(authGuard(roleGuard(deleteHandler, ADMIN)))
+  : withRateLimit(withCsrf(authGuard(roleGuard(deleteHandler, ADMIN))), {
+      limit: 10,
+      window: 60,
+      key: rateKey,
+    });
 
 export async function POST(req) {
   return create(req);

@@ -251,32 +251,39 @@ const deleteHandler = async (req) => {
   }
 };
 
-const create = withRateLimit(
-  withCsrf(authGuard(roleGuard(createHandler, ADMIN_ROLES))),
-  DEV
-    ? { limit: 1000, window: 60, prefix: "create-profile" }
-    : { limit: 10, window: 60, prefix: "create-profile" },
-);
+const rateKey = (req) => `rate:${req.ip}:${req.method}:${req.nextUrl.pathname}`;
 
-const update = withRateLimit(
-  withCsrf(authGuard(roleGuard(updateHandler, ADMIN_ROLES))),
-  DEV
-    ? { limit: 1000, window: 60, prefix: "update-profile" }
-    : { limit: 20, window: 60, prefix: "update-profile" },
-);
+const get = DEV
+  ? getHandler
+  : withRateLimit(getHandler, {
+      limit: 100,
+      window: 60,
+      key: rateKey,
+    });
 
-const remove = withRateLimit(
-  withCsrf(authGuard(roleGuard(deleteHandler, ADMIN_ROLES))),
-  DEV
-    ? { limit: 1000, window: 60, prefix: "delete-profile" }
-    : { limit: 10, window: 60, prefix: "delete-profile" },
-);
+const create = DEV
+  ? withCsrf(authGuard(roleGuard(createHandler, ADMIN_ROLES)))
+  : withRateLimit(withCsrf(authGuard(roleGuard(createHandler, ADMIN_ROLES))), {
+      limit: 10,
+      window: 60,
+      key: rateKey,
+    });
 
-const get = withRateLimit(getHandler, {
-  limit: 100,
-  window: 60,
-  prefix: "get-profile",
-});
+const update = DEV
+  ? withCsrf(authGuard(roleGuard(updateHandler, ADMIN_ROLES)))
+  : withRateLimit(withCsrf(authGuard(roleGuard(updateHandler, ADMIN_ROLES))), {
+      limit: 20,
+      window: 60,
+      key: rateKey,
+    });
+
+const remove = DEV
+  ? withCsrf(authGuard(roleGuard(deleteHandler, ADMIN_ROLES)))
+  : withRateLimit(withCsrf(authGuard(roleGuard(deleteHandler, ADMIN_ROLES))), {
+      limit: 10,
+      window: 60,
+      key: rateKey,
+    });
 
 export async function POST(req) {
   return create(req);

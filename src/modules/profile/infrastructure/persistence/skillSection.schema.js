@@ -2,11 +2,11 @@ import mongoose from "mongoose";
 
 const skillSectionSchema = new mongoose.Schema(
   {
-    profileId: {
-      type: mongoose.Schema.Types.ObjectId,
-      required: true,
-      ref: "Profile",
+    key: {
+      type: String,
+      default: "global",
       unique: true,
+      index: true,
     },
 
     heading: {
@@ -33,13 +33,16 @@ const skillSectionSchema = new mongoose.Schema(
 
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       required: true,
+    },
+
+    updatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
   },
-  {
-    timestamps: true,
-  },
+  { timestamps: true },
 );
 
 export const SkillSectionModel =

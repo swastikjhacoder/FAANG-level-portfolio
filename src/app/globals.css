@@ -171,3 +171,10 @@ body {
 
   mix-blend-mode: screen;
 }
+
+.blur-0 {
+  filter: blur(0px);
+}
+.blur-sm {
+  filter: blur(6px);
+}

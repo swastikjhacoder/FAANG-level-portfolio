@@ -68,14 +68,12 @@ export default function SkillsPage() {
 
   const sectionValidators = {
     heading: (v) => (!v ? "Required" : null),
-    subHeading: (v) => (!v ? "Required" : null),
+    subHeading: () => null,
     description: (v) => (!v || v.length < 10 ? "Min 10 chars" : null),
   };
 
   useEffect(() => {
     if (!hydrated || !profile?._id) return;
-
-    const profileId = profile._id;
 
     let isMounted = true;
 
@@ -83,7 +81,7 @@ export default function SkillsPage() {
       try {
         const [res1, res2] = await Promise.all([
           fetch(`/api/v1/profile/skill?profileId=${profileId}`),
-          fetch(`/api/v1/profile/skillSection?profileId=${profileId}`),
+          fetch(`/api/v1/profile/skillSection`),
         ]);
 
         const json1 = await res1.json();
@@ -109,7 +107,7 @@ export default function SkillsPage() {
     return () => {
       isMounted = false;
     };
-  }, [hydrated, profile]);
+  }, [hydrated, profile, profileId]);
 
   const refetchSkills = async () => {
     const res = await fetch(`/api/v1/profile/skill?profileId=${profileId}`);
@@ -120,25 +118,16 @@ export default function SkillsPage() {
   const handleSectionSubmit = async () => {
     const errors = {
       heading: sectionValidators.heading(sectionForm.heading),
-      subHeading: sectionValidators.subHeading(sectionForm.subHeading),
       description: sectionValidators.description(sectionForm.description),
     };
 
-    if (errors.heading || errors.subHeading || errors.description) return;
+    if (errors.heading || errors.description) return;
 
-    const method = section ? "PATCH" : "POST";
-
-    await requestWithCsrf(`/api/v1/profile/skillSection`, method, {
-      profileId,
+    await requestWithCsrf(`/api/v1/profile/skillSection`, "PATCH", {
       ...sectionForm,
     });
 
-    const res = await fetch(
-      `/api/v1/profile/skillSection?profileId=${profileId}`,
-    );
-    const json = await res.json();
-
-    setSection(json.data);
+    setSection(sectionForm);
     setIsSectionModalOpen(false);
   };
 
@@ -204,7 +193,7 @@ export default function SkillsPage() {
     await refetchSkills();
   };
 
-  if (!hydrated) return;
+  if (!hydrated) return null;
 
   return (
     <div className="p-4 sm:p-6 space-y-6">

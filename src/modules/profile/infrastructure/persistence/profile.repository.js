@@ -3,6 +3,7 @@ import { ProfileModel } from "./profile.schema.js";
 
 import { validateObjectId } from "@/shared/utils/validateObjectId";
 import { ForbiddenError, ValidationError } from "@/shared/errors";
+import connectDB from "@/shared/lib/db.js";
 
 export class ProfileRepository {
   allowedUpdateFields = [
@@ -14,6 +15,10 @@ export class ProfileRepository {
     "maritalStatus",
     "languages",
   ];
+
+  async ensureDB() {
+    await connectDB();
+  }
 
   baseQuery() {
     return { isDeleted: false };
@@ -67,6 +72,7 @@ export class ProfileRepository {
   }
 
   async findLatestActive() {
+    await this.ensureDB();
     return ProfileModel.findOne(this.baseQuery())
       .sort({ createdAt: -1 })
       .lean();
