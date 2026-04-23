@@ -66,6 +66,21 @@ export class ProfileRepository {
     });
   }
 
+  async findLatestActive() {
+    return ProfileModel.findOne(this.baseQuery())
+      .sort({ createdAt: -1 })
+      .lean();
+  }
+
+  async findPublicProfile() {
+    return ProfileModel.findOne({
+      ...this.baseQuery(),
+      profileImage: { $exists: true, $ne: null },
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+  }
+
   async list({
     page = 1,
     limit = 10,

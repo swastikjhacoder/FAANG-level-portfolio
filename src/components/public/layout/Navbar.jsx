@@ -26,10 +26,23 @@ const navItems = [
 export default function Navbar() {
   const [open, setOpen] = useState(false);
 
+  const handleScroll = (id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    setOpen(false);
+  };
+
   return (
-    <nav className="fixed top-0 left-0 w-full z-50">
+    <nav className="fixed top-0 left-0 w-full z-1000">
       <div className="w-full backdrop-blur-xl bg-(--glass-bg) border-b border-(--glass-border) shadow-(--glass-shadow) px-6 py-3 flex items-center justify-between">
-        <div className="text-xl md:text-2xl font-bold gradient-text animate-gradient">
+        <div
+          onClick={() => handleScroll("home")}
+          className="text-xl md:text-2xl font-bold gradient-text animate-gradient cursor-pointer"
+        >
           Swastik Jha
         </div>
 
@@ -37,14 +50,14 @@ export default function Navbar() {
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
-              <a
+              <button
                 key={item.name}
-                href={`#${item.name.toLowerCase()}`}
+                onClick={() => handleScroll(item.name.toLowerCase())}
                 className="flex items-center gap-2 text-(--text-muted) hover:text-(--text-color) transition"
               >
                 <Icon size={18} />
                 {item.name}
-              </a>
+              </button>
             );
           })}
 
@@ -54,10 +67,7 @@ export default function Navbar() {
         </div>
 
         <div className="md:hidden">
-          <button
-            className="text-(--text-color)"
-            onClick={() => setOpen(!open)}
-          >
+          <button onClick={() => setOpen(!open)}>
             {open ? <X /> : <Menu />}
           </button>
         </div>
@@ -68,23 +78,22 @@ export default function Navbar() {
           open ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
         }`}
       >
-        <div className="backdrop-blur-xl bg-(--glass-bg) border-b border-(--glass-border) shadow-(--glass-shadow) px-6 py-4 flex flex-col gap-4">
+        <div className="backdrop-blur-xl bg-(--glass-bg) border-b border-(--glass-border) px-6 py-4 flex flex-col gap-4">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
-              <a
+              <button
                 key={item.name}
-                href={`#${item.name.toLowerCase()}`}
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-3 text-(--text-muted) hover:text-(--text-color) transition"
+                onClick={() => handleScroll(item.name.toLowerCase())}
+                className="flex items-center gap-3 text-(--text-muted) hover:text-(--text-color)"
               >
                 <Icon size={18} />
                 {item.name}
-              </a>
+              </button>
             );
           })}
 
-          <button className="mt-2 px-4 py-2 rounded-xl gradient-bg text-white font-semibold shadow-md">
+          <button className="mt-2 px-4 py-2 rounded-xl gradient-bg text-white font-semibold">
             Hire Me
           </button>
         </div>

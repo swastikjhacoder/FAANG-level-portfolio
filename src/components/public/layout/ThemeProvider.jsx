@@ -24,6 +24,17 @@ function isColorDark(hex) {
   return brightness < 128;
 }
 
+function hexToRgb(hex) {
+  const c = hex.substring(1);
+  const bigint = parseInt(c, 16);
+
+  return {
+    r: (bigint >> 16) & 255,
+    g: (bigint >> 8) & 255,
+    b: bigint & 255,
+  };
+}
+
 export default function ThemeProvider({ children }) {
   const { background, foreground } = useThemeStore();
   const isMounted = useIsMounted();
@@ -31,10 +42,46 @@ export default function ThemeProvider({ children }) {
   useEffect(() => {
     const root = document.documentElement;
 
+    const isDark = isColorDark(background);
+    const { r, g, b } = hexToRgb(foreground);
+
     root.style.setProperty("--bg-color", background);
     root.style.setProperty("--text-color", foreground);
 
-    if (isColorDark(background)) {
+    root.style.setProperty("--text-primary", foreground);
+    root.style.setProperty("--text-secondary", `rgba(${r}, ${g}, ${b}, 0.75)`);
+    root.style.setProperty("--text-muted", `rgba(${r}, ${g}, ${b}, 0.6)`);
+
+    root.style.setProperty(
+      "--surface",
+      isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+    );
+
+    root.style.setProperty(
+      "--surface-strong",
+      isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
+    );
+
+    root.style.setProperty(
+      "--border",
+      isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
+    );
+
+    root.style.setProperty(
+      "--shadow",
+      isDark ? "0 8px 32px rgba(0,0,0,0.35)" : "0 8px 32px rgba(0,0,0,0.08)",
+    );
+
+    root.style.setProperty("--glass-bg", "var(--surface)");
+    root.style.setProperty("--glass-border", "var(--border)");
+    root.style.setProperty("--glass-shadow", "var(--shadow)");
+
+    root.style.setProperty(
+      "--chart-grid",
+      isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
+    );
+
+    if (isDark) {
       root.classList.add("dark");
     } else {
       root.classList.remove("dark");

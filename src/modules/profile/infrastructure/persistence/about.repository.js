@@ -1,23 +1,34 @@
 import AboutModel from "./about.schema";
+import connectDB from "@/shared/lib/db";
 
 export class AboutRepository {
   async get() {
+    await connectDB();
     return AboutModel.findOne({ isDeleted: false });
   }
 
   async create(data) {
+    await connectDB();
     return AboutModel.create(data);
   }
 
   async update(data) {
-    return AboutModel.findOneAndUpdate({}, data, {
-      new: true,
-      runValidators: true,
-    });
+    await connectDB();
+
+    return AboutModel.findOneAndUpdate(
+      { singleton: true, isDeleted: false }, // ✅ strict filter
+      data,
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
   }
 
   async upsert(data) {
-    return AboutModel.findOneAndUpdate({}, data, {
+    await connectDB();
+
+    return AboutModel.findOneAndUpdate({ singleton: true }, data, {
       new: true,
       upsert: true,
       runValidators: true,
@@ -25,6 +36,12 @@ export class AboutRepository {
   }
 
   async softDelete() {
-    return AboutModel.findOneAndUpdate({}, { isDeleted: true }, { new: true });
+    await connectDB();
+
+    return AboutModel.findOneAndUpdate(
+      { singleton: true },
+      { isDeleted: true },
+      { new: true },
+    );
   }
 }

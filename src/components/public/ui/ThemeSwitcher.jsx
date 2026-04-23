@@ -30,14 +30,14 @@ export default function ThemeSwitcher() {
     >
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className="bg-(--surface) text-(--text-color) px-4 py-2 rounded-full shadow-lg border border-(--glass-border)"
+        className="bg-[var(--surface)] text-[var(--text-color)] px-4 py-2 rounded-full shadow-lg border border-[var(--glass-border)]"
       >
         🎨
       </button>
 
       {open && (
-        <div className="mt-3 w-64 p-4 rounded-2xl shadow-xl backdrop-blur-md bg-(--glass-bg) border border-(--glass-border)">
-          <h3 className="text-sm font-semibold mb-2 text-(--text-color)">
+        <div className="mt-3 w-64 p-4 rounded-2xl shadow-xl backdrop-blur-md bg-[var(--glass-bg)] border border-[var(--glass-border)]">
+          <h3 className="text-sm font-semibold mb-2 text-[var(--text-primary)]">
             Background
           </h3>
 
@@ -48,7 +48,7 @@ export default function ThemeSwitcher() {
                 onClick={() => setTheme(bg, foreground)}
                 className={`w-6 h-6 rounded-full cursor-pointer border-2 transition ${
                   background === bg
-                    ? "border-(--text-color)"
+                    ? "border-[var(--text-primary)]"
                     : "border-transparent"
                 }`}
                 style={{ background: bg }}
@@ -56,7 +56,7 @@ export default function ThemeSwitcher() {
             ))}
           </div>
 
-          <h3 className="text-sm font-semibold mb-2 text-(--text-color)">
+          <h3 className="text-sm font-semibold mb-2 text-[var(--text-primary)]">
             Text
           </h3>
 
@@ -67,7 +67,7 @@ export default function ThemeSwitcher() {
                 onClick={() => setTheme(background, fg)}
                 className={`w-6 h-6 rounded-full cursor-pointer border-2 transition ${
                   foreground === fg
-                    ? "border-(--text-color)"
+                    ? "border-[var(--text-primary)]"
                     : "border-transparent"
                 }`}
                 style={{ background: fg }}
