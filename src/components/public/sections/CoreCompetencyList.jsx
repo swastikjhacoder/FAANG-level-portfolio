@@ -44,12 +44,14 @@ const CoreCompetencyList = ({ data }) => {
     return <p className="text-center">No competencies found</p>;
   }
 
+  const visibleItems = completed.slice(-3);
+
   return (
-    <div className="mt-10 w-full flex flex-col items-center text-center space-y-3">
-      {completed.map((item, index) => (
+    <div className="mt-10 w-full flex flex-col items-center text-center space-y-3 h-[140px] overflow-hidden justify-end">
+      {visibleItems.map((item, index) => (
         <div
           key={index}
-          className="text-lg sm:text-xl md:text-2xl text-[var(--text-secondary)]"
+          className="text-lg sm:text-xl md:text-2xl text-[var(--text-secondary)] opacity-70"
         >
           {item}
         </div>

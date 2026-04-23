@@ -148,9 +148,9 @@ export default function ExperiencePage() {
       role: exp.role,
       startDate: exp.startDate?.substring(0, 10),
       endDate: exp.endDate?.substring(0, 10) || "",
-      history: exp.history?.join(", "),
-      achievements: exp.achievements?.join(", "),
-      projects: exp.projects?.join(", "),
+      history: exp.history?.join("\n"),
+      achievements: exp.achievements?.join("\n"),
+      projects: exp.projects?.join("\n"),
     });
     setIsModalOpen(true);
   };
@@ -163,15 +163,21 @@ export default function ExperiencePage() {
     )
       return;
 
+    const parseLines = (text) =>
+      text
+        .split("\n")
+        .map((i) => i.trim())
+        .filter((i) => i !== "");
+
     const payload = {
       profileId,
       company: form.company,
       role: form.role,
       startDate: form.startDate,
       endDate: form.endDate || null,
-      history: form.history.split(",").map((i) => i.trim()),
-      achievements: form.achievements.split(",").map((i) => i.trim()),
-      projects: form.projects.split(",").map((i) => i.trim()),
+      history: parseLines(form.history),
+      achievements: parseLines(form.achievements),
+      projects: parseLines(form.projects),
     };
 
     const url = editingExp
@@ -401,17 +407,20 @@ export default function ExperiencePage() {
             onChange={(e) => setForm({ ...form, endDate: e.target.value })}
           />
           <Input
-            label="History (comma separated)"
+            label="History"
+            textarea
             value={form.history}
             onChange={(e) => setForm({ ...form, history: e.target.value })}
           />
           <Input
-            label="Achievements (comma separated)"
+            label="Achievements"
+            textarea
             value={form.achievements}
             onChange={(e) => setForm({ ...form, achievements: e.target.value })}
           />
           <Input
-            label="Projects (comma separated)"
+            label="Projects"
+            textarea
             value={form.projects}
             onChange={(e) => setForm({ ...form, projects: e.target.value })}
           />

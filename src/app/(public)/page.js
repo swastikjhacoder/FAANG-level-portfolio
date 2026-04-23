@@ -194,10 +194,12 @@ const Home = async () => {
       </Section>
 
       <Section id="experience">
-        <FadeInSection>
-          <ExperienceSection data={experienceRes.data} />
+        <div className="space-y-12">
+          <FadeInSection>
+            <ExperienceSection data={experienceRes.data} />
+          </FadeInSection>
           <ExperienceList data={experiencesRes.data} />
-        </FadeInSection>
+        </div>
       </Section>
 
       <Section id="academic" title="Academic">
