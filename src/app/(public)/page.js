@@ -20,6 +20,7 @@ import Testimonial from "@/components/public/sections/Testimonial";
 import TestimonialSection from "@/components/public/sections/TestimonialSection";
 import ContactSection from "@/components/public/sections/ContactSection";
 import Contact from "@/components/public/sections/Contact";
+import ScrollHandler from "@/components/public/utils/ScrollHandler";
 
 function getBaseUrl() {
   if (process.env.APP_URL) {
@@ -260,6 +261,7 @@ const Home = async () => {
 
   return (
     <main className="pt-16 sm:pt-20">
+      <ScrollHandler />
       <Section id="home" className="border-none">
         <FadeInSection>
           <ProfileSection data={profile} />

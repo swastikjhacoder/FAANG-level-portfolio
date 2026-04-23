@@ -1,7 +1,38 @@
 "use client";
 
-import { FaGithub, FaLinkedin, FaArrowUp } from "react-icons/fa";
-import { MdEmail } from "react-icons/md";
+import Link from "next/link";
+import { FaGithub, FaLinkedin, FaArrowUp, FaFacebook } from "react-icons/fa";
+import { SiLeetcode } from "react-icons/si";
+
+const navItems = [
+  "About",
+  "Skills",
+  "Experience",
+  "Academic",
+  "Projects",
+  "Services",
+  "Testimonial",
+  "Contact",
+];
+
+const socialLinks = [
+  {
+    Icon: FaGithub,
+    href: "https://github.com/swastikjhacoder",
+  },
+  {
+    Icon: FaLinkedin,
+    href: "https://www.linkedin.com/in/swastik-jha-467583181/",
+  },
+  {
+    Icon: SiLeetcode,
+    href: "https://leetcode.com/u/swastikjhacoder/",
+  },
+  {
+    Icon: FaFacebook,
+    href: "https://www.facebook.com/swastik.jha.2025",
+  },
+];
 
 const Footer = () => {
   return (
@@ -18,24 +49,24 @@ const Footer = () => {
         </div>
 
         <div className="flex flex-wrap justify-center gap-4 text-sm">
-          {["About", "Skills", "Experience", "Projects", "Contact"].map(
-            (item) => (
-              <a
-                key={item}
-                href={`#${item.toLowerCase()}`}
-                className="text-(--text-muted) hover:text-(--text-color) transition"
-              >
-                {item}
-              </a>
-            ),
-          )}
+          {navItems.map((item) => (
+            <a
+              key={item}
+              href={`/#${item.toLowerCase()}`}
+              className="text-(--text-muted) hover:text-(--text-color) transition"
+            >
+              {item}
+            </a>
+          ))}
         </div>
 
         <div className="flex items-center gap-4">
-          {[FaGithub, FaLinkedin, MdEmail].map((Icon, i) => (
+          {socialLinks.map(({ Icon, href }, i) => (
             <a
               key={i}
-              href="#"
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
               className="p-2 rounded-lg border border-(--glass-border) hover:bg-(--surface) transition hover:scale-110"
             >
               <Icon size={18} />
@@ -58,12 +89,14 @@ const Footer = () => {
             Sitemap
           </a>
 
-          <a
+          <Link
             href="/privacy-policy"
+            target="_blank"
+            rel="noopener noreferrer"
             className="hover:text-(--text-color) transition"
           >
             Privacy Policy
-          </a>
+          </Link>
         </div>
 
         <button

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import {
   User,
   Code,
@@ -25,14 +26,21 @@ const navItems = [
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
 
-  const handleScroll = (id) => {
+  const handleNavigate = (id) => {
+    if (pathname !== "/") {
+      router.push(`/#${id}`);
+      setOpen(false);
+      return;
+    }
+
     const el = document.getElementById(id);
     if (el) {
       el.scrollIntoView({ behavior: "smooth" });
-    } else {
-      window.scrollTo({ top: 0, behavior: "smooth" });
     }
+
     setOpen(false);
   };
 
@@ -40,7 +48,7 @@ export default function Navbar() {
     <nav className="fixed top-0 left-0 w-full z-1000">
       <div className="w-full backdrop-blur-xl bg-(--glass-bg) border-b border-(--glass-border) shadow-(--glass-shadow) px-6 py-3 flex items-center justify-between">
         <div
-          onClick={() => handleScroll("home")}
+          onClick={() => handleNavigate("home")}
           className="text-xl md:text-2xl font-bold gradient-text animate-gradient cursor-pointer"
         >
           Swastik Jha
@@ -52,10 +60,10 @@ export default function Navbar() {
             return (
               <button
                 key={item.name}
-                onClick={() => handleScroll(item.name.toLowerCase())}
+                onClick={() => handleNavigate(item.name.toLowerCase())}
                 className="flex items-center gap-2 text-(--text-muted) hover:text-(--text-color) transition"
               >
-                <Icon size={18} />
+                {Icon && <Icon size={18} />}
                 {item.name}
               </button>
             );
@@ -84,10 +92,10 @@ export default function Navbar() {
             return (
               <button
                 key={item.name}
-                onClick={() => handleScroll(item.name.toLowerCase())}
+                onClick={() => handleNavigate(item.name.toLowerCase())}
                 className="flex items-center gap-3 text-(--text-muted) hover:text-(--text-color)"
               >
-                <Icon size={18} />
+                {Icon && <Icon size={18} />}
                 {item.name}
               </button>
             );
