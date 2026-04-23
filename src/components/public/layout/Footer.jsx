@@ -39,9 +39,13 @@ const Footer = () => {
     <footer className="mt-20 border-t border-(--glass-border) bg-(--glass-bg) backdrop-blur-lg">
       <div className="px-4 md:px-10 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex flex-col items-center md:items-start gap-2">
-          <div className="text-lg font-semibold gradient-text animate-gradient">
+          <Link
+            href="/#home"
+            scroll={false}
+            className="text-lg font-semibold gradient-text animate-gradient"
+          >
             Swastik Jha
-          </div>
+          </Link>
           <p className="text-sm text-(--text-muted) text-center md:text-left max-w-sm">
             MERN Architect building scalable, secure, and high-performance web
             applications.

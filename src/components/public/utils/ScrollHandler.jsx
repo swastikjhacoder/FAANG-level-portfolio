@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 
 const ScrollHandler = () => {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   useEffect(() => {
     const hash = window.location.hash;
     if (!hash) return;
@@ -13,9 +17,9 @@ const ScrollHandler = () => {
     if (el) {
       setTimeout(() => {
         el.scrollIntoView({ behavior: "smooth" });
-      }, 100);
+      }, 80);
     }
-  }, []);
+  }, [pathname, searchParams]);
 
   return null;
 };
