@@ -36,12 +36,13 @@ export const loginController = async (req, context = {}) => {
     const response = NextResponse.json({
       success: true,
       user: result.user,
+      accessToken: result.accessToken,
     });
 
     const cookieOptions = {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
       path: "/",
     };
 
@@ -161,8 +162,8 @@ export const refreshController = async (req) => {
 
     const cookieOptions = {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: true,
+      sameSite: "none",
       path: "/",
     };
 
