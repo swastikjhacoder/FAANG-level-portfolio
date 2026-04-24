@@ -6,22 +6,19 @@ let csrfInitialized = false;
 
 const requestCache = new Map();
 
+const isTokenExpired = (token) => {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload.exp * 1000 < Date.now();
+  } catch {
+    return true;
+  }
+};
+
 const getToken = () => inMemoryAccessToken;
-console.log("TOKEN:", getToken());
 
 const isValidToken = (t) =>
   typeof t === "string" && t.trim() !== "" && t !== "undefined" && t !== "null";
-
-// let authReadyPromise = Promise.resolve();
-
-// export const setAuthReady = (promise) => {
-//   authReadyPromise = promise;
-// };
-
-export const waitForAuthReady = async () => {
-  if (!authReadyPromise) return;
-  await authReadyPromise;
-};
 
 export const setAccessToken = (token) => {
   inMemoryAccessToken = token;
@@ -78,10 +75,7 @@ const createError = (response, data) => {
 export const secureFetch = async (url, options = {}) => {
   const method = (options.method || "GET").toUpperCase();
 
-  // await waitForAuthReady();
-
   const rawToken = getToken();
-
   const safeToken = isValidToken(rawToken) ? rawToken : null;
 
   const cacheKey = `${method}:${url}:${safeToken || "no-token"}`;
@@ -95,22 +89,38 @@ export const secureFetch = async (url, options = {}) => {
       await ensureCsrfToken();
     }
 
-    const csrfToken = getCsrfToken();
     const isFormData = options.body instanceof FormData;
+    let csrfToken = getCsrfToken();
+
+    let currentToken = getToken();
+
+    if (isValidToken(currentToken) && isTokenExpired(currentToken)) {
+      if (!refreshPromise) {
+        refreshPromise = refreshAccessToken().finally(() => {
+          refreshPromise = null;
+        });
+      }
+
+      const newToken = await refreshPromise;
+
+      if (newToken) {
+        setAccessToken(newToken);
+        currentToken = newToken;
+      } else {
+        clearAccessToken();
+        currentToken = null;
+      }
+    }
 
     const baseHeaders = {
       ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
       ...(options.headers || {}),
     };
-    const currentToken = getToken();
 
     if (isValidToken(currentToken)) {
       baseHeaders["authorization"] = `Bearer ${currentToken}`;
     }
-
-    console.log("HEADERS:", baseHeaders);
-    console.log("TOKEN SENT:", currentToken);
 
     let config = {
       credentials: "include",
@@ -120,57 +130,58 @@ export const secureFetch = async (url, options = {}) => {
 
     let response = await fetch(url, config);
 
-    // if (response.status === 401) {
-    //   if (!getToken()) {
-    //     throw new Error("NO_TOKEN");
-    //   }
-
-    //   if (!refreshPromise) {
-    //     refreshPromise = refreshAccessToken().finally(() => {
-    //       refreshPromise = null;
-    //     });
-    //   }
-
-    //   const newAccessToken = await refreshPromise;
-
-    //   if (!newAccessToken) {
-    //     clearAccessToken();
-
-    //     if (typeof window !== "undefined") {
-    //       const isOnLoginPage = window.location.pathname === "/login";
-
-    //       if (!isOnLoginPage) {
-    //         window.location.replace("/login");
-    //       }
-    //     }
-
-    //     throw new Error("SESSION_EXPIRED");
-    //   }
-
-    //   setAccessToken(newAccessToken);
-
-    //   const retryToken = getToken();
-
-    //   const retryHeaders = {
-    //     ...(isFormData ? {} : { "Content-Type": "application/json" }),
-    //     ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
-    //     ...(isValidToken(retryToken)
-    //       ? { Authorization: `Bearer ${retryToken}` }
-    //       : {}),
-    //     ...(options.headers || {}),
-    //   };
-
-    //   const retryConfig = {
-    //     credentials: "include",
-    //     ...options,
-    //     headers: retryHeaders,
-    //   };
-
-    //   response = await fetch(url, retryConfig);
-    // }
-
     if (response.status === 401) {
-      throw new Error("UNAUTHORIZED");
+
+      if (!refreshPromise) {
+        refreshPromise = refreshAccessToken().finally(() => {
+          refreshPromise = null;
+        });
+      }
+
+      const newAccessToken = await refreshPromise;
+
+      if (!newAccessToken) {
+        clearAccessToken();
+
+        if (typeof window !== "undefined") {
+          const isOnLoginPage = window.location.pathname === "/login";
+
+          if (!isOnLoginPage) {
+            window.location.replace("/login");
+          }
+        }
+
+        throw new Error("SESSION_EXPIRED");
+      }
+
+      setAccessToken(newAccessToken);
+
+      const retryCsrfToken = getCsrfToken();
+
+      const retryHeaders = {
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
+        ...(retryCsrfToken ? { "x-csrf-token": retryCsrfToken } : {}),
+        Authorization: `Bearer ${newAccessToken}`,
+        ...(options.headers || {}),
+      };
+
+      const retryConfig = {
+        credentials: "include",
+        ...options,
+        headers: retryHeaders,
+      };
+
+      response = await fetch(url, retryConfig);
+
+      if (response.status === 401) {
+        clearAccessToken();
+
+        if (typeof window !== "undefined") {
+          window.location.replace("/login");
+        }
+
+        throw new Error("SESSION_EXPIRED");
+      }
     }
 
     let data;
