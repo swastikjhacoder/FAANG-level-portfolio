@@ -31,21 +31,27 @@ export const loginController = async (req, context = {}) => {
       userAgent,
     });
 
+    const isProd = process.env.NODE_ENV === "production";
+
     const response = NextResponse.json({
       success: true,
       user: result.user,
       accessToken: result.accessToken,
     });
 
-    const cookieOptions = {
+    response.cookies.set("accessToken", result.accessToken, {
       httpOnly: true,
-      secure: true,
+      secure: isProd,
       sameSite: "lax",
       path: "/",
-    };
+      maxAge: 60 * 15,
+    });
 
     response.cookies.set("refreshToken", result.refreshToken, {
-      ...cookieOptions,
+      httpOnly: true,
+      secure: isProd,
+      sameSite: "lax",
+      path: "/",
       maxAge: 60 * 60 * 24 * 7,
     });
 
@@ -119,7 +125,7 @@ export const refreshController = async (req) => {
   try {
     await connectDB();
 
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const refreshToken = cookieStore.get("refreshToken")?.value;
 
     if (!refreshToken) {

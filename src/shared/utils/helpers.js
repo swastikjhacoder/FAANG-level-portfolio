@@ -85,7 +85,7 @@ export async function getUserFromRequest(req) {
     }
 
     if (!token) {
-      const cookieStore = cookies();
+      const cookieStore = await cookies();
       token = cookieStore.get("accessToken")?.value;
     }
 

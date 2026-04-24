@@ -1,4 +1,3 @@
-import { useAuthStore } from "@/store/useAuthStore";
 import { refreshAccessToken } from "./refreshToken";
 
 let inMemoryAccessToken = null;
@@ -8,15 +7,16 @@ let csrfInitialized = false;
 const requestCache = new Map();
 
 const getToken = () => inMemoryAccessToken;
+console.log("TOKEN:", getToken());
 
 const isValidToken = (t) =>
   typeof t === "string" && t.trim() !== "" && t !== "undefined" && t !== "null";
 
-let authReadyPromise = Promise.resolve();;
+// let authReadyPromise = Promise.resolve();
 
-export const setAuthReady = (promise) => {
-  authReadyPromise = promise;
-};
+// export const setAuthReady = (promise) => {
+//   authReadyPromise = promise;
+// };
 
 export const waitForAuthReady = async () => {
   if (!authReadyPromise) return;
@@ -78,7 +78,7 @@ const createError = (response, data) => {
 export const secureFetch = async (url, options = {}) => {
   const method = (options.method || "GET").toUpperCase();
 
-  await waitForAuthReady();
+  // await waitForAuthReady();
 
   const rawToken = getToken();
 
@@ -103,12 +103,14 @@ export const secureFetch = async (url, options = {}) => {
       ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
       ...(options.headers || {}),
     };
-
     const currentToken = getToken();
 
     if (isValidToken(currentToken)) {
-      baseHeaders.Authorization = `Bearer ${currentToken}`;
+      baseHeaders["authorization"] = `Bearer ${currentToken}`;
     }
+
+    console.log("HEADERS:", baseHeaders);
+    console.log("TOKEN SENT:", currentToken);
 
     let config = {
       credentials: "include",
@@ -118,45 +120,57 @@ export const secureFetch = async (url, options = {}) => {
 
     let response = await fetch(url, config);
 
+    // if (response.status === 401) {
+    //   if (!getToken()) {
+    //     throw new Error("NO_TOKEN");
+    //   }
+
+    //   if (!refreshPromise) {
+    //     refreshPromise = refreshAccessToken().finally(() => {
+    //       refreshPromise = null;
+    //     });
+    //   }
+
+    //   const newAccessToken = await refreshPromise;
+
+    //   if (!newAccessToken) {
+    //     clearAccessToken();
+
+    //     if (typeof window !== "undefined") {
+    //       const isOnLoginPage = window.location.pathname === "/login";
+
+    //       if (!isOnLoginPage) {
+    //         window.location.replace("/login");
+    //       }
+    //     }
+
+    //     throw new Error("SESSION_EXPIRED");
+    //   }
+
+    //   setAccessToken(newAccessToken);
+
+    //   const retryToken = getToken();
+
+    //   const retryHeaders = {
+    //     ...(isFormData ? {} : { "Content-Type": "application/json" }),
+    //     ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+    //     ...(isValidToken(retryToken)
+    //       ? { Authorization: `Bearer ${retryToken}` }
+    //       : {}),
+    //     ...(options.headers || {}),
+    //   };
+
+    //   const retryConfig = {
+    //     credentials: "include",
+    //     ...options,
+    //     headers: retryHeaders,
+    //   };
+
+    //   response = await fetch(url, retryConfig);
+    // }
+
     if (response.status === 401) {
-      if (!refreshPromise) {
-        refreshPromise = refreshAccessToken().finally(() => {
-          refreshPromise = null;
-        });
-      }
-
-      const newAccessToken = await refreshPromise;
-
-      if (!newAccessToken) {
-        clearAccessToken();
-
-        if (typeof window !== "undefined") {
-          window.location.href = "/login";
-        }
-
-        throw new Error("SESSION_EXPIRED");
-      }
-
-      setAccessToken(newAccessToken);
-
-      const retryToken = getToken();
-
-      const retryHeaders = {
-        ...(isFormData ? {} : { "Content-Type": "application/json" }),
-        ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
-        ...(isValidToken(retryToken)
-          ? { Authorization: `Bearer ${retryToken}` }
-          : {}),
-        ...(options.headers || {}),
-      };
-
-      const retryConfig = {
-        credentials: "include",
-        ...options,
-        headers: retryHeaders,
-      };
-
-      response = await fetch(url, retryConfig);
+      throw new Error("UNAUTHORIZED");
     }
 
     let data;

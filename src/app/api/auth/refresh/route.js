@@ -8,7 +8,8 @@ export async function POST(req) {
   try {
     await connectDB();
 
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
+
     const refreshToken = cookieStore.get("refreshToken")?.value;
 
     if (!refreshToken) {
@@ -23,14 +24,24 @@ export async function POST(req) {
     const useCase = new RefreshTokenUseCase();
     const result = await useCase.execute(refreshToken, { ip, userAgent });
 
+    const isProd = process.env.NODE_ENV === "production";
+
     const res = NextResponse.json({
       success: true,
       accessToken: result.accessToken,
     });
 
+    res.cookies.set("accessToken", result.accessToken, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 15,
+    });
+
     res.cookies.set("refreshToken", result.refreshToken, {
       httpOnly: true,
-      secure: true,
+      secure: isProd,
       sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 7,

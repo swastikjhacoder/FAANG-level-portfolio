@@ -13,8 +13,11 @@ const userRepository = new UserRepository();
 const redis = new RedisService();
 
 const extractToken = (req) => {
-  const authHeader =
-    req.headers.get("authorization") || req.headers.get("Authorization");
+  const authHeader = req.headers.get("authorization");
+  console.log("AUTH HEADER:", authHeader);
+  if (!authHeader) {
+    console.log("HEADERS DEBUG:", Object.fromEntries(req.headers.entries()));
+  }
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return null;

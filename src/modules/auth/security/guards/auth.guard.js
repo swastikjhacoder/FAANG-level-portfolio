@@ -9,7 +9,7 @@ const redis = new RedisService();
 const isValidToken = (t) =>
   typeof t === "string" && t.trim() !== "" && t !== "undefined" && t !== "null";
 
-const extractToken = (req) => {
+const extractToken = async (req) => {
   const authHeader =
     req.headers.get("authorization") || req.headers.get("Authorization");
 
@@ -23,7 +23,7 @@ const extractToken = (req) => {
     return token;
   }
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const cookieToken = cookieStore.get("accessToken")?.value;
 
   return isValidToken(cookieToken) ? cookieToken : null;
@@ -32,7 +32,7 @@ const extractToken = (req) => {
 export const authGuard = (handler) => {
   return async (req) => {
     try {
-      const token = extractToken(req);
+      const token = await extractToken(req);
 
       if (!token) {
         return new Response("Unauthorized: Missing token", { status: 401 });

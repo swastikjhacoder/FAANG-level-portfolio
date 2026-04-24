@@ -3,7 +3,8 @@ import { generateCsrfToken } from "@/shared/security/middleware/csrf.middleware"
 import { cookies } from "next/headers";
 
 export async function GET() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
+
   let token = cookieStore.get("csrfToken")?.value;
 
   if (!token) {

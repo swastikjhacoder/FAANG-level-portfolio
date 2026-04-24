@@ -1,13 +1,10 @@
-import crypto from "crypto";
 import { UnauthorizedError } from "@/shared/errors";
 
 import SessionModel from "@/modules/auth/infrastructure/persistence/session.schema";
 import UserModel from "@/modules/auth/infrastructure/persistence/user.schema";
 
-import { signAccessToken, signRefreshToken } from "@/shared/utils/jwt";
-
-const hashToken = (token) =>
-  crypto.createHash("sha256").update(token).digest("hex");
+import { signAccessToken } from "@/shared/utils/jwt";
+import { generateTokenWithMeta, hashToken } from "@/shared/utils/hash";
 
 export class RefreshTokenUseCase {
   async execute(refreshToken, { ip, userAgent }) {
@@ -47,12 +44,8 @@ export class RefreshTokenUseCase {
       throw new UnauthorizedError("User not found");
     }
 
-    const newRefreshToken = signRefreshToken({
-      userId: user._id,
-      sessionVersion: session.sessionVersion,
-    });
-
-    const newTokenHash = hashToken(newRefreshToken);
+    const { raw: newRefreshToken, hash: newTokenHash } =
+      generateTokenWithMeta();
 
     session.previousTokenHash = session.currentTokenHash;
     session.currentTokenHash = newTokenHash;

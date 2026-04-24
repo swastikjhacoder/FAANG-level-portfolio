@@ -22,7 +22,8 @@ export const setCsrfCookie = (response) => {
 };
 
 export const validateCsrf = async (req) => {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
+
   const cookieToken = cookieStore.get(CSRF_COOKIE_NAME)?.value;
   const headerToken = req.headers.get(CSRF_HEADER_NAME);
 
@@ -30,8 +31,8 @@ export const validateCsrf = async (req) => {
     throw new Error("CSRF token missing");
   }
 
-  const cookieBuffer = Buffer.from(cookieToken);
-  const headerBuffer = Buffer.from(headerToken);
+  const cookieBuffer = Buffer.from(cookieToken, "utf-8");
+  const headerBuffer = Buffer.from(headerToken, "utf-8");
 
   if (
     cookieBuffer.length !== headerBuffer.length ||

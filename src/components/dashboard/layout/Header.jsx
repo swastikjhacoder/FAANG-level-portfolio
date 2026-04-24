@@ -42,8 +42,8 @@ export default function Header({ collapsed, setCollapsed, setMobileOpen }) {
   const { user, logout, hydrated: authHydrated, setHydrated } = useAuthStore();
 
   useEffect(() => {
-    setHydrated();
-  }, [setHydrated]);
+    useAuthStore.getState().setHydrated();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -55,8 +55,6 @@ export default function Header({ collapsed, setCollapsed, setMobileOpen }) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  if (!themeHydrated || !authHydrated) return null;
 
   const firstName =
     user?.name?.firstName || user?.name?.displayName?.split(" ")[0] || "User";
@@ -109,7 +107,7 @@ export default function Header({ collapsed, setCollapsed, setMobileOpen }) {
 
   return (
     <>
-      <div className="h-16 px-4 sm:px-6 flex items-center justify-between bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+      <div className="sticky top-0 z-30 h-16 px-4 sm:px-6 flex items-center justify-between bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-3">
           <button
             onClick={() => {

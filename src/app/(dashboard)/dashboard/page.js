@@ -10,6 +10,7 @@ import StatCard from "@/components/dashboard/ui/StatCard";
 import SkillsBarChart from "@/components/dashboard/ui/chart/SkillsBarChart";
 import TechStackPieChart from "@/components/dashboard/ui/chart/TechStackPieChart";
 import ExperienceTimeline from "@/components/dashboard/ui/chart/ExperienceTimeline";
+import { secureFetch } from "@/shared/lib/secureFetch";
 
 export default function DashboardPage() {
   const route = dashboardRoutes.find((r) => r.href === "/dashboard");
@@ -37,50 +38,58 @@ export default function DashboardPage() {
 
     let isMounted = true;
 
-    (async () => {
+    const loadDashboard = async () => {
       try {
-        const [projectsRes, skillsRes, expRes, servicesRes] = await Promise.all(
-          [
-            fetch(`/api/v1/profile/project?profileId=${profileId}`),
-            fetch(`/api/v1/profile/skill?profileId=${profileId}`),
-            fetch(`/api/v1/profile/experience?profileId=${profileId}`),
-            fetch(`/api/v1/profile/service?profileId=${profileId}`),
-          ],
-        );
+        setLoading(true);
 
         const [projectsJson, skillsJson, expJson, servicesJson] =
           await Promise.all([
-            projectsRes.json(),
-            skillsRes.json(),
-            expRes.json(),
-            servicesRes.json(),
+            secureFetch(`/api/v1/profile/project?profileId=${profileId}`),
+            secureFetch(`/api/v1/profile/skill?profileId=${profileId}`),
+            secureFetch(`/api/v1/profile/experience?profileId=${profileId}`),
+            secureFetch(`/api/v1/profile/service?profileId=${profileId}`),
           ]);
 
         if (!isMounted) return;
 
-        setProjects(projectsJson.data || []);
-        setSkills(skillsJson.data || []);
-        setExperience(expJson.data || []);
+        const projectsData = projectsJson?.data || [];
+        const skillsData = skillsJson?.data || [];
+        const expData = expJson?.data || [];
+        const servicesData = servicesJson?.data || [];
+
+        setProjects(projectsData);
+        setSkills(skillsData);
+        setExperience(expData);
 
         setStats({
-          projects: projectsJson.data?.length || 0,
-          skills: skillsJson.data?.length || 0,
-          experience: expJson.data?.length || 0,
-          services: servicesJson.data?.length || 0,
+          projects: projectsData.length,
+          skills: skillsData.length,
+          experience: expData.length,
+          services: servicesData.length,
         });
-
-        setLoading(false);
       } catch (err) {
         console.error("Dashboard fetch error:", err);
+      } finally {
+        if (isMounted) setLoading(false);
       }
-    })();
+    };
+
+    loadDashboard();
 
     return () => {
       isMounted = false;
     };
   }, [hydrated, profileId]);
 
-  if (!route || !hydrated || profileLoading) return null;
+  if (!route) return null;
+
+  if (!hydrated || profileLoading) {
+    return <div className="p-6">Loading dashboard...</div>;
+  }
+
+  if (!profileId) {
+    return <div className="p-6">No profile found</div>;
+  }
 
   return (
     <div className="p-4 sm:p-6 space-y-6">

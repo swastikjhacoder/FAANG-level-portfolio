@@ -8,12 +8,12 @@ export const COOKIE_NAMES = {
 const BASE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: "none",
+  sameSite: "lax",
   path: "/",
 };
 
-export const setRefreshTokenCookie = (token) => {
-  const cookieStore = cookies();
+export const setRefreshTokenCookie = async (token) => {
+  const cookieStore = await cookies();
 
   cookieStore.set(COOKIE_NAMES.REFRESH_TOKEN, token, {
     ...BASE_OPTIONS,
@@ -21,13 +21,13 @@ export const setRefreshTokenCookie = (token) => {
   });
 };
 
-export const getRefreshTokenCookie = () => {
-  const cookieStore = cookies();
+export const getRefreshTokenCookie = async () => {
+  const cookieStore = await cookies();
   return cookieStore.get(COOKIE_NAMES.REFRESH_TOKEN)?.value || null;
 };
 
-export const clearRefreshTokenCookie = () => {
-  const cookieStore = cookies();
+export const clearRefreshTokenCookie = async () => {
+  const cookieStore = await cookies();
 
   cookieStore.set(COOKIE_NAMES.REFRESH_TOKEN, "", {
     ...BASE_OPTIONS,
@@ -35,8 +35,8 @@ export const clearRefreshTokenCookie = () => {
   });
 };
 
-export const setAccessTokenCookie = (token) => {
-  const cookieStore = cookies();
+export const setAccessTokenCookie = async (token) => {
+  const cookieStore = await cookies();
 
   cookieStore.set(COOKIE_NAMES.ACCESS_TOKEN, token, {
     ...BASE_OPTIONS,
@@ -44,13 +44,13 @@ export const setAccessTokenCookie = (token) => {
   });
 };
 
-export const getAccessTokenCookie = () => {
-  const cookieStore = cookies();
+export const getAccessTokenCookie = async () => {
+  const cookieStore = await cookies();
   return cookieStore.get(COOKIE_NAMES.ACCESS_TOKEN)?.value || null;
 };
 
-export const clearAccessTokenCookie = () => {
-  const cookieStore = cookies();
+export const clearAccessTokenCookie = async () => {
+  const cookieStore = await cookies();
 
   cookieStore.set(COOKIE_NAMES.ACCESS_TOKEN, "", {
     ...BASE_OPTIONS,

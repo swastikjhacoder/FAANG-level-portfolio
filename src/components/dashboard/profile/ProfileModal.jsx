@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useAuthStore } from "@/store/useAuthStore";
-import Image from "next/image";
 
 export default function ProfileModal({ onClose }) {
   const { user, updateProfile } = useAuthStore();
@@ -118,15 +117,11 @@ export default function ProfileModal({ onClose }) {
             {imageLoading ? (
               <div className="w-6 h-6 border-2 border-gray-300 border-t-black rounded-full animate-spin" />
             ) : preview ? (
-              <div className="relative w-24 h-24">
-                <Image
-                  src={preview}
-                  alt="avatar"
-                  fill
-                  sizes="96px"
-                  className="object-cover rounded-full"
-                />
-              </div>
+              <img
+                src={preview}
+                alt="avatar"
+                className="w-24 h-24 object-cover rounded-full"
+              />
             ) : (
               <span className="text-xs">Upload</span>
             )}

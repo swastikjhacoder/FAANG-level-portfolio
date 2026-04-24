@@ -24,7 +24,7 @@ const logoutHandler = async (req) => {
 
     const userId = req.user?.userId;
 
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const refreshToken = cookieStore.get("refreshToken")?.value;
 
     if (refreshToken) {

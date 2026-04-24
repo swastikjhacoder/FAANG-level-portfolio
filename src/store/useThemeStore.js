@@ -4,8 +4,8 @@ import { persist } from "zustand/middleware";
 export const useThemeStore = create(
   persist(
     (set) => ({
-      background: "#0f172a",
-      foreground: "#ffffff",
+      background: "#ffffff",
+      foreground: "#0f172a",
 
       setTheme: (bg, fg) =>
         set({

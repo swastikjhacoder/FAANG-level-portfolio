@@ -1,7 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { setAccessToken, clearAccessToken } from "@/shared/lib/secureFetch";
-import { secureFetch } from "@/shared/lib/secureFetch";
+import {
+  clearAccessToken,
+  secureFetch,
+  setAccessToken,
+} from "@/shared/lib/secureFetch";
 
 export const useAuthStore = create(
   persist(
@@ -14,25 +17,20 @@ export const useAuthStore = create(
       setHydrated: () => set({ hydrated: true }),
 
       login: async (email, password) => {
-        const csrfRes = await fetch("/api/csrf", {
+        const { csrfToken } = await fetch("/api/csrf", {
           credentials: "include",
-        });
+        }).then((res) => res.json());
 
-        const { csrfToken } = await csrfRes.json();
-
-        const res = await fetch("/api/auth/login", {
+        const data = await secureFetch("/api/auth/login", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "x-csrf-token": csrfToken,
           },
           body: JSON.stringify({ email, password }),
-          credentials: "include",
         });
 
-        const data = await res.json();
-
-        if (!res.ok || !data.success) {
+        if (!data.success) {
           throw new Error(data.message || "Login failed");
         }
 
@@ -41,9 +39,8 @@ export const useAuthStore = create(
         let profileData = null;
 
         try {
-          const profileJson = await secureFetch("/api/v1/profile/me");
-
-          profileData = profileJson.data || null;
+          const profile = await secureFetch("/api/v1/profile/me");
+          profileData = profile.data;
         } catch (err) {
           console.error("Profile fetch failed:", err);
         }
@@ -58,10 +55,9 @@ export const useAuthStore = create(
       },
 
       register: async (formDataInput) => {
-        const csrfRes = await fetch("/api/csrf", {
+        const { csrfToken } = await fetch("/api/csrf", {
           credentials: "include",
-        });
-        const { csrfToken } = await csrfRes.json();
+        }).then((res) => res.json());
 
         const formData = new FormData();
 
@@ -74,18 +70,15 @@ export const useAuthStore = create(
           formData.append("file", formDataInput.image);
         }
 
-        const res = await fetch("/api/auth/register", {
+        const data = await secureFetch("/api/auth/register", {
           method: "POST",
           headers: {
             "x-csrf-token": csrfToken,
           },
           body: formData,
-          credentials: "include",
         });
 
-        const data = await res.json();
-
-        if (!res.ok || !data.success) {
+        if (!data.success) {
           throw new Error(data.message || "Registration failed");
         }
 
@@ -93,10 +86,9 @@ export const useAuthStore = create(
       },
 
       updateProfile: async (formDataInput) => {
-        const csrfRes = await fetch("/api/csrf", {
+        const { csrfToken } = await fetch("/api/csrf", {
           credentials: "include",
-        });
-        const { csrfToken } = await csrfRes.json();
+        }).then((res) => res.json());
 
         const formData = new FormData();
 
@@ -111,18 +103,15 @@ export const useAuthStore = create(
           formData.append("file", formDataInput.image);
         }
 
-        const res = await fetch("/api/profile/update", {
-          method: "PUT",
+        const data = await secureFetch("/api/profile/update", {
+          method: "PATCH",
           headers: {
             "x-csrf-token": csrfToken,
           },
           body: formData,
-          credentials: "include",
         });
 
-        const data = await res.json();
-
-        if (!res.ok || !data.success) {
+        if (!data.success) {
           throw new Error(data.message || "Update failed");
         }
 
@@ -137,15 +126,12 @@ export const useAuthStore = create(
       },
 
       logout: async () => {
-        const csrfRes = await fetch("/api/csrf", {
+        const { csrfToken } = await fetch("/api/csrf", {
           credentials: "include",
-        });
+        }).then((res) => res.json());
 
-        const { csrfToken } = await csrfRes.json();
-
-        await fetch("/api/auth/logout", {
+        await secureFetch("/api/auth/logout", {
           method: "POST",
-          credentials: "include",
           headers: {
             "x-csrf-token": csrfToken,
           },
