@@ -344,12 +344,28 @@ body {
 
 @keyframes float {
   0% {
-    transform: translateY(0px) translateX(0px);
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  25% {
+    transform: translate3d(20px, -30px, 0) scale(1.05);
   }
   50% {
-    transform: translateY(-40px) translateX(20px);
+    transform: translate3d(-15px, -60px, 0) scale(0.98);
+  }
+  75% {
+    transform: translate3d(25px, -30px, 0) scale(1.02);
   }
   100% {
-    transform: translateY(0px) translateX(0px);
+    transform: translate3d(0, 0, 0) scale(1);
   }
+}
+
+@keyframes floatOpacity {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 0.45; }
+}
+
+@keyframes drift {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50px); }
 }

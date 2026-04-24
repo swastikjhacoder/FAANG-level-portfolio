@@ -42,11 +42,13 @@ const shapes = [
 
 const FloatingShapes = () => {
   return (
-    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden animate-[drift_40s_linear_infinite]">
       {shapes.map((shape, i) => (
         <div
           key={i}
-          className="absolute rounded-full opacity-40 blur-3xl"
+          className={`absolute rounded-full opacity-30 ${
+            i % 2 === 0 ? "blur-2xl" : "blur-xl"
+          }`}
           style={{
             width: `${shape.size}px`,
             height: `${shape.size}px`,
@@ -54,11 +56,10 @@ const FloatingShapes = () => {
             left: shape.left,
             background: shape.gradient,
 
-            animationName: "float",
-            animationDuration: `${10 + i * 3}s`,
-            animationTimingFunction: "ease-in-out",
-            animationIterationCount: "infinite",
-            animationDelay: shape.delay,
+            animation: `
+            float ${10 + i * 3}s ease-in-out infinite ${shape.delay},
+            floatOpacity ${6 + i * 2}s ease-in-out infinite ${shape.delay}
+          `,
           }}
         />
       ))}

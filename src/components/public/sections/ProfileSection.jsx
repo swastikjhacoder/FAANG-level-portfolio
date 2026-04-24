@@ -51,22 +51,20 @@ const ProfileSection = ({ data }) => {
           <div className="relative w-56 h-56 sm:w-64 sm:h-64 lg:w-80 lg:h-80">
             <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/20 to-indigo-500/20 blur-2xl" />
 
-            <div
-              className="relative w-full h-full overflow-hidden border border-[var(--glass-border)] shadow-lg"
-              style={{
-                borderRadius: "30% 70% 40% 60% / 60% 40% 60% 40%",
-              }}
-            >
+            <div className="relative w-full h-full rounded-2xl overflow-hidden border border-white/20 shadow-2xl">
+              <div className="absolute inset-0 backdrop-blur-xl bg-white/10 z-0" />
               <Image
                 src={data?.profileImage?.url}
                 alt={fullName}
                 fill
-                className="object-cover z-0"
+                className="object-contain z-10"
                 sizes="(max-width: 640px) 224px, (max-width: 1024px) 256px, 320px"
                 priority
               />
 
-              <div className="shine-overlay z-10" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent z-20" />
+
+              <div className="shine-overlay z-30" />
             </div>
           </div>
         </div>

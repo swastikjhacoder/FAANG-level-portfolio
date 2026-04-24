@@ -11,6 +11,15 @@ import { RegisterDTO } from "../../application/dto/register.dto";
 import auditLogger from "@/shared/security/audit/audit.logger";
 import { NextResponse } from "next/server";
 
+const isProd = process.env.NODE_ENV === "production";
+
+const cookieOptions = {
+  httpOnly: true,
+  secure: isProd,
+  sameSite: isProd ? "none" : "lax",
+  path: "/",
+};
+
 const jsonResponse = (data, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
@@ -31,8 +40,6 @@ export const loginController = async (req, context = {}) => {
       userAgent,
     });
 
-    const isProd = process.env.NODE_ENV === "production";
-
     const response = NextResponse.json({
       success: true,
       user: result.user,
@@ -40,18 +47,12 @@ export const loginController = async (req, context = {}) => {
     });
 
     response.cookies.set("accessToken", result.accessToken, {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: "lax",
-      path: "/",
+      ...cookieOptions,
       maxAge: 60 * 15,
     });
 
     response.cookies.set("refreshToken", result.refreshToken, {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: "lax",
-      path: "/",
+      ...cookieOptions,
       maxAge: 60 * 60 * 24 * 7,
     });
 
@@ -148,13 +149,6 @@ export const refreshController = async (req) => {
       success: true,
       accessToken: result.accessToken,
     });
-
-    const cookieOptions = {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      path: "/",
-    };
 
     response.cookies.set("refreshToken", result.refreshToken, {
       ...cookieOptions,

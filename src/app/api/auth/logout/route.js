@@ -10,12 +10,19 @@ import { SessionRepository } from "@/modules/auth/infrastructure/persistence/ses
 
 import crypto from "crypto";
 
+const isProd = process.env.NODE_ENV === "production";
 const DEV = process.env.NODE_ENV === "development";
 
 const sessionRepo = new SessionRepository();
 
-const hashToken = (token) => {
-  return crypto.createHash("sha256").update(token).digest("hex");
+const hashToken = (token) =>
+  crypto.createHash("sha256").update(token).digest("hex");
+
+const cookieOptions = {
+  httpOnly: true,
+  secure: isProd,
+  sameSite: isProd ? "none" : "lax",
+  path: "/",
 };
 
 const logoutHandler = async (req) => {
@@ -29,7 +36,6 @@ const logoutHandler = async (req) => {
 
     if (refreshToken) {
       const tokenHash = hashToken(refreshToken);
-
       const session = await sessionRepo.findByTokenHash(tokenHash);
 
       if (session && !session.isRevoked) {
@@ -42,24 +48,20 @@ const logoutHandler = async (req) => {
       message: "Logged out successfully",
     });
 
-    const cookieOptions = {
-      httpOnly: true,
-      secure: true,
-      sameSite: "none",
-      path: "/",
-    };
-
     response.cookies.set("refreshToken", "", {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      path: "/",
+      ...cookieOptions,
+      expires: new Date(0),
+    });
+
+    response.cookies.set("accessToken", "", {
+      ...cookieOptions,
       expires: new Date(0),
     });
 
     response.cookies.set("csrfToken", "", {
       ...cookieOptions,
       httpOnly: false,
+      expires: new Date(0),
     });
 
     auditLogger.log({
