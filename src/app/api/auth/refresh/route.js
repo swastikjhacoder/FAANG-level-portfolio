@@ -33,8 +33,6 @@ export async function POST(req) {
     const useCase = new RefreshTokenUseCase();
     const result = await useCase.execute(refreshToken, { ip, userAgent });
 
-    const isProd = process.env.NODE_ENV === "production";
-
     const res = NextResponse.json({
       success: true,
       accessToken: result.accessToken,
