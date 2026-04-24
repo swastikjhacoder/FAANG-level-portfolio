@@ -9,7 +9,9 @@ export const refreshAccessToken = async () => {
 
     const data = await res.json();
 
-    return data?.accessToken || null;
+    if (!data?.success) return null;
+
+    return data.accessToken;
   } catch {
     return null;
   }

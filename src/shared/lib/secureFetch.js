@@ -7,6 +7,22 @@ let csrfInitialized = false;
 
 const requestCache = new Map();
 
+const getToken = () => inMemoryAccessToken;
+
+const isValidToken = (t) =>
+  typeof t === "string" && t.trim() !== "" && t !== "undefined" && t !== "null";
+
+let authReadyPromise = Promise.resolve();;
+
+export const setAuthReady = (promise) => {
+  authReadyPromise = promise;
+};
+
+export const waitForAuthReady = async () => {
+  if (!authReadyPromise) return;
+  await authReadyPromise;
+};
+
 export const setAccessToken = (token) => {
   inMemoryAccessToken = token;
 };
@@ -39,7 +55,10 @@ const ensureCsrfToken = async () => {
   await fetch("/api/csrf", {
     method: "GET",
     credentials: "include",
+    cache: "no-store",
   });
+
+  await new Promise((r) => setTimeout(r, 20));
 
   csrfInitialized = true;
 };
@@ -58,7 +77,14 @@ const createError = (response, data) => {
 
 export const secureFetch = async (url, options = {}) => {
   const method = (options.method || "GET").toUpperCase();
-  const cacheKey = `${method}:${url}`;
+
+  await waitForAuthReady();
+
+  const rawToken = getToken();
+
+  const safeToken = isValidToken(rawToken) ? rawToken : null;
+
+  const cacheKey = `${method}:${url}:${safeToken || "no-token"}`;
 
   if (method === "GET" && requestCache.has(cacheKey)) {
     return requestCache.get(cacheKey);
@@ -78,8 +104,10 @@ export const secureFetch = async (url, options = {}) => {
       ...(options.headers || {}),
     };
 
-    if (inMemoryAccessToken) {
-      baseHeaders.Authorization = `Bearer ${inMemoryAccessToken}`;
+    const currentToken = getToken();
+
+    if (isValidToken(currentToken)) {
+      baseHeaders.Authorization = `Bearer ${currentToken}`;
     }
 
     let config = {
@@ -102,32 +130,30 @@ export const secureFetch = async (url, options = {}) => {
       if (!newAccessToken) {
         clearAccessToken();
 
-        const { logout } = useAuthStore.getState();
-        logout?.();
-
         if (typeof window !== "undefined") {
           window.location.href = "/login";
         }
 
-        throw new Error("Session expired");
+        throw new Error("SESSION_EXPIRED");
       }
 
       setAccessToken(newAccessToken);
 
+      const retryToken = getToken();
+
       const retryHeaders = {
         ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
-        Authorization: `Bearer ${newAccessToken}`,
+        ...(isValidToken(retryToken)
+          ? { Authorization: `Bearer ${retryToken}` }
+          : {}),
         ...(options.headers || {}),
       };
 
       const retryConfig = {
         credentials: "include",
         ...options,
-        headers: {
-          ...retryHeaders,
-          Authorization: `Bearer ${newAccessToken}`,
-        },
+        headers: retryHeaders,
       };
 
       response = await fetch(url, retryConfig);

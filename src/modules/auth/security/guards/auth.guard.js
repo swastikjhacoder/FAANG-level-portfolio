@@ -5,6 +5,8 @@ import {
 import { RedisService } from "../../infrastructure/cache/redis.service";
 
 const redis = new RedisService();
+const isValidToken = (t) =>
+  typeof t === "string" && t.trim() !== "" && t !== "undefined" && t !== "null";
 
 const getCookieFromRequest = (req, name) => {
   const cookieHeader = req.headers.get("cookie") || "";
@@ -26,8 +28,14 @@ const extractToken = (req) => {
   const authHeader =
     req.headers.get("authorization") || req.headers.get("Authorization");
 
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    return authHeader.split(" ")[1];
+  let token = null;
+
+  if (authHeader?.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  }
+
+  if (isValidToken(token)) {
+    return token;
   }
 
   return getCookieFromRequest(req, "accessToken");
