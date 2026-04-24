@@ -3,26 +3,11 @@ import {
   extractJTI,
 } from "../../infrastructure/security/token.service";
 import { RedisService } from "../../infrastructure/cache/redis.service";
+import { cookies } from "next/headers";
 
 const redis = new RedisService();
 const isValidToken = (t) =>
   typeof t === "string" && t.trim() !== "" && t !== "undefined" && t !== "null";
-
-const getCookieFromRequest = (req, name) => {
-  const cookieHeader = req.headers.get("cookie") || "";
-
-  const cookies = Object.fromEntries(
-    cookieHeader
-      .split("; ")
-      .filter(Boolean)
-      .map((c) => {
-        const [key, ...v] = c.split("=");
-        return [key, v.join("=")];
-      }),
-  );
-
-  return cookies[name];
-};
 
 const extractToken = (req) => {
   const authHeader =
@@ -38,7 +23,10 @@ const extractToken = (req) => {
     return token;
   }
 
-  return getCookieFromRequest(req, "accessToken");
+  const cookieStore = cookies();
+  const cookieToken = cookieStore.get("accessToken")?.value;
+
+  return isValidToken(cookieToken) ? cookieToken : null;
 };
 
 export const authGuard = (handler) => {

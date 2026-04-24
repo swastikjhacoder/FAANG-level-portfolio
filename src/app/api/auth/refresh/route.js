@@ -8,11 +8,9 @@ export async function POST(req) {
   try {
     await connectDB();
 
-    const cookieStore = await cookies();
-
+    const cookieStore = cookies();
     const refreshToken = cookieStore.get("refreshToken")?.value;
-    console.log("REFRESH TOKEN:", refreshToken);
-    
+
     if (!refreshToken) {
       return NextResponse.json(
         { success: false, message: "Unauthorized" },
@@ -33,7 +31,7 @@ export async function POST(req) {
     res.cookies.set("refreshToken", result.refreshToken, {
       httpOnly: true,
       secure: true,
-      sameSite: "none",
+      sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
     });

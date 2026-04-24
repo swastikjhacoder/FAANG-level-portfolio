@@ -11,8 +11,6 @@ import { RegisterDTO } from "../../application/dto/register.dto";
 import auditLogger from "@/shared/security/audit/audit.logger";
 import { NextResponse } from "next/server";
 
-const COOKIE_NAME = "refreshToken";
-
 const jsonResponse = (data, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
@@ -42,11 +40,10 @@ export const loginController = async (req, context = {}) => {
     const cookieOptions = {
       httpOnly: true,
       secure: true,
-      sameSite: "none",
+      sameSite: "lax",
       path: "/",
     };
 
-    response.cookies.set("accessToken", result.accessToken, cookieOptions);
     response.cookies.set("refreshToken", result.refreshToken, {
       ...cookieOptions,
       maxAge: 60 * 60 * 24 * 7,
@@ -118,27 +115,12 @@ export const registerController = async (req, context = {}) => {
   }
 };
 
-const getCookieFromRequest = (req, name) => {
-  const cookieHeader = req.headers.get("cookie") || "";
-
-  const cookies = Object.fromEntries(
-    cookieHeader
-      .split("; ")
-      .filter(Boolean)
-      .map((c) => {
-        const [key, ...v] = c.split("=");
-        return [key, v.join("=")];
-      }),
-  );
-
-  return cookies[name];
-};
-
 export const refreshController = async (req) => {
   try {
     await connectDB();
 
-    const refreshToken = getCookieFromRequest(req, "refreshToken");
+    const cookieStore = cookies();
+    const refreshToken = cookieStore.get("refreshToken")?.value;
 
     if (!refreshToken) {
       return NextResponse.json(
@@ -158,16 +140,16 @@ export const refreshController = async (req) => {
 
     const response = NextResponse.json({
       success: true,
+      accessToken: result.accessToken,
     });
 
     const cookieOptions = {
       httpOnly: true,
       secure: true,
-      sameSite: "none",
+      sameSite: "lax",
       path: "/",
     };
 
-    response.cookies.set("accessToken", result.accessToken, cookieOptions);
     response.cookies.set("refreshToken", result.refreshToken, {
       ...cookieOptions,
       maxAge: 60 * 60 * 24 * 7,
@@ -181,31 +163,6 @@ export const refreshController = async (req) => {
         message: error.message || "Token refresh failed",
       },
       { status: 401 },
-    );
-  }
-};
-
-export const logoutController = async () => {
-  try {
-    const cookieStore = cookies();
-
-    cookieStore.set(COOKIE_NAME, "", {
-      httpOnly: true,
-      path: "/",
-      expires: new Date(0),
-    });
-
-    return jsonResponse({
-      success: true,
-      message: "Logged out successfully",
-    });
-  } catch (error) {
-    return jsonResponse(
-      {
-        success: false,
-        message: error.message || "Logout failed",
-      },
-      500,
     );
   }
 };

@@ -1,21 +1,10 @@
 import { NextResponse } from "next/server";
 import { generateCsrfToken } from "@/shared/security/middleware/csrf.middleware";
+import { cookies } from "next/headers";
 
-const getCookieFromRequest = (req, name) => {
-  const cookieHeader = req.headers.get("cookie") || "";
-
-  const cookies = Object.fromEntries(
-    cookieHeader.split("; ").map((c) => {
-      const [key, ...v] = c.split("=");
-      return [key, v.join("=")];
-    }),
-  );
-
-  return cookies[name];
-};
-
-export async function GET(req) {
-  let token = getCookieFromRequest(req, "csrfToken");
+export async function GET() {
+  const cookieStore = cookies();
+  let token = cookieStore.get("csrfToken")?.value;
 
   if (!token) {
     token = generateCsrfToken();

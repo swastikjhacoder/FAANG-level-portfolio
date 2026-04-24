@@ -1,26 +1,8 @@
 import { randomBytes, timingSafeEqual } from "crypto";
+import { cookies } from "next/headers";
 
 const CSRF_COOKIE_NAME = "csrfToken";
 const CSRF_HEADER_NAME = "x-csrf-token";
-
-const getCookieFromRequest = (req, name) => {
-  const cookieHeader = req.headers.get("cookie") || "";
-
-  if (!cookieHeader) return null;
-
-  const cookies = Object.fromEntries(
-    cookieHeader
-      .split(";")
-      .map((c) => c.trim())
-      .filter(Boolean)
-      .map((c) => {
-        const [key, ...v] = c.split("=");
-        return [key, decodeURIComponent(v.join("="))];
-      }),
-  );
-
-  return cookies[name] || null;
-};
 
 export const generateCsrfToken = () => {
   return randomBytes(32).toString("hex");
@@ -40,15 +22,16 @@ export const setCsrfCookie = (response) => {
 };
 
 export const validateCsrf = async (req) => {
-  const cookieToken = getCookieFromRequest(req, CSRF_COOKIE_NAME);
+  const cookieStore = cookies();
+  const cookieToken = cookieStore.get(CSRF_COOKIE_NAME)?.value;
   const headerToken = req.headers.get(CSRF_HEADER_NAME);
 
   if (!cookieToken || !headerToken) {
     throw new Error("CSRF token missing");
   }
 
-  const cookieBuffer = Buffer.from(cookieToken, "utf-8");
-  const headerBuffer = Buffer.from(headerToken, "utf-8");
+  const cookieBuffer = Buffer.from(cookieToken);
+  const headerBuffer = Buffer.from(headerToken);
 
   if (
     cookieBuffer.length !== headerBuffer.length ||

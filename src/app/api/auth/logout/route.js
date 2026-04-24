@@ -3,8 +3,7 @@ import connectDB from "@/shared/lib/db";
 
 import withRateLimit from "@/shared/security/middleware/rateLimit.middleware";
 import { withCsrf } from "@/shared/security/middleware/csrf.middleware";
-
-import { authGuard } from "@/modules/auth/security/guards/auth.guard";
+import { cookies } from "next/headers";
 import auditLogger from "@/shared/security/audit/audit.logger";
 
 import { SessionRepository } from "@/modules/auth/infrastructure/persistence/session.repository";
@@ -19,29 +18,14 @@ const hashToken = (token) => {
   return crypto.createHash("sha256").update(token).digest("hex");
 };
 
-const getCookieFromRequest = (req, name) => {
-  const cookieHeader = req.headers.get("cookie") || "";
-
-  const cookies = Object.fromEntries(
-    cookieHeader
-      .split("; ")
-      .filter(Boolean)
-      .map((c) => {
-        const [key, ...v] = c.split("=");
-        return [key, v.join("=")];
-      }),
-  );
-
-  return cookies[name];
-};
-
 const logoutHandler = async (req) => {
   try {
     await connectDB();
 
     const userId = req.user?.userId;
 
-    const refreshToken = getCookieFromRequest(req, "refreshToken");
+    const cookieStore = cookies();
+    const refreshToken = cookieStore.get("refreshToken")?.value;
 
     if (refreshToken) {
       const tokenHash = hashToken(refreshToken);
@@ -60,14 +44,18 @@ const logoutHandler = async (req) => {
 
     const cookieOptions = {
       httpOnly: true,
-      secure: !DEV,
-      sameSite: "strict",
-      expires: new Date(0),
+      secure: true,
+      sameSite: "none",
       path: "/",
     };
 
-    response.cookies.set("accessToken", "", cookieOptions);
-    response.cookies.set("refreshToken", "", cookieOptions);
+    response.cookies.set("refreshToken", "", {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      path: "/",
+      expires: new Date(0),
+    });
 
     response.cookies.set("csrfToken", "", {
       ...cookieOptions,
@@ -99,8 +87,8 @@ const logoutHandler = async (req) => {
 const rateKey = (req) => `rate:${req.ip}:${req.method}:${req.nextUrl.pathname}`;
 
 const logout = DEV
-  ? withCsrf(authGuard(logoutHandler))
-  : withRateLimit(withCsrf(authGuard(logoutHandler)), {
+  ? withCsrf(logoutHandler)
+  : withRateLimit(withCsrf(logoutHandler), {
       limit: 10,
       window: 60,
       key: rateKey,
