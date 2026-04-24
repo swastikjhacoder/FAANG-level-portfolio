@@ -22,6 +22,7 @@ import TestimonialSection from "@/components/public/sections/TestimonialSection"
 import ContactSection from "@/components/public/sections/ContactSection";
 import Contact from "@/components/public/sections/Contact";
 import ScrollHandler from "@/components/public/utils/ScrollHandler";
+import BackToTopButton from "@/components/public/ui/BackToTopButton";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 60;
@@ -213,6 +214,7 @@ const Home = async () => {
   return (
     <main className="pt-16 sm:pt-20">
       <ScrollHandler />
+      <BackToTopButton />
 
       <Section id="home" className="border-none">
         <FadeInSection>
