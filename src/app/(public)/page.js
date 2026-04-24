@@ -25,6 +25,7 @@ import ContactSection from "@/components/public/sections/ContactSection";
 import Contact from "@/components/public/sections/Contact";
 import ScrollHandler from "@/components/public/utils/ScrollHandler";
 import BackToTopButton from "@/components/public/ui/BackToTopButton";
+import FloatingShapes from "@/components/public/ui/FloatingShapes";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 60;
@@ -154,7 +155,7 @@ const getContact = createFetcher({
 const Section = ({ id, title, children, className = "" }) => (
   <section
     id={id}
-    className={`w-full min-h-screen flex items-center py-16 sm:py-20 border-b border-[var(--glass-border)] ${className}`}
+    className={`relative z-10 w-full min-h-screen flex items-center py-16 sm:py-20 border-b border-[var(--glass-border)] ${className}`}
   >
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
       {title && (
@@ -227,6 +228,8 @@ const Home = async () => {
 
   return (
     <main className="pt-16 sm:pt-20">
+      <FloatingShapes />
+
       <ScrollHandler />
       <BackToTopButton />
 
