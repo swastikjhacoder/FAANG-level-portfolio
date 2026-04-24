@@ -1,9 +1,8 @@
-import {
-  verifyAccessToken,
-  extractJTI,
-} from "../../infrastructure/security/token.service";
+import { verifyAccessToken, extractJTI } from "@/shared/utils/jwt";
+
 import { RedisService } from "../../infrastructure/cache/redis.service";
 import { UserRepository } from "@/modules/auth/infrastructure/persistence/user.repository";
+import SessionModel from "@/modules/auth/infrastructure/persistence/session.schema";
 
 const redis = new RedisService();
 const userRepository = new UserRepository();
@@ -30,34 +29,43 @@ export const jwtStrategy = async (req, options = {}) => {
 
   const payload = verifyAccessToken(token);
 
-  if (checkBlacklist) {
-    const jti = extractJTI(token);
+  const jti = extractJTI(token);
 
-    if (jti) {
-      const isBlacklisted = await redis.isBlacklisted(jti);
+  if (checkBlacklist && jti) {
+    const isBlacklisted = await redis.isBlacklisted(jti);
 
-      if (isBlacklisted) {
-        throw new Error("Unauthorized: Token revoked");
-      }
+    if (isBlacklisted) {
+      throw new Error("Unauthorized: Token revoked");
     }
   }
 
   if (checkSessionVersion) {
-    const user = await userRepository.findByEmail(payload.email);
+    if (!payload.sessionId) {
+      throw new Error("Unauthorized: Missing sessionId");
+    }
+    
+    const session = await SessionModel.findById(payload.sessionId);
 
-    if (!user) {
-      throw new Error("Unauthorized: User not found");
+    if (!session || session.isRevoked) {
+      throw new Error("Unauthorized: Session invalid");
     }
 
-    if (user.sessionVersion !== payload.sessionVersion) {
+    if (session.sessionVersion !== payload.sessionVersion) {
       throw new Error("Unauthorized: Session invalidated");
     }
+  }
+
+  const user = await userRepository.findById(payload.userId);
+
+  if (!user) {
+    throw new Error("Unauthorized: User not found");
   }
 
   return {
     userId: payload.userId,
     roles: payload.roles || [],
     sessionVersion: payload.sessionVersion,
-    jti: extractJTI(token),
+    sessionId: payload.sessionId,
+    jti,
   };
 };

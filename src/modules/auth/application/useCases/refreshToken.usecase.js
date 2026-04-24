@@ -4,6 +4,7 @@ import SessionModel from "@/modules/auth/infrastructure/persistence/session.sche
 import UserModel from "@/modules/auth/infrastructure/persistence/user.schema";
 
 import { signAccessToken } from "@/shared/utils/jwt";
+
 import { generateTokenWithMeta, hashToken } from "@/shared/utils/hash";
 
 export class RefreshTokenUseCase {
@@ -14,35 +15,23 @@ export class RefreshTokenUseCase {
       $or: [{ currentTokenHash: tokenHash }, { previousTokenHash: tokenHash }],
     }).select("+currentTokenHash +previousTokenHash");
 
-    if (!session) {
-      throw new UnauthorizedError("Invalid session");
-    }
-
-    if (session.isRevoked) {
-      throw new UnauthorizedError("Session revoked");
-    }
-
-    if (session.expiresAt < new Date()) {
+    if (!session) throw new UnauthorizedError("Invalid session");
+    if (session.isRevoked) throw new UnauthorizedError("Session revoked");
+    if (session.expiresAt < new Date())
       throw new UnauthorizedError("Session expired");
-    }
 
     const isValid =
       tokenHash === session.currentTokenHash ||
       tokenHash === session.previousTokenHash;
 
-    if (!isValid) {
-      throw new UnauthorizedError("Invalid token");
-    }
+    if (!isValid) throw new UnauthorizedError("Invalid token");
 
     if (session.fingerprint !== `${userAgent}-${ip}`) {
       console.warn("⚠️ Fingerprint mismatch");
     }
 
     const user = await UserModel.findById(session.userId);
-
-    if (!user) {
-      throw new UnauthorizedError("User not found");
-    }
+    if (!user) throw new UnauthorizedError("User not found");
 
     const { raw: newRefreshToken, hash: newTokenHash } =
       generateTokenWithMeta();
@@ -57,6 +46,7 @@ export class RefreshTokenUseCase {
       userId: user._id,
       roles: user.roles,
       sessionVersion: session.sessionVersion,
+      sessionId: session._id.toString(),
     });
 
     return {

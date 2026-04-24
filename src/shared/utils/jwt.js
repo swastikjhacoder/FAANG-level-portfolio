@@ -1,14 +1,14 @@
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
-const ACCESS_TOKEN_SECRET = process.env.JWT_ACCESS_SECRET;
-const REFRESH_TOKEN_SECRET = process.env.JWT_REFRESH_SECRET;
+const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
+const ACCESS_TOKEN_EXPIRY = process.env.ACCESS_TOKEN_EXPIRY || "15m";
 
-if (!ACCESS_TOKEN_SECRET || !REFRESH_TOKEN_SECRET) {
-  throw new Error("JWT secrets are not defined");
+if (!ACCESS_TOKEN_SECRET) {
+  throw new Error("ACCESS_TOKEN_SECRET missing");
 }
 
-const ISSUER = "swastikjha.com";
-const AUDIENCE = "user";
+const generateJTI = () => crypto.randomUUID();
 
 export const signAccessToken = (payload) => {
   return jwt.sign(
@@ -20,65 +20,24 @@ export const signAccessToken = (payload) => {
     },
     ACCESS_TOKEN_SECRET,
     {
-      expiresIn: "15m",
-      issuer: ISSUER,
-      audience: AUDIENCE,
+      expiresIn: ACCESS_TOKEN_EXPIRY,
+      jwtid: generateJTI(),
     },
   );
 };
 
 export const verifyAccessToken = (token) => {
   try {
-    return jwt.verify(token, ACCESS_TOKEN_SECRET, {
-      issuer: ISSUER,
-      audience: AUDIENCE,
-    });
+    return jwt.verify(token, ACCESS_TOKEN_SECRET);
   } catch (err) {
-    if (err.name === "TokenExpiredError") {
-      throw new Error("Token expired");
-    }
-    throw new Error("Invalid token");
+    console.error("JWT VERIFY ERROR:", err.message);
+    throw new Error("Invalid or expired access token");
   }
 };
 
-export const signRefreshToken = (payload) => {
-  return jwt.sign(payload, REFRESH_TOKEN_SECRET, {
-    expiresIn: "7d",
-    issuer: ISSUER,
-    audience: AUDIENCE,
-  });
-};
+export const decodeToken = (token) => jwt.decode(token);
 
-export const verifyRefreshToken = (token) => {
-  try {
-    return jwt.verify(token, REFRESH_TOKEN_SECRET, {
-      issuer: ISSUER,
-      audience: AUDIENCE,
-    });
-  } catch (err) {
-    throw new Error("Invalid or expired refresh token");
-  }
-};
-
-export const decodeToken = (token) => {
-  try {
-    return jwt.decode(token);
-  } catch {
-    return null;
-  }
-};
-
-export const extractBearerToken = (req) => {
-  const authHeader =
-    req.headers.get?.("authorization") || req.headers.authorization;
-
-  if (!authHeader) return null;
-
-  const parts = authHeader.split(" ");
-
-  if (parts.length !== 2 || parts[0] !== "Bearer") {
-    return null;
-  }
-
-  return parts[1];
+export const extractJTI = (token) => {
+  const decoded = jwt.decode(token);
+  return decoded?.jti;
 };

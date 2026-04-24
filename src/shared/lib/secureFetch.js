@@ -1,33 +1,21 @@
 import { refreshAccessToken } from "./refreshToken";
 
-let inMemoryAccessToken = null;
 let refreshPromise = null;
 let csrfInitialized = false;
+let isRedirecting = false;
 
 const requestCache = new Map();
 
-const isTokenExpired = (token) => {
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload.exp * 1000 < Date.now();
-  } catch {
-    return true;
-  }
-};
-
-const getToken = () => inMemoryAccessToken;
-
-const isValidToken = (t) =>
-  typeof t === "string" && t.trim() !== "" && t !== "undefined" && t !== "null";
+let accessToken = null;
 
 export const setAccessToken = (token) => {
-  inMemoryAccessToken = token;
+  accessToken = token;
 };
 
-export const getAccessToken = () => inMemoryAccessToken;
+export const getAccessToken = () => accessToken;
 
 export const clearAccessToken = () => {
-  inMemoryAccessToken = null;
+  accessToken = null;
 };
 
 const getCsrfToken = () => {
@@ -55,8 +43,6 @@ const ensureCsrfToken = async () => {
     cache: "no-store",
   });
 
-  await new Promise((r) => setTimeout(r, 20));
-
   csrfInitialized = true;
 };
 
@@ -74,13 +60,12 @@ const createError = (response, data) => {
 
 export const secureFetch = async (url, options = {}) => {
   const method = (options.method || "GET").toUpperCase();
+  const cacheKey = `${method}:${url}`;
 
-  const rawToken = getToken();
-  const safeToken = isValidToken(rawToken) ? rawToken : null;
+  const isCacheable =
+    method === "GET" && !url.includes("/profile") && !url.includes("/auth");
 
-  const cacheKey = `${method}:${url}:${safeToken || "no-token"}`;
-
-  if (method === "GET" && requestCache.has(cacheKey)) {
+  if (isCacheable && requestCache.has(cacheKey)) {
     return requestCache.get(cacheKey);
   }
 
@@ -90,93 +75,67 @@ export const secureFetch = async (url, options = {}) => {
     }
 
     const isFormData = options.body instanceof FormData;
-    let csrfToken = getCsrfToken();
+    const csrfToken = getCsrfToken();
+    const token = getAccessToken();
 
-    let currentToken = getToken();
-
-    if (isValidToken(currentToken) && isTokenExpired(currentToken)) {
-      if (!refreshPromise) {
-        refreshPromise = refreshAccessToken().finally(() => {
-          refreshPromise = null;
-        });
-      }
-
-      const newToken = await refreshPromise;
-
-      if (newToken) {
-        setAccessToken(newToken);
-        currentToken = newToken;
-      } else {
-        clearAccessToken();
-        currentToken = null;
-      }
-    }
-
-    const baseHeaders = {
-      ...(isFormData ? {} : { "Content-Type": "application/json" }),
-      ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
-      ...(options.headers || {}),
-    };
-
-    if (isValidToken(currentToken)) {
-      baseHeaders["authorization"] = `Bearer ${currentToken}`;
-    }
-
-    let config = {
+    const config = {
       credentials: "include",
       ...options,
-      headers: baseHeaders,
+      headers: {
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
+        ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(options.headers || {}),
+      },
     };
 
     let response = await fetch(url, config);
 
-    if (response.status === 401) {
+    const isAuthRoute =
+      url.includes("/api/auth/login") ||
+      url.includes("/api/auth/refresh") ||
+      url.includes("/api/auth/logout") ||
+      url.includes("/api/csrf");
 
+    if (response.status === 401 && !isAuthRoute) {
       if (!refreshPromise) {
-        refreshPromise = refreshAccessToken().finally(() => {
-          refreshPromise = null;
-        });
+        refreshPromise = refreshAccessToken()
+          .then((newToken) => {
+            if (newToken) {
+              setAccessToken(newToken);
+              return true;
+            }
+            return false;
+          })
+          .finally(() => {
+            refreshPromise = null;
+          });
       }
 
-      const newAccessToken = await refreshPromise;
+      const success = await refreshPromise;
 
-      if (!newAccessToken) {
-        clearAccessToken();
-
-        if (typeof window !== "undefined") {
-          const isOnLoginPage = window.location.pathname === "/login";
-
-          if (!isOnLoginPage) {
-            window.location.replace("/login");
-          }
+      if (!success) {
+        if (typeof window !== "undefined" && !isRedirecting) {
+          isRedirecting = true;
+          window.location.replace("/login");
         }
 
         throw new Error("SESSION_EXPIRED");
       }
 
-      setAccessToken(newAccessToken);
+      const retryToken = getAccessToken();
 
-      const retryCsrfToken = getCsrfToken();
-
-      const retryHeaders = {
-        ...(isFormData ? {} : { "Content-Type": "application/json" }),
-        ...(retryCsrfToken ? { "x-csrf-token": retryCsrfToken } : {}),
-        Authorization: `Bearer ${newAccessToken}`,
-        ...(options.headers || {}),
-      };
-
-      const retryConfig = {
-        credentials: "include",
-        ...options,
-        headers: retryHeaders,
-      };
-
-      response = await fetch(url, retryConfig);
+      response = await fetch(url, {
+        ...config,
+        headers: {
+          ...config.headers,
+          ...(retryToken ? { Authorization: `Bearer ${retryToken}` } : {}),
+        },
+      });
 
       if (response.status === 401) {
-        clearAccessToken();
-
-        if (typeof window !== "undefined") {
+        if (typeof window !== "undefined" && !isRedirecting) {
+          isRedirecting = true;
           window.location.replace("/login");
         }
 
@@ -198,7 +157,7 @@ export const secureFetch = async (url, options = {}) => {
     return data;
   })();
 
-  if (method === "GET") {
+  if (isCacheable) {
     requestCache.set(cacheKey, fetchPromise);
     setTimeout(() => requestCache.delete(cacheKey), 5000);
   }

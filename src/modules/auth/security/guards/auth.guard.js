@@ -1,32 +1,22 @@
-import {
-  verifyAccessToken,
-  extractJTI,
-} from "../../infrastructure/security/token.service";
+import { verifyAccessToken, extractJTI } from "@/shared/utils/jwt";
+
 import { RedisService } from "../../infrastructure/cache/redis.service";
+import SessionModel from "@/modules/auth/infrastructure/persistence/session.schema";
+
 import { cookies } from "next/headers";
 
 const redis = new RedisService();
-const isValidToken = (t) =>
-  typeof t === "string" && t.trim() !== "" && t !== "undefined" && t !== "null";
 
 const extractToken = async (req) => {
   const authHeader =
     req.headers.get("authorization") || req.headers.get("Authorization");
 
-  let token = null;
-
   if (authHeader?.startsWith("Bearer ")) {
-    token = authHeader.split(" ")[1];
-  }
-
-  if (isValidToken(token)) {
-    return token;
+    return authHeader.split(" ")[1];
   }
 
   const cookieStore = await cookies();
-  const cookieToken = cookieStore.get("accessToken")?.value;
-
-  return isValidToken(cookieToken) ? cookieToken : null;
+  return cookieStore.get("accessToken")?.value || null;
 };
 
 export const authGuard = (handler) => {
@@ -35,43 +25,42 @@ export const authGuard = (handler) => {
       const token = await extractToken(req);
 
       if (!token) {
-        return new Response("Unauthorized: Missing token", { status: 401 });
+        return new Response("Unauthorized", { status: 401 });
       }
 
-      let payload;
-      try {
-        payload = verifyAccessToken(token);
-      } catch (err) {
-        console.error("VERIFY FAILED:", err.message);
-        return new Response("Invalid token", { status: 401 });
-      }
-
+      const payload = verifyAccessToken(token);
       const jti = extractJTI(token);
-      console.log("JTI:", jti);
 
-      if (jti) {
-        const isBlacklisted = await redis.isBlacklisted(jti);
-        console.log("BLACKLISTED:", isBlacklisted);
+      if (jti && (await redis.isBlacklisted(jti))) {
+        return new Response("Token revoked", { status: 401 });
+      }
 
-        if (isBlacklisted) {
-          return new Response("Unauthorized: Token revoked", {
-            status: 401,
-          });
-        }
+      if (!payload.sessionId) {
+        return new Response("Invalid token payload", { status: 401 });
+      }
+
+      const session = await SessionModel.findById(payload.sessionId);
+
+      if (!session || session.isRevoked) {
+        return new Response("Session invalid", { status: 401 });
+      }
+
+      if (session.sessionVersion !== payload.sessionVersion) {
+        return new Response("Session expired", { status: 401 });
       }
 
       req.user = {
-        id: payload.userId,
         userId: payload.userId,
         roles: payload.roles || [],
         sessionVersion: payload.sessionVersion,
+        sessionId: payload.sessionId,
         jti,
       };
 
-      return await handler(req);
+      return handler(req);
     } catch (err) {
-      console.error("AUTH ERROR:", err);
-      return new Response(err.message || "Unauthorized", { status: 401 });
+      console.error("AUTH ERROR:", err.message);
+      return new Response("Unauthorized", { status: 401 });
     }
   };
 };

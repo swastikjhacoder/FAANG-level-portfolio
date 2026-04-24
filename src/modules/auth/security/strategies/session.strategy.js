@@ -1,9 +1,8 @@
 import mongoose from "mongoose";
+import { cookies } from "next/headers";
 
-import {
-  verifyAccessToken,
-  extractJTI,
-} from "../../infrastructure/security/token.service";
+import { verifyAccessToken, extractJTI } from "@/shared/utils/jwt";
+
 import { SessionRepository } from "../../infrastructure/persistence/session.repository";
 import { UserRepository } from "@/modules/auth/infrastructure/persistence/user.repository";
 import { RedisService } from "../../infrastructure/cache/redis.service";
@@ -12,18 +11,16 @@ const sessionRepository = new SessionRepository();
 const userRepository = new UserRepository();
 const redis = new RedisService();
 
-const extractToken = (req) => {
-  const authHeader = req.headers.get("authorization");
-  console.log("AUTH HEADER:", authHeader);
-  if (!authHeader) {
-    console.log("HEADERS DEBUG:", Object.fromEntries(req.headers.entries()));
+const extractToken = async (req) => {
+  const authHeader =
+    req.headers.get("authorization") || req.headers.get("Authorization");
+
+  if (authHeader?.startsWith("Bearer ")) {
+    return authHeader.split(" ")[1];
   }
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return null;
-  }
-
-  return authHeader.split(" ")[1];
+  const cookieStore = await cookies();
+  return cookieStore.get("accessToken")?.value || null;
 };
 
 export const sessionStrategy = async (req, options = {}) => {
@@ -33,7 +30,7 @@ export const sessionStrategy = async (req, options = {}) => {
     checkSessionVersion = true,
   } = options;
 
-  const token = extractToken(req);
+  const token = await extractToken(req);
 
   if (!token) {
     throw new Error("Unauthorized: Missing token");
@@ -41,7 +38,7 @@ export const sessionStrategy = async (req, options = {}) => {
 
   const payload = verifyAccessToken(token);
 
-  const { userId, sessionVersion } = payload;
+  const { userId, sessionVersion, sessionId } = payload;
 
   if (!userId) {
     throw new Error("Unauthorized: Invalid token payload");
@@ -50,23 +47,21 @@ export const sessionStrategy = async (req, options = {}) => {
   if (checkBlacklist) {
     const jti = extractJTI(token);
 
-    if (jti) {
-      const isBlacklisted = await redis.isBlacklisted(jti);
-
-      if (isBlacklisted) {
-        throw new Error("Unauthorized: Token revoked");
-      }
+    if (jti && (await redis.isBlacklisted(jti))) {
+      throw new Error("Unauthorized: Token revoked");
     }
   }
 
   let session = null;
 
   if (checkSession) {
-    if (!payload.sessionId) {
+    if (!sessionId) {
       throw new Error("Unauthorized: Missing sessionId");
     }
 
-    const sessionId = new mongoose.Types.ObjectId(payload.sessionId);
+    if (!mongoose.Types.ObjectId.isValid(sessionId)) {
+      throw new Error("Unauthorized: Invalid sessionId");
+    }
 
     session = await sessionRepository.findById(sessionId);
 
@@ -82,25 +77,31 @@ export const sessionStrategy = async (req, options = {}) => {
       throw new Error("Unauthorized: Session expired");
     }
 
-    await sessionRepository.updateLastUsed(sessionId);
+    sessionRepository.updateLastUsed(sessionId).catch(() => {});
   }
 
   if (checkSessionVersion) {
-    const user = await userRepository.findById(userId);
+    if (session) {
+      if (session.sessionVersion !== sessionVersion) {
+        throw new Error("Unauthorized: Session invalidated");
+      }
+    } else {
+      const user = await userRepository.findById(userId);
 
-    if (!user) {
-      throw new Error("Unauthorized: User not found");
-    }
+      if (!user) {
+        throw new Error("Unauthorized: User not found");
+      }
 
-    if (user.sessionVersion !== sessionVersion) {
-      throw new Error("Unauthorized: Session invalidated");
+      if (user.sessionVersion !== sessionVersion) {
+        throw new Error("Unauthorized: Session invalidated");
+      }
     }
   }
 
   return {
     userId,
     roles: payload.roles || [],
-    sessionId: payload.sessionId,
+    sessionId,
     sessionVersion,
     jti: extractJTI(token),
   };

@@ -24,7 +24,7 @@ export default function AuthGuard({ children }) {
   }
 
   if (!isAuthenticated) {
-    return null;
+    return <Loader fullScreen />;
   }
 
   return children;

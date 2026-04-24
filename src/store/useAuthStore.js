@@ -17,22 +17,10 @@ export const useAuthStore = create(
       setHydrated: () => set({ hydrated: true }),
 
       login: async (email, password) => {
-        const { csrfToken } = await fetch("/api/csrf", {
-          credentials: "include",
-        }).then((res) => res.json());
-
         const data = await secureFetch("/api/auth/login", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-csrf-token": csrfToken,
-          },
           body: JSON.stringify({ email, password }),
         });
-
-        if (!data.success) {
-          throw new Error(data.message || "Login failed");
-        }
 
         setAccessToken(data.accessToken);
 
@@ -41,24 +29,21 @@ export const useAuthStore = create(
         try {
           const profile = await secureFetch("/api/v1/profile/me");
           profileData = profile.data;
-        } catch (err) {
-          console.error("Profile fetch failed:", err);
-        }
+        } catch {}
 
-        set({
-          user: data.user,
-          profile: profileData,
-          isAuthenticated: true,
-        });
+        set(
+          () => ({
+            user: data.user,
+            profile: profileData,
+            isAuthenticated: true,
+          }),
+          true,
+        );
 
         return data;
       },
 
       register: async (formDataInput) => {
-        const { csrfToken } = await fetch("/api/csrf", {
-          credentials: "include",
-        }).then((res) => res.json());
-
         const formData = new FormData();
 
         formData.append("firstName", formDataInput.firstName);
@@ -72,24 +57,13 @@ export const useAuthStore = create(
 
         const data = await secureFetch("/api/auth/register", {
           method: "POST",
-          headers: {
-            "x-csrf-token": csrfToken,
-          },
           body: formData,
         });
-
-        if (!data.success) {
-          throw new Error(data.message || "Registration failed");
-        }
 
         return data;
       },
 
       updateProfile: async (formDataInput) => {
-        const { csrfToken } = await fetch("/api/csrf", {
-          credentials: "include",
-        }).then((res) => res.json());
-
         const formData = new FormData();
 
         formData.append("firstName", formDataInput.firstName);
@@ -105,15 +79,8 @@ export const useAuthStore = create(
 
         const data = await secureFetch("/api/profile/update", {
           method: "PATCH",
-          headers: {
-            "x-csrf-token": csrfToken,
-          },
           body: formData,
         });
-
-        if (!data.success) {
-          throw new Error(data.message || "Update failed");
-        }
 
         set((state) => ({
           user: {
@@ -126,15 +93,8 @@ export const useAuthStore = create(
       },
 
       logout: async () => {
-        const { csrfToken } = await fetch("/api/csrf", {
-          credentials: "include",
-        }).then((res) => res.json());
-
         await secureFetch("/api/auth/logout", {
           method: "POST",
-          headers: {
-            "x-csrf-token": csrfToken,
-          },
         });
 
         clearAccessToken();
@@ -148,13 +108,11 @@ export const useAuthStore = create(
     }),
     {
       name: "auth-storage",
-
       partialize: (state) => ({
         user: state.user,
         profile: state.profile,
         isAuthenticated: state.isAuthenticated,
       }),
-
       onRehydrateStorage: () => (state) => {
         state.setHydrated();
       },

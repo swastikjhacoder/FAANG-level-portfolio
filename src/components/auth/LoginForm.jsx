@@ -33,7 +33,10 @@ export default function LoginForm() {
 
     try {
       await login(form.email, form.password);
-      router.replace("/dashboard");
+
+      setTimeout(() => {
+        router.replace("/dashboard");
+      }, 0);
     } catch (err) {
       setError(err.message || "Login failed");
     } finally {

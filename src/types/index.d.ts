@@ -35,7 +35,7 @@ declare global {
     ip?: string;
     userAgent?: string;
     requestId?: string;
-    body?: any;
+    body?: unknown;
   }
 
   interface JwtPayload {
@@ -46,7 +46,7 @@ declare global {
     exp?: number;
   }
 
-  interface ApiResponse<T = any> {
+  interface ApiResponse<T = unknown> {
     success: boolean;
     data?: T;
     message?: string;
@@ -77,14 +77,47 @@ declare global {
     interface ProcessEnv {
       NODE_ENV: "development" | "production" | "test";
 
+      APP_URL: string;
+      API_BASE_URL: string;
+
       MONGODB_URL: string;
-
-      JWT_ACCESS_SECRET: string;
-      JWT_REFRESH_SECRET: string;
-
       REDIS_URL?: string;
 
-      APP_URL?: string;
+      ACCESS_TOKEN_SECRET: string;
+      REFRESH_TOKEN_SECRET: string;
+
+      ACCESS_TOKEN_EXPIRY: string;
+      REFRESH_TOKEN_EXPIRY: string;
+
+      BCRYPT_SALT_ROUNDS: string;
+
+      ENCRYPTION_KEY: string;
+      COOKIE_SECRET: string;
+
+      TOKEN_PEPPER: string;
+      PASSWORD_PEPPER: string;
+
+      COOKIE_SECURE?: string;
+
+      RATE_LIMIT_MAX?: string;
+      RATE_LIMIT_WINDOW_MS?: string;
+
+      CORS_ORIGIN?: string;
+
+      LOG_LEVEL?: string;
+      ENABLE_GRAPHQL_INTROSPECTION?: string;
+
+      SMTP_HOST: string;
+      SMTP_PORT: string;
+      SMTP_USER: string;
+      SMTP_PASS: string;
+      SMTP_FROM: string;
+
+      CLOUDINARY_CLOUD_NAME: string;
+      CLOUDINARY_API_KEY: string;
+      CLOUDINARY_API_SECRET: string;
+
+      VERCEL_URL?: string;
     }
   }
 }

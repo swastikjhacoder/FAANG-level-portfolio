@@ -10,7 +10,6 @@ import {
 import { refreshAccessToken } from "@/shared/lib/refreshToken";
 
 export default function AuthProvider({ children }) {
-  const setHydrated = useAuthStore((s) => s.setHydrated);
   const hydrated = useAuthStore((s) => s.hydrated);
 
   useEffect(() => {
@@ -20,15 +19,11 @@ export default function AuthProvider({ children }) {
       const token = getAccessToken();
 
       if (!token) {
-        try {
-          const newToken = await refreshAccessToken();
+        const newToken = await refreshAccessToken();
 
-          if (newToken) {
-            setAccessToken(newToken);
-          } else {
-            clearAccessToken();
-          }
-        } catch {
+        if (newToken) {
+          setAccessToken(newToken);
+        } else {
           clearAccessToken();
         }
       }
@@ -36,10 +31,6 @@ export default function AuthProvider({ children }) {
 
     initAuth();
   }, [hydrated]);
-
-  useEffect(() => {
-    setHydrated();
-  }, [setHydrated]);
 
   return children;
 }
