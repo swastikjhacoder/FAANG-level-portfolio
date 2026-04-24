@@ -2,7 +2,7 @@ export const corsOptions = {
   origin: [
     "http://localhost:3000",
     "https://swastikjha.com",
-    "https://swastik-portfolio-eight.vercel.app/",
+    "https://swastik-portfolio-eight.vercel.app",
   ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
