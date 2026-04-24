@@ -20,8 +20,36 @@ export function proxy(req) {
 
   res.headers.set(
     "Content-Security-Policy",
-    "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
+    `
+    default-src 'self';
+    script-src 'self' 'unsafe-eval' 'unsafe-inline';
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' data:;
+    connect-src 'self' https://swastik-portfolio-eight.vercel.app;
+    object-src 'none';
+    base-uri 'self';
+    frame-ancestors 'none';
+    `.replace(/\n/g, ""),
   );
+
+  const origin = req.headers.get("origin");
+
+  if (origin && origin === process.env.CORS_ORIGIN) {
+    res.headers.set("Access-Control-Allow-Origin", origin);
+    res.headers.set("Access-Control-Allow-Credentials", "true");
+    res.headers.set(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization, x-csrf-token",
+    );
+    res.headers.set(
+      "Access-Control-Allow-Methods",
+      "GET,POST,PUT,DELETE,OPTIONS",
+    );
+  }
+
+  if (method === "OPTIONS") {
+    return res;
+  }
 
   if (pathname.startsWith("/dashboard")) {
     const token = req.cookies.get("refreshToken")?.value;
@@ -32,12 +60,15 @@ export function proxy(req) {
   }
 
   if (pathname.startsWith("/api")) {
+    if (pathname.startsWith("/api/auth")) {
+      return res;
+    }
+
     if (isSafeMethod(method)) {
       return res;
     }
 
     if (
-      pathname.startsWith("/api/auth") ||
       pathname === "/api/csrf" ||
       pathname === "/api/v1/contact/send" ||
       pathname === "/api/contact/hire-me"
