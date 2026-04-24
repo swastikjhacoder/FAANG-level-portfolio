@@ -71,7 +71,7 @@ const Footer = () => {
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 rounded-lg border border-(--glass-border) hover:bg-(--surface) transition hover:scale-110"
+              className="p-2 rounded-lg border border-(--glass-border) hover:bg-[var(--surface)] transition hover:scale-110"
             >
               <Icon size={18} />
             </a>

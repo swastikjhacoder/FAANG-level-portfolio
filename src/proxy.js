@@ -39,7 +39,8 @@ export function proxy(req) {
     if (
       pathname.startsWith("/api/auth") ||
       pathname === "/api/csrf" ||
-      pathname === "/api/v1/contact/send"
+      pathname === "/api/v1/contact/send" ||
+      pathname === "/api/contact/hire-me"
     ) {
       return res;
     }
