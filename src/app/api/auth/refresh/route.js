@@ -4,6 +4,15 @@ import { cookies } from "next/headers";
 import { RefreshTokenUseCase } from "@/modules/auth/application/useCases/refreshToken.usecase";
 import { extractRequestMeta } from "@/shared/utils/requestMeta";
 
+const isProd = process.env.NODE_ENV === "production";
+
+const cookieOptions = {
+  httpOnly: true,
+  secure: isProd,
+  sameSite: isProd ? "none" : "lax",
+  path: "/",
+};
+
 export async function POST(req) {
   try {
     await connectDB();
@@ -32,18 +41,12 @@ export async function POST(req) {
     });
 
     res.cookies.set("accessToken", result.accessToken, {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: "lax",
-      path: "/",
+      ...cookieOptions,
       maxAge: 60 * 15,
     });
 
     res.cookies.set("refreshToken", result.refreshToken, {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: "lax",
-      path: "/",
+      ...cookieOptions,
       maxAge: 60 * 60 * 24 * 7,
     });
 

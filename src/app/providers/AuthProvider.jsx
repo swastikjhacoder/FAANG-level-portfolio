@@ -13,14 +13,12 @@ export default function AuthProvider({ children }) {
   const setHydrated = useAuthStore((s) => s.setHydrated);
   const hydrated = useAuthStore((s) => s.hydrated);
 
-  // 🔹 Initialize auth on app load
   useEffect(() => {
     if (!hydrated) return;
 
     const initAuth = async () => {
       const token = getAccessToken();
 
-      // If no token in memory → try refresh
       if (!token) {
         try {
           const newToken = await refreshAccessToken();
@@ -39,7 +37,6 @@ export default function AuthProvider({ children }) {
     initAuth();
   }, [hydrated]);
 
-  // 🔹 Mark Zustand store as hydrated
   useEffect(() => {
     setHydrated();
   }, [setHydrated]);
