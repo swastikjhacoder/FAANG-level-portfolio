@@ -1,8 +1,10 @@
 import { cache } from "react";
 import React from "react";
 
-import AboutSection from "@/components/public/sections/AboutSection";
 import ProfileSection from "@/components/public/sections/ProfileSection";
+import SoftSkillSection from "@/components/public/sections/SoftSkillSection";
+import SoftSkills from "@/components/public/sections/SoftSkills";
+import AboutSection from "@/components/public/sections/AboutSection";
 import ProfileSummarySection from "@/components/public/sections/ProfileSummarySection";
 import CoreCompetencySection from "@/components/public/sections/CoreCompetencySection";
 import CoreCompetencyList from "@/components/public/sections/CoreCompetencyList";
@@ -71,6 +73,14 @@ function createFetcher(config) {
 const getProfile = createFetcher({
   path: "/api/v1/profile/public",
   errorMessage: "Failed to fetch profile",
+});
+
+const getSoftSkillSection = createFetcher({
+  path: "/api/v1/profile/softSkillSection",
+});
+
+const getSoftSkills = createFetcher({
+  path: "/api/v1/profile/softSkill",
 });
 
 const getAboutData = createFetcher({
@@ -168,6 +178,7 @@ const Home = async () => {
     projectSectionRes,
     serviceSectionRes,
     contactSectionRes,
+    softSkillSectionRes,
   ] = await Promise.all([
     getAboutData({}),
     getProfile({}),
@@ -178,6 +189,7 @@ const Home = async () => {
     getProjectSection({}),
     getServiceSection({}),
     getContactSection({}),
+    getSoftSkillSection({}),
   ]);
 
   const profile = profileRes.data;
@@ -196,6 +208,7 @@ const Home = async () => {
     servicesRes,
     testimonialsRes,
     contactRes,
+    softSkillsRes,
   ] = await Promise.all([
     getProfileSummary({ query: { profileId: profile._id } }),
     getCoreCompetencyItems({ query: { profileId: profile._id } }),
@@ -206,6 +219,7 @@ const Home = async () => {
     getServices({ query: { profileId: profile._id } }),
     getTestimonials({ query: { profileId: profile._id } }),
     getContact({ query: { profileId: profile._id } }),
+    getSoftSkills({ query: { profileId: profile._id } }),
   ]);
 
   const approvedTestimonials =
@@ -217,9 +231,17 @@ const Home = async () => {
       <BackToTopButton />
 
       <Section id="home" className="border-none">
-        <FadeInSection>
-          <ProfileSection data={profile} />
-        </FadeInSection>
+        <div className="space-y-10">
+          <FadeInSection>
+            <ProfileSection data={profile} />
+          </FadeInSection>
+          <FadeInSection>
+            <div className="space-y-10">
+              <SoftSkillSection data={softSkillSectionRes.data} />
+              <SoftSkills data={softSkillsRes.data} />
+            </div>
+          </FadeInSection>
+        </div>
       </Section>
 
       <Section id="about">

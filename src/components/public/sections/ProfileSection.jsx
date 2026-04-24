@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import Image from "next/image";
 
@@ -14,7 +16,7 @@ const ProfileSection = ({ data }) => {
             Hi, I&apos;m <span className="gradient-text">{fullName}</span>
           </h1>
 
-          <div className="flex flex-wrap justify-center lg:justify-start gap-2">
+          <div className="flex flex-wrap justify-center gap-2">
             {data?.roles?.map((role, index) => (
               <span
                 key={index}
@@ -29,6 +31,19 @@ const ProfileSection = ({ data }) => {
             {data?.description?.slice(0, 3).map((desc, i) => (
               <p key={i}>{desc}</p>
             ))}
+          </div>
+
+          <div className="pt-2">
+            <button
+              onClick={() =>
+                document
+                  .getElementById("contact")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
+              className="ml-4 px-4 py-2 rounded-xl gradient-bg text-white font-semibold shadow-md hover:scale-105 transition hover:cursor-pointer"
+            >
+              Contact Me
+            </button>
           </div>
         </div>
 

@@ -3,6 +3,7 @@ export const dashboardRoutes = [
   { name: "About", href: "/dashboard/about", icon: "user" },
   { name: "Competencies", href: "/dashboard/competencies", icon: "competencies" },
   { name: "Skills", href: "/dashboard/skills", icon: "code" },
+  { name: "Soft-Skills", href: "/dashboard/soft-skills", icon: "code" },
   { name: "Experience", href: "/dashboard/experience", icon: "briefcase" },
   { name: "Academic", href: "/dashboard/academic", icon: "academic" },
   { name: "Certification", href: "/dashboard/certification", icon: "certification" },

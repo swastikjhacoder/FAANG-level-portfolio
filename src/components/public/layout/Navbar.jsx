@@ -64,7 +64,7 @@ export default function Navbar() {
                 <button
                   key={item.name}
                   onClick={() => handleNavigate(item.name.toLowerCase())}
-                  className="flex items-center gap-2 text-(--text-muted) hover:text-(--text-color) transition"
+                  className="flex items-center gap-2 text-(--text-muted) hover:text-(--text-color) transition hover:cursor-pointer"
                 >
                   {Icon && <Icon size={18} />}
                   {item.name}
@@ -74,7 +74,7 @@ export default function Navbar() {
 
             <button
               onClick={() => setHireOpen(true)}
-              className="ml-4 px-4 py-2 rounded-xl gradient-bg text-white font-semibold shadow-md hover:scale-105 transition"
+              className="ml-4 px-4 py-2 rounded-xl gradient-bg text-white font-semibold shadow-md hover:scale-105 transition hover:cursor-pointer"
             >
               Hire Me
             </button>
